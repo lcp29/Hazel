@@ -47,7 +47,7 @@ namespace Hazel {
 		}
 		catch (YAML::ParserException e)
 		{
-			HZ_CORE_ERROR("Failed to load project file '{0}'\n     {1}", filepath, e.what());
+			HZ_CORE_ERROR("Failed to load project file '{0}'\n     {1}", (const char*) filepath.c_str(), e.what());
 			return false;
 		}
 

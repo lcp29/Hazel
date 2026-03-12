@@ -10,7 +10,7 @@
 #include "mono/metadata/mono-debug.h"
 #include "mono/metadata/threads.h"
 
-#include "FileWatch.h"
+#include <FileWatch.hpp>
 
 #include "Hazel/Core/Application.h"
 #include "Hazel/Core/Timer.h"
@@ -68,7 +68,7 @@ namespace Hazel {
 				{
 					ScopedBuffer pdbFileData = FileSystem::ReadFileBinary(pdbPath);
 					mono_debug_open_image_from_memory(image, pdbFileData.As<const mono_byte>(), pdbFileData.Size());
-					HZ_CORE_INFO("Loaded PDB {}", pdbPath);
+					HZ_CORE_INFO("Loaded PDB {}", (const char*) pdbPath.c_str());
 				}
 			}
 
@@ -322,7 +322,7 @@ namespace Hazel {
 		}
 		else
 		{
-			HZ_CORE_ERROR("Could not find ScriptInstance for entity {}",  entityUUID);
+			HZ_CORE_ERROR("Could not find ScriptInstance for entity {}", (uint64_t) entityUUID);
 		}
 	}
 

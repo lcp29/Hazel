@@ -42,13 +42,13 @@ namespace Hazel {
 
 	static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
 	{
-		HZ_CORE_WARN("Value: {0}", *parameter);
+		HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
 		*outResult = glm::normalize(*parameter);
 	}
 
 	static float NativeLog_VectorDot(glm::vec3* parameter)
 	{
-		HZ_CORE_WARN("Value: {0}", *parameter);
+		HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
 		return glm::dot(*parameter, *parameter);
 	}
 

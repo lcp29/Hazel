@@ -2,9 +2,9 @@
 #include "Font.h"
 
 #undef INFINITE
-#include "msdf-atlas-gen.h"
-#include "FontGeometry.h"
-#include "GlyphGeometry.h"
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
+#include <msdf-atlas-gen/FontGeometry.h>
+#include <msdf-atlas-gen/GlyphGeometry.h>
 
 #include "MSDFData.h"
 
@@ -82,7 +82,7 @@ namespace Hazel {
 		// atlasPacker.setDimensionsConstraint()
 		atlasPacker.setPixelRange(2.0);
 		atlasPacker.setMiterLimit(1.0);
-		atlasPacker.setPadding(0);
+		atlasPacker.setSpacing(0);
 		atlasPacker.setScale(emSize);
 		int remaining = atlasPacker.pack(m_Data->Glyphs.data(), (int)m_Data->Glyphs.size());
 		HZ_CORE_ASSERT(remaining == 0);

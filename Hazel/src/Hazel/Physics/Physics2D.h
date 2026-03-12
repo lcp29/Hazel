@@ -2,7 +2,7 @@
 
 #include "Hazel/Scene/Components.h"
 
-#include "box2d/b2_body.h"
+#include <box2d/b2_body.h>
 
 namespace Hazel {
 
