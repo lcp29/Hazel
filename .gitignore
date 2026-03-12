@@ -24,3 +24,8 @@ scripts/__pycache__
 cmake-build-debug/
 cmake-build-release/
 .idea/
+
+# DLL files
+**.dll
+**.pdb
+!Hazel/vendor/mono
