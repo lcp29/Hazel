@@ -20,7 +20,7 @@ add_library(Hazel STATIC
     ${HAZEL_SOURCES}
 )
 
-target_compile_features(Hazel PUBLIC cxx_std_17)
+target_compile_features(Hazel PUBLIC cxx_std_20)
 
 target_precompile_headers(Hazel PRIVATE
     ${HAZEL_ROOT}/src/hzpch.h
@@ -66,6 +66,7 @@ target_link_libraries(Hazel
         yaml-cpp::yaml-cpp
         glm
         spdlog
+        vk-bootstrap
 )
 
 if(MSVC)
