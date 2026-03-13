@@ -5,8 +5,8 @@
 
 #include "mono/jit/jit.h"
 #include "mono/metadata/assembly.h"
+#include "mono/metadata/attrdefs.h"
 #include "mono/metadata/object.h"
-#include "mono/metadata/tabledefs.h"
 #include "mono/metadata/mono-debug.h"
 #include "mono/metadata/threads.h"
 
@@ -414,7 +414,7 @@ namespace Hazel {
 			{
 				const char* fieldName = mono_field_get_name(field);
 				uint32_t flags = mono_field_get_flags(field);
-				if (flags & FIELD_ATTRIBUTE_PUBLIC)
+				if (flags & MONO_FIELD_ATTR_PUBLIC)
 				{
 					MonoType* type = mono_field_get_type(field);
 					ScriptFieldType fieldType = Utils::MonoTypeToScriptFieldType(type);

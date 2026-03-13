@@ -86,7 +86,7 @@ if(WIN32)
     )
 
     target_link_libraries(Hazel PUBLIC
-        ${HAZEL_VENDOR_DIR}/mono/lib/$<IF:$<CONFIG:Debug>,Debug,Release>/libmono-static-sgen.lib
+        ${HAZEL_VENDOR_DIR}/mono/lib/libmono-static-sgen.lib
     )
 
     if(VULKAN_SDK_DIR)
