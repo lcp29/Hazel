@@ -49,6 +49,7 @@ add_subdirectory(Hazelnut/SandboxProject/Assets/Scripts)
 add_subdirectory(Hazel-ScriptCore)
 add_subdirectory(Hazelnut)
 add_subdirectory(Sandbox)
+add_subdirectory(RenderingPlayground)
 
 set_property(TARGET Hazel PROPERTY FOLDER "Core")
 set_property(TARGET Hazel-ScriptCore PROPERTY FOLDER "Core")

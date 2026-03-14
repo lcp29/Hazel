@@ -11,10 +11,6 @@ file(GLOB_RECURSE HAZEL_SOURCES CONFIGURE_DEPENDS
     ${HAZEL_ROOT}/src/*.cpp
 )
 
-list(REMOVE_ITEM HAZEL_SOURCES
-    ${HAZEL_ROOT}/src/Hazel/ImGui/ImGuiBuild.cpp
-)
-
 add_library(Hazel STATIC
     ${HAZEL_HEADERS}
     ${HAZEL_SOURCES}
