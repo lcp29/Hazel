@@ -4,9 +4,15 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace Hazel
 {
+    template<typename T>
+    struct InRHIFlagScope : std::false_type {};
+
     template<typename BitType>
+    requires InRHIFlagScope<BitType>::value
     class Flags
     {
     public:
@@ -16,43 +22,59 @@ namespace Hazel
 
         Flags() : value(0) {}
 
-        Flags(UnderlyingType value) : value(value) {}
+        constexpr Flags(const UnderlyingType &value) : value(value) {}
 
-        Flags(BitType value) : value(static_cast<UnderlyingType>(value)) {}
+        constexpr Flags(const BitType &value) : value(static_cast<UnderlyingType>(value)) {}
 
-        Flags(const Flags &other) : value(other.value) {}
+        constexpr Flags(const Flags &other) : value(other.value) {}
 
-        operator UnderlyingType() const { return value; }
+        constexpr operator UnderlyingType() const { return value; }
 
-        operator bool() const { return value != 0; }
+        constexpr operator bool() const { return value != 0; }
 
-        Flags operator|(const Flags &rhs)
+        constexpr Flags operator|(const Flags &rhs) const
         {
             return static_cast<UnderlyingType>(value) | static_cast<UnderlyingType>(rhs.value);
         }
 
-        Flags operator|(const UnderlyingType &rhs)
+        constexpr Flags operator|(const UnderlyingType &rhs) const
         {
-            return static_cast<UnderlyingType>(value) | rhs.value;
+            return static_cast<UnderlyingType>(value) | rhs;
         }
 
-        Flags operator&(const Flags &rhs)
+        constexpr Flags operator&(const Flags &rhs) const
         {
-            return static_cast<UnderlyingType>(value) | static_cast<UnderlyingType>(rhs.value);
+            return static_cast<UnderlyingType>(value) & static_cast<UnderlyingType>(rhs.value);
         }
 
         bool operator==(const Flags &) const = default;
     };
 
-    template<typename BitType, typename UnderlyingType = std::underlying_type_t<BitType>>
-    Flags<BitType> operator|(const UnderlyingType &lhs, const Flags<BitType> &rhs)
+    template<typename BitType>
+    requires InRHIFlagScope<BitType>::value
+    constexpr Flags<BitType> operator|(const BitType &lhs, const Flags<BitType> &rhs)
     {
         return rhs | lhs;
     }
 
     template<typename BitType, typename UnderlyingType = std::underlying_type_t<BitType>>
-    Flags<BitType> operator&(const UnderlyingType &lhs, const Flags<BitType> &rhs)
+    requires InRHIFlagScope<BitType>::value
+    Flags<BitType> operator|(const BitType &lhs, const BitType &rhs)
     {
-        return rhs | lhs;
+        return static_cast<UnderlyingType>(lhs) | static_cast<UnderlyingType>(rhs);
+    }
+
+    template<typename BitType>
+    requires InRHIFlagScope<BitType>::value
+    constexpr Flags<BitType> operator&(const BitType &lhs, const Flags<BitType> &rhs)
+    {
+        return Flags<BitType>(lhs) & rhs;
+    }
+
+    template<typename BitType, typename UnderlyingType = std::underlying_type_t<BitType>>
+    requires InRHIFlagScope<BitType>::value
+    Flags<BitType> operator&(const BitType &lhs, const BitType &rhs)
+    {
+        return static_cast<UnderlyingType>(lhs) & static_cast<UnderlyingType>(rhs);
     }
 } // Hazel

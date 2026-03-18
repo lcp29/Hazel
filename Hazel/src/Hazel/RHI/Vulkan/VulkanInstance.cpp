@@ -2,45 +2,75 @@
 // Created by helmholtz on 2026/3/13.
 //
 
-#include "VulkanInstance.h"
-
 #include <VkBootstrap.h>
+#include <vulkan/vulkan.hpp>
 
+#include "../RHIBase.h"
+#include "../RHIInstance.h"
 #include "VulkanAdapter.h"
 #include "VulkanCommon.h"
+#include "VulkanDevice.h"
+#include "VulkanInstance.h"
+#include "VulkanSurface.h"
 
 namespace Hazel
 {
-    std::vector<Ref<RHIAdapter>> VulkanInstance::GetAdapters()
+    std::vector<RHIAdapter> RHI_VK_FUNC_IMPL(RHIInstance, GetAdapters)()
     {
-        auto physicalDevices = m_Instance.enumeratePhysicalDevices();
+        const auto physicalDevices = m_Instance.enumeratePhysicalDevices();
 
-        std::vector<Ref<RHIAdapter>> adapters;
+        std::vector<RHIAdapter> adapters;
         adapters.reserve(physicalDevices.size());
 
-        for (const auto &device: physicalDevices)
+        for (const auto &physicalDevice: physicalDevices)
         {
-            adapters.push_back(CreateRef<VulkanAdapter>(device));
+            adapters.emplace_back(physicalDevice);
         }
 
         return adapters;
     }
 
-    VulkanInstance::VulkanInstance(const VulkanInstance &&instance) noexcept
+    RHISurface *RHI_VK_FUNC_IMPL(RHIInstance, CreateSurface)(const RHISurfaceDesc &desc)
     {
-        m_IsValid = instance.m_IsValid;
-        m_Instance = instance.m_Instance;
-        m_InstanceDesc = instance.m_InstanceDesc;
-        m_DebugCallbackContext = instance.m_DebugCallbackContext;
+        std::unique_ptr<RHISurface> surface(new RHISurface(this, m_Instance, desc));
+        if (!surface || !surface->IsValid())
+        {
+            return nullptr;
+        }
+
+        RHISurface *surfacePtr = surface.get();
+        RegisterSurface(std::move(surface));
+        return surfacePtr;
     }
 
-    VulkanInstance::VulkanInstance(const RHIInstanceDesc &desc) : m_InstanceDesc(desc)
+    RHIDevice *RHI_VK_FUNC_IMPL(RHIInstance, CreateDevice)(const RHIAdapter *adapter,
+                                                           const RHIDeviceCapabilities &caps,
+                                                           const RHISurface *surface)
+    {
+        if (!adapter || !adapter->CanCreateDevice(caps))
+        {
+            return nullptr;
+        }
+
+        std::unique_ptr<RHIDevice> device(new RHIDevice(this, m_Instance, *adapter, caps, surface));
+        if (!device || !device->IsValid())
+        {
+            return nullptr;
+        }
+
+        RHIDevice *devicePtr = device.get();
+        RegisterDevice(std::move(device));
+        return devicePtr;
+    }
+
+    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(const RHIInstanceDesc &desc) : m_InstanceDesc(desc)
     {
         vkb::InstanceBuilder builder;
         m_DebugCallbackContext.callback = desc.debugMessageCallback;
         m_DebugCallbackContext.userData = nullptr;
+
         auto instance = builder.set_app_name(desc.appName.c_str())
-                .require_api_version(1, 4, 0)
+                .require_api_version(1, 3, 0)
                 .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
                 .set_engine_name(desc.engineName.c_str())
                 .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
@@ -54,36 +84,103 @@ namespace Hazel
                        const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
                        void *callbackContext) -> VkBool32
                     {
-                        if (callbackContext)
+                        if (!callbackContext)
                         {
-                            VulkanDebugMessageContext *context = static_cast<VulkanDebugMessageContext *>(
-                                callbackContext);
-                            DebugMessage message{};
-                            message.backend = RHIBackend::Vulkan;
-                            message.severity = severity;
-                            message.type = type;
-                            message.messageIdNumber = callbackData->messageIdNumber;
-                            message.messageIdName = callbackData->pMessageIdName;
-                            message.message = callbackData->pMessage;
-                            context->callback(message, context->userData);
+                            return VK_FALSE;
                         }
+
+                        auto *context = static_cast<VulkanDebugMessageContext *>(callbackContext);
+                        DebugMessage message{};
+                        message.backend = RHIBackend::Vulkan;
+                        message.severity = severity;
+                        message.type = type;
+                        message.messageIdNumber = callbackData->messageIdNumber;
+                        message.messageIdName = callbackData->pMessageIdName;
+                        message.message = callbackData->pMessage;
+                        context->callback(message, context->userData);
                         return VK_FALSE;
                     })
                 .build();
 
-        if (instance.has_value())
+        if (!instance.has_value())
         {
-            m_Instance = instance.value();
-            m_IsValid = true;
             return;
         }
-        m_IsValid = false;
+
+        m_Instance = instance.value();
+        m_DynamicLoader = vk::detail::DispatchLoaderDynamic(m_Instance, vkGetInstanceProcAddr);
+        if (desc.useValidation)
+        {
+            m_DebugMessenger = instance.value().debug_messenger;
+        }
+
+        m_IsValid = true;
     }
 
-    VulkanInstance::~VulkanInstance()
+    RHI_VK_FUNC_IMPL(RHIInstance, ~RHIInstanceImpl)()
     {
-        m_Instance.destroy();
+        Release();
+    }
+
+    void RHI_VK_FUNC_IMPL(RHIInstance, Release)()
+    {
+        if (!m_IsValid)
+        {
+            return;
+        }
+
+        for (const auto &device: m_Devices)
+        {
+            if (device)
+            {
+                device->ReleaseFromOwner();
+            }
+        }
+        m_Devices.clear();
+
+        for (const auto &surface: m_Surfaces)
+        {
+            if (surface)
+            {
+                surface->ReleaseWithoutUnregister();
+            }
+        }
+        m_Surfaces.clear();
+
+        FlushDeletionQueue();
+
+        if (m_Instance)
+        {
+            if (m_InstanceDesc.useValidation && m_DebugMessenger)
+            {
+                m_Instance.destroyDebugUtilsMessengerEXT(m_DebugMessenger, nullptr, m_DynamicLoader);
+            }
+
+            m_Instance.destroy();
+        }
+
+        m_DebugMessenger = VK_NULL_HANDLE;
         m_Instance = VK_NULL_HANDLE;
         m_IsValid = false;
     }
-} // Hazel
+
+    void RHI_VK_FUNC_IMPL(RHIInstance, RegisterDevice)(std::unique_ptr<RHIDevice> device)
+    {
+        RegisterOwnedObject(m_Devices, std::move(device));
+    }
+
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice *device)
+    {
+        UnregisterOwnedObject(m_Devices, device);
+    }
+
+    void RHI_VK_FUNC_IMPL(RHIInstance, RegisterSurface)(std::unique_ptr<RHISurface> surface)
+    {
+        RegisterOwnedObject(m_Surfaces, std::move(surface));
+    }
+
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface *surface)
+    {
+        UnregisterOwnedObject(m_Surfaces, surface);
+    }
+} // namespace Hazel

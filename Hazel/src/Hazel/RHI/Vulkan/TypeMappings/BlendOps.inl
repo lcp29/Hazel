@@ -1,0 +1,5 @@
+X(Add, eAdd)
+X(Subtract, eSubtract)
+X(ReverseSubtract, eReverseSubtract)
+X(Min, eMin)
+X(Max, eMax)

@@ -1,0 +1,8 @@
+X(Never, eNever)
+X(Less, eLess)
+X(Equal, eEqual)
+X(LessOrEqual, eLessOrEqual)
+X(Greater, eGreater)
+X(NotEqual, eNotEqual)
+X(GreaterOrEqual, eGreaterOrEqual)
+X(Always, eAlways)

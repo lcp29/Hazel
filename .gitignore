@@ -29,3 +29,5 @@ cmake-build-release/
 **.dll
 **.pdb
 !Hazel/vendor/mono
+
+Imperatives/

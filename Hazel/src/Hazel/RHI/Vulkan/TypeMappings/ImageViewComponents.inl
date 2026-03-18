@@ -1,0 +1,7 @@
+X(Identity, eIdentity)
+X(Zero, eZero)
+X(One, eOne)
+X(R, eR)
+X(G, eG)
+X(B, eB)
+X(A, eA)

@@ -4,16 +4,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "Flags.h"
+#include "RHIBase.h"
 
 namespace Hazel
 {
-    enum class RHIBackend
-    {
-        Auto = 1 << 0,
-        Vulkan = 1 << 1
-    };
-
     struct Version
     {
         uint8_t major;
@@ -29,6 +26,9 @@ namespace Hazel
         Error = 1 << 3
     };
 
+    template<>
+    struct InRHIFlagScope<DebugMessageSeverityFlagBits> : std::true_type {};
+
     using DebugMessageSeverity = Flags<DebugMessageSeverityFlagBits>;
 
     enum class DebugMessageTypeFlagBits : uint8_t
@@ -38,17 +38,10 @@ namespace Hazel
         Validation = 1 << 2
     };
 
+    template<>
+    struct InRHIFlagScope<DebugMessageTypeFlagBits> : std::true_type {};
+
     using DebugMessageType = Flags<DebugMessageTypeFlagBits>;
-
-    inline DebugMessageType operator|(DebugMessageType a, DebugMessageTypeFlagBits b)
-    {
-        return a | DebugMessageType(b);
-    }
-
-    inline DebugMessageSeverity operator|(DebugMessageSeverity a, DebugMessageSeverityFlagBits b)
-    {
-        return a | DebugMessageSeverity(b);
-    }
 
     struct DebugMessage
     {
@@ -63,13 +56,4 @@ namespace Hazel
     };
 
     using DebugMessageCallback = void(*)(const DebugMessage &, void *);
-
-    struct RHIDeviceCapabilities
-    {
-        bool supportGpuAddress;
-
-        bool supportSubgroup;
-        uint32_t subgroupSizeMin;
-        uint32_t subgroupSizeMax;
-    };
 } // Hazel

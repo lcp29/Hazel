@@ -3,36 +3,54 @@
 //
 
 #pragma once
+
+#include "../RHIHeaders.h"
+#include "VulkanBase.h"
 #include "VulkanCommon.h"
-#include "../RHIDesc.h"
-#include "../RHIInstance.h"
 
 #include <vulkan/vulkan.hpp>
 
-
 namespace Hazel
 {
-    class VulkanInstance : public RHIInstance
+    RHI_VK_CLASS_IMPL(RHIInstance)
     {
     public:
-        bool IsValid() const override { return m_IsValid; }
+        bool IsValid() const { return m_IsValid; }
 
-        std::vector<Ref<RHIAdapter>> GetAdapters() override;
+        std::vector<RHIAdapter> GetAdapters();
+        RHISurface *CreateSurface(const RHISurfaceDesc &desc);
+        RHIDevice *CreateDevice(const RHIAdapter *adapter,
+                                const RHIDeviceCapabilities &caps,
+                                const RHISurface *surface = nullptr);
+        void Release();
 
-        VulkanInstance(const VulkanInstance &) = delete;
+        explicit RHIInstanceImpl(const RHIInstanceDesc &desc);
+        RHIInstanceImpl(const RHIInstanceImpl &) = delete;
+        RHIInstanceImpl &operator=(const RHIInstanceImpl &) = delete;
+        ~RHIInstanceImpl();
+        vk::Instance GetHandle() const { return m_Instance; }
 
-        VulkanInstance &operator=(const VulkanInstance &) = delete;
-
-        VulkanInstance(const VulkanInstance &&instance) noexcept;
-
-        VulkanInstance(const RHIInstanceDesc &desc);
-
-        ~VulkanInstance() override;
+        void EnqueueDeletion(DeletionQueue::Operation operation) { m_DeletionQueue.Enqueue(std::move(operation)); }
+        void FlushDeletionQueue() { m_DeletionQueue.Flush(); }
+        DeletionQueue::OperationSet ExtractDeletionQueue() { return m_DeletionQueue.ExtractAll(); }
 
     private:
+        friend class RHIDeviceImpl<RHIBackend::Vulkan>;
+        friend class RHISurfaceImpl<RHIBackend::Vulkan>;
+
+        void RegisterDevice(std::unique_ptr<RHIDevice> device);
+        void UnregisterDevice(RHIDevice *device);
+        void RegisterSurface(std::unique_ptr<RHISurface> surface);
+        void UnregisterSurface(RHISurface *surface);
+
         bool m_IsValid = false;
         vk::Instance m_Instance;
         RHIInstanceDesc m_InstanceDesc;
         VulkanDebugMessageContext m_DebugCallbackContext;
+        vk::DebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+        vk::detail::DispatchLoaderDynamic m_DynamicLoader;
+        RHIOwnerSet<RHIDevice> m_Devices;
+        RHIOwnerSet<RHISurface> m_Surfaces;
+        DeletionQueue m_DeletionQueue;
     };
-} // Hazel
+} // namespace Hazel

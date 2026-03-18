@@ -4,20 +4,22 @@
 
 #pragma once
 
-#include "../Core/Base.h"
-#include "RHIAdapter.h"
-
-#include <vector>
+#include "RHICommon.h"
 
 namespace Hazel
 {
-    class RHIInstance
+    struct RHIInstanceDesc
     {
-    public:
-        virtual bool IsValid() const { return false; }
+        RHIBackend backend = RHIBackend::Auto;
+        std::string appName = "";
+        Version appVersion = {1, 0, 0};
+        std::string engineName = "";
+        Version engineVersion = {1, 0, 0};
 
-        virtual std::vector<Ref<RHIAdapter>> GetAdapters() = 0;
+        bool useValidation = false;
+        DebugMessageType debugMessageType = DebugMessageTypeFlagBits::General;
+        DebugMessageSeverity debugMessageSeverity = DebugMessageSeverityFlagBits::Warning;
 
-        virtual ~RHIInstance() = default;
+        DebugMessageCallback debugMessageCallback = nullptr;
     };
 } // Hazel

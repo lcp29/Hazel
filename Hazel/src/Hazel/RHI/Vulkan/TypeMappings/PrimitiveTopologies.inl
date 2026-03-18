@@ -1,0 +1,5 @@
+X(PointList, ePointList)
+X(LineList, eLineList)
+X(LineStrip, eLineStrip)
+X(TriangleList, eTriangleList)
+X(TriangleStrip, eTriangleStrip)

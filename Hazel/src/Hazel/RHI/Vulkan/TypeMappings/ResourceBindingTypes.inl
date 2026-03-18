@@ -1,0 +1,8 @@
+X(Sampler, eSampler)
+X(SamplerWithImage, eCombinedImageSampler)
+X(SampledImage, eSampledImage)
+X(StorageImage, eStorageImage)
+X(UniformBuffer, eUniformBuffer)
+X(StorageBuffer, eStorageBuffer)
+X(UniformTexelBuffer, eUniformTexelBuffer)
+X(StorageTexelBuffer, eStorageTexelBuffer)

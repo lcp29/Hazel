@@ -1,0 +1,7 @@
+X(Image1D, e1D)
+X(Image2D, e2D)
+X(Image3D, e3D)
+X(Cube, eCube)
+X(Image1DArray, e1DArray)
+X(Image2DArray, e2DArray)
+X(CubeArray, eCubeArray)

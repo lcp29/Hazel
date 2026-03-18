@@ -1,0 +1,6 @@
+X(TransferSource, eTransferSrc)
+X(TransferDestination, eTransferDst)
+X(Sampled, eSampled)
+X(Storage, eStorage)
+X(ColorAttachment, eColorAttachment)
+X(DepthStencilAttachment, eDepthStencilAttachment)
