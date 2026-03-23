@@ -34,8 +34,14 @@ namespace Hazel
         bool BindComputePipeline(RHIComputePipeline* pipeline);
         bool BindVertexBuffer(uint32_t binding, RHIBuffer* buffer, uint64_t offset = 0);
         bool BindIndexBuffer(RHIBuffer* buffer, RHIIndexType indexType, uint64_t offset = 0);
-        bool BindGraphicsResourceGroup(RHIGraphicsPipeline* pipeline, uint32_t set, RHIResourceGroup* resourceGroup);
-        bool BindGraphicsResourceGroup(RHIResourceSignature* signature, uint32_t set, RHIResourceGroup* resourceGroup);
+        bool BindGraphicsResourceGroup(RHIGraphicsPipeline* pipeline,
+                                       uint32_t set,
+                                       RHIResourceGroup* resourceGroup,
+                                       const std::vector<uint32_t>* bufferOffsets = {});
+        bool BindGraphicsResourceGroup(RHIResourceSignature* signature,
+                                       uint32_t set,
+                                       RHIResourceGroup* resourceGroup,
+                                       const std::vector<uint32_t>* bufferOffsets = {});
         bool BindComputeResourceGroup(RHIComputePipeline* pipeline, uint32_t set, RHIResourceGroup* resourceGroup);
         bool BindComputeResourceGroup(RHIResourceSignature* signature, uint32_t set, RHIResourceGroup* resourceGroup);
         bool BlitImage(RHIImage* srcImage,

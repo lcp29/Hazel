@@ -322,17 +322,19 @@ namespace Hazel
 
     bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIGraphicsPipeline* pipeline,
                                                                        uint32_t set,
-                                                                       RHIResourceGroup* resourceGroup)
+                                                                       RHIResourceGroup* resourceGroup,
+                                                                       const std::vector<uint32_t>* bufferOffsets)
     {
         auto* vkPipeline = pipeline;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkPipeline || !vkPipeline->IsValid());
 
-        return BindGraphicsResourceGroup(vkPipeline->GetDesc().resourceSignature, set, resourceGroup);
+        return BindGraphicsResourceGroup(vkPipeline->GetDesc().resourceSignature, set, resourceGroup, bufferOffsets);
     }
 
     bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIResourceSignature* signature,
                                                                        uint32_t set,
-                                                                       RHIResourceGroup* resourceGroup)
+                                                                       RHIResourceGroup* resourceGroup,
+                                                                       const std::vector<uint32_t>* bufferOffsets)
     {
         auto* vkSignature = signature;
         auto* vkGroup = resourceGroup;
@@ -346,8 +348,8 @@ namespace Hazel
             set,
             1,
             &descriptorSet,
-            0,
-            nullptr);
+            bufferOffsets->size(),
+            bufferOffsets->data());
         return true;
     }
 
