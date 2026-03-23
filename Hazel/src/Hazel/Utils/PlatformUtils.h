@@ -17,4 +17,10 @@ namespace Hazel
     public:
         static float GetTime();
     };
+
+    class SystemSettings
+    {
+    public:
+        static float GetSystemDPIScale();
+    };
 } // namespace Hazel

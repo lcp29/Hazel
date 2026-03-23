@@ -9,6 +9,15 @@
 
 namespace Hazel
 {
+    float SystemSettings::GetSystemDPIScale()
+    {
+        // Get the DPI scale factor for the primary monitor
+        HDC screen = GetDC(nullptr);
+        int dpiX = GetDeviceCaps(screen, LOGPIXELSX);
+        ReleaseDC(nullptr, screen);
+        return dpiX / 96.0f; // 96 DPI is the default scale (100%)
+    }
+
     float Time::GetTime()
     {
         return glfwGetTime();
