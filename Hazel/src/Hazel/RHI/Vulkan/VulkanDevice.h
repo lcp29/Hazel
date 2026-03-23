@@ -22,13 +22,16 @@ namespace Hazel
         bool IsValid() const { return m_IsValid; }
 
         bool WaitIdle();
+        bool WaitSyncPoint(RHISyncPoint *syncPoint, uint64_t timeout = UINT64_MAX);
         void FlushDeferredDeletions();
 
         RHIQueue *GetQueue(RHIQueueType type) const;
+        RHIQueue *GetUniformQueue() const { return m_IsUniformQueue ? GetQueue(RHIQueueType::Graphics) : nullptr; }
 
         RHIBuffer *CreateBuffer(const RHIBufferDesc &desc);
         RHIBufferView *CreateBufferView(RHIBuffer *buffer, const RHIBufferViewDesc &desc);
         RHICommandPool *CreateCommandPool(const RHICommandPoolDesc &desc);
+        RHICommandPool* CreateCommandPoolUniformQueue(const RHICommandPoolDesc& desc);
         RHIComputePipeline *CreateComputePipeline(const RHIComputePipelineDesc &desc);
         RHIGraphicsPipeline *CreateGraphicsPipeline(const RHIGraphicsPipelineDesc &desc);
         RHIImage *CreateImage(const RHIImageDesc &desc);
@@ -47,9 +50,12 @@ namespace Hazel
         vk::Device GetHandle() const { return m_Device; }
         vk::PhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
         VulkanMemoryAllocator *GetAllocator() const { return m_Allocator.get(); }
+        bool IsUniformQueue() const { return m_IsUniformQueue; }
 
         void EnqueueDeletion(DeletionQueue::Operation operation) { m_DeletionQueue.Enqueue(std::move(operation)); }
         DeletionQueue::OperationSet ExtractDeletionQueue() { return m_DeletionQueue.ExtractAll(); }
+
+        RHIDeviceImpl(RHIDevice &&device) noexcept;
 
     private:
         friend class RHIInstanceImpl<RHIBackend::Vulkan>;
@@ -100,6 +106,7 @@ namespace Hazel
         void UnregisterShader(RHIShader *shader);
 
         bool m_IsValid = false;
+        bool m_IsUniformQueue = false;
         RHIInstance *m_InstanceOwner = nullptr;
         RHIAdapter m_Adapter;
         RHIDeviceCapabilities m_Capabilities;

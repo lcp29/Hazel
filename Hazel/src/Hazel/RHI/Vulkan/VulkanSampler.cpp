@@ -5,6 +5,7 @@
 #include "VulkanSampler.h"
 
 #include "VulkanDevice.h"
+#include "VulkanPipelineCommon.h"
 
 namespace Hazel
 {
@@ -79,6 +80,8 @@ namespace Hazel
         createInfo.maxLod = desc.maxLod;
         createInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
         createInfo.unnormalizedCoordinates = VK_FALSE;
+        createInfo.compareEnable = desc.compareEnable;
+        createInfo.compareOp = VulkanConvertCompareOp(desc.compareOp);
 
         auto result = m_Device.createSampler(&createInfo, nullptr, &m_Sampler);
         if (result != vk::Result::eSuccess)

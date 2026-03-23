@@ -36,5 +36,7 @@ namespace Hazel
         float maxLod = 1000.0f;
         float maxAnisotropy = 1.0f;
         bool enableAnisotropy = false;
+        bool compareEnable = false;
+        RHICompareOp compareOp = RHICompareOp::LessOrEqual;
     };
 } // Hazel

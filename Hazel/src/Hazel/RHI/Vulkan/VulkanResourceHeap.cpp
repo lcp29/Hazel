@@ -80,10 +80,7 @@ namespace Hazel
 
     RHIResourceGroup *RHI_VK_FUNC_IMPL(RHIResourceHeap, CreateGroup)(RHIResourceLayout *layout)
     {
-        if (!m_IsValid || !layout || !layout->IsValid())
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !layout || !layout->IsValid());
 
         std::unique_ptr<RHIResourceGroup> group(new RHIResourceGroup(this, m_Device, layout));
         if (!group || !group->IsValid())
@@ -135,7 +132,7 @@ namespace Hazel
                 group->ReleaseWithoutUnregister();
             }
         }
-        m_Groups.clear();
+        m_Groups.Clear();
 
         const auto device = m_Device;
         const auto descriptorPool = m_DescriptorPool;
@@ -173,7 +170,7 @@ namespace Hazel
                 group->ReleaseImmediateWithoutUnregister();
             }
         }
-        m_Groups.clear();
+        m_Groups.Clear();
 
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         DeletionQueue::Execute(std::move(pendingOperations));
@@ -191,11 +188,11 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, RegisterGroup)(std::unique_ptr<RHIResourceGroup> group)
     {
-        RegisterOwnedObject(m_Groups, std::move(group));
+        m_Groups.Register(std::move(group));
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup *group)
     {
-        UnregisterOwnedObject(m_Groups, group);
+        m_Groups.Unregister(group);
     }
 } // Hazel

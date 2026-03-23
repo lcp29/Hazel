@@ -26,6 +26,7 @@ target_precompile_headers(Hazel PRIVATE
 target_compile_definitions(Hazel PUBLIC
     _CRT_SECURE_NO_WARNINGS
     GLFW_INCLUDE_NONE
+    RHI_USE_VULKAN
     $<$<CONFIG:Debug>:HZ_DEBUG>
     $<$<CONFIG:Release>:HZ_RELEASE>
     $<$<CONFIG:RelWithDebInfo>:HZ_RELEASE>

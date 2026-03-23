@@ -21,41 +21,15 @@ namespace Hazel
 		internal extern static void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
 		#endregion
 
-		#region Rigidbody2DComponent
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, bool wake);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_GetLinearVelocity(ulong entityID, out Vector2 linearVelocity);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static Rigidbody2DComponent.BodyType Rigidbody2DComponent_GetType(ulong entityID);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_SetType(ulong entityID, Rigidbody2DComponent.BodyType type);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_ApplyLinearImpulseToCenter(ulong entityID, ref Vector2 impulse, bool wake);
-		#endregion
-
-		#region TextComponent
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static string TextComponent_GetText(ulong entityID);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void TextComponent_SetText(ulong entityID, string text);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void TextComponent_GetColor(ulong entityID, out Vector4 color);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void TextComponent_SetColor(ulong entityID, ref Vector4 color);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static float TextComponent_GetKerning(ulong entityID);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void TextComponent_SetKerning(ulong entityID, float kerning);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static float TextComponent_GetLineSpacing(ulong entityID);
-		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void TextComponent_SetLineSpacing(ulong entityID, float lineSpacing);
-		#endregion
-
-		#region Rigidbody2DComponent
+		#region SystemInternal
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
 		internal extern static bool Input_IsKeyDown(KeyCode keycode);
+		[MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void NativeLog(System.String logString, int parameter);
+		[MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void NativeLog_Vector(ref Vector3 parameter, out Vector3 result);
+		[MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static float NativeLog_VectorDot(ref Vector3 parameter);
 		#endregion
 	}
 }

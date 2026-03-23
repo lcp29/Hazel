@@ -38,10 +38,12 @@ namespace Hazel
 
     RHI_VK_FUNC_IMPL(RHIImageView, RHIImageViewImpl)(RHIDevice *device, RHIImage *image, const RHIImageViewDesc &desc)
     {
-        if (!device || !image || !image->IsValid() || desc.format == RHIFormat::Undefined)
+        if (!device || !image || desc.format == RHIFormat::Undefined)
         {
             return;
         }
+
+        HZ_RHI_DEBUG_RETURN_IF(!image->IsValid());
 
         m_ImageOwner = image;
         m_DeviceOwner = device;
@@ -71,14 +73,10 @@ namespace Hazel
         }
 
         auto *imageOwner = m_ImageOwner;
-        auto *swapchainOwner = m_SwapchainOwner;
         ReleaseWithoutUnregister();
         if (imageOwner)
         {
             imageOwner->UnregisterView(this);
-        } else if (swapchainOwner)
-        {
-            swapchainOwner->UnregisterImageView(this);
         }
     }
 
@@ -90,14 +88,10 @@ namespace Hazel
         }
 
         auto *imageOwner = m_ImageOwner;
-        auto *swapchainOwner = m_SwapchainOwner;
         ReleaseImmediateWithoutUnregister();
         if (imageOwner)
         {
             imageOwner->UnregisterView(this);
-        } else if (swapchainOwner)
-        {
-            swapchainOwner->UnregisterImageView(this);
         }
     }
 

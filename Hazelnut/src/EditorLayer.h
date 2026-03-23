@@ -1,17 +1,25 @@
 #pragma once
 
 #include "Hazel.h"
+#include "Hazel/Events/KeyEvent.h"
+#include "Hazel/Events/MouseEvent.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
-
-#include "Hazel/Renderer/EditorCamera.h"
+#include "Hazel/Scene/ViewportCameraController.h"
 
 namespace Hazel {
 
 	class EditorLayer : public Layer
 	{
 	public:
-		EditorLayer();
+		struct EditorUITexture
+		{
+			RHIImage* Image = nullptr;
+			RHIImageView* View = nullptr;
+			void* ImGuiTexture = nullptr;
+		};
+
+		EditorLayer(Renderer* renderer);
 		virtual ~EditorLayer() = default;
 
 		virtual void OnAttach() override;
@@ -23,8 +31,15 @@ namespace Hazel {
 	private:
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
-		
+
 		void OnOverlayRender();
+
+		void RecreateDefaultRenderTextureData();
+	    void RecreateObjectIDRenderData();
+	    void OnObjectIDMapRender();
+		void ResetProjectContext();
+		bool HasOpenProject() const;
+		void DrawProjectSelectionScreen();
 
 		void NewProject();
 		bool OpenProject();
@@ -40,7 +55,6 @@ namespace Hazel {
 		void SerializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 		void OnScenePlay();
-		void OnSceneSimulate();
 		void OnSceneStop();
 		void OnScenePause();
 
@@ -49,41 +63,35 @@ namespace Hazel {
 		// UI Panels
 		void UI_Toolbar();
 	private:
-		Hazel::OrthographicCameraController m_CameraController;
-
-		// Temp
-		Ref<VertexArray> m_SquareVA;
-		Ref<Shader> m_FlatColorShader;
-		Ref<Framebuffer> m_Framebuffer;
-
+		// Editor textures
+		RHISampler* m_UISampler = nullptr;
+		RHISampler* m_CheckerboardSampler = nullptr;
+		EditorUITexture m_IconPlay, m_IconPause, m_IconStep, m_IconStop;
+		EditorUITexture m_ContentBrowserDirectoryIcon, m_ContentBrowserFileIcon;
+		EditorUITexture m_CheckerboardTexture;
+        std::vector<EditorUITexture> m_DefaultRenderTextureUIData;
+		// Scenes
 		Ref<Scene> m_ActiveScene;
 		Ref<Scene> m_EditorScene;
 		std::filesystem::path m_EditorScenePath;
-		Entity m_SquareEntity;
-		Entity m_CameraEntity;
-		Entity m_SecondCamera;
-		
 		Entity m_HoveredEntity;
 
-		bool m_PrimaryCamera = true;
+	    // Rendering
+	    Renderer* m_Renderer = nullptr;
+	    RenderTexture* m_ObjectIDRenderTexture = nullptr;
+	    std::vector<RHIBuffer*> m_ObjectIDRenderTextureBuffer;
 
-		EditorCamera m_EditorCamera;
-
-		Ref<Texture2D> m_CheckerboardTexture;
-
+	    // viewport related
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
-		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+		glm::vec2 m_ViewportSize = { 1280.0f, 720.0f };
 		glm::vec2 m_ViewportBounds[2];
-
-		glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
+	    ViewportCameraController m_ViewportCameraController;
 
 		int m_GizmoType = -1;
 
-		bool m_ShowPhysicsColliders = false;
-
 		enum class SceneState
 		{
-			Edit = 0, Play = 1, Simulate = 2
+			Edit = 0, Play = 1
 		};
 		SceneState m_SceneState = SceneState::Edit;
 
@@ -91,8 +99,6 @@ namespace Hazel {
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
 
-		// Editor resources
-		Ref<Texture2D> m_IconPlay, m_IconPause, m_IconStep, m_IconSimulate, m_IconStop;
 	};
 
 }

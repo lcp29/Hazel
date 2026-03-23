@@ -1,6 +1,8 @@
 #include "hzpch.h"
 #include "ProjectSerializer.h"
 
+#include "GlobalSettingRegistry.h"
+
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
@@ -16,19 +18,16 @@ namespace Hazel {
 		const auto& config = m_Project->GetConfig();
 
 		YAML::Emitter out;
-		{
-			out << YAML::BeginMap; // Root
-			out << YAML::Key << "Project" << YAML::Value;
-			{
-				out << YAML::BeginMap;// Project
-				out << YAML::Key << "Name" << YAML::Value << config.Name;
-				out << YAML::Key << "StartScene" << YAML::Value << config.StartScene.string();
-				out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
-				out << YAML::Key << "ScriptModulePath" << YAML::Value << config.ScriptModulePath.string();
-				out << YAML::EndMap; // Project
-			}
-			out << YAML::EndMap; // Root
-		}
+		YAML::Node rootNode;
+		YAML::Node projectNode;
+		projectNode["Name"] = config.Name;
+		projectNode["StartScene"] = config.StartScene.string();
+		projectNode["AssetDirectory"] = config.AssetDirectory.string();
+		projectNode["ScriptModulePath"] = config.ScriptModulePath.string();
+		rootNode["Project"] = projectNode;
+		rootNode["GlobalSettings"] = GlobalSettings.Serialize();
+
+		out << rootNode;
 
 		std::ofstream fout(filepath);
 		fout << out.c_str();
@@ -45,20 +44,22 @@ namespace Hazel {
 		{
 			data = YAML::LoadFile(filepath.string());
 		}
-		catch (YAML::ParserException e)
+		catch (const std::exception& e)
 		{
 			HZ_CORE_ERROR("Failed to load project file '{0}'\n     {1}", (const char*) filepath.c_str(), e.what());
 			return false;
 		}
 
-		auto projectNode = data["Project"];
+		YAML::Node projectNode = data["Project"];
 		if (!projectNode)
 			return false;
 
-		config.Name = projectNode["Name"].as<std::string>();
-		config.StartScene = projectNode["StartScene"].as<std::string>();
-		config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-		config.ScriptModulePath = projectNode["ScriptModulePath"].as<std::string>();
+		config.Name = projectNode["Name"] ? projectNode["Name"].as<std::string>() : "Untitled";
+		config.StartScene = projectNode["StartScene"] ? projectNode["StartScene"].as<std::string>() : "";
+		config.AssetDirectory = projectNode["AssetDirectory"] ? projectNode["AssetDirectory"].as<std::string>() : "Assets";
+		config.ScriptModulePath = projectNode["ScriptModulePath"] ? projectNode["ScriptModulePath"].as<std::string>() : "";
+
+		GlobalSettings.Deserialize(data["GlobalSettings"]);
 		return true;
 	}
 

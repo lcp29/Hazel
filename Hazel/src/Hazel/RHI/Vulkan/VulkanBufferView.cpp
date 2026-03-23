@@ -18,28 +18,14 @@ namespace Hazel
         m_BufferOwner = buffer;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_BufferOwner || !m_BufferOwner->IsValid() || desc.format == RHIFormat::Undefined)
+        if (!m_DeviceOwner || !m_BufferOwner || desc.format == RHIFormat::Undefined)
         {
             return;
         }
 
-        const auto bufferUsages = m_BufferOwner->GetUsages();
-        if (!(bufferUsages & RHIBufferUsageFlagBits::UniformTexelBuffer)
-            && !(bufferUsages & RHIBufferUsageFlagBits::StorageTexelBuffer))
-        {
-            return;
-        }
-
-        if (desc.offset >= m_BufferOwner->GetSize())
-        {
-            return;
-        }
+        HZ_RHI_DEBUG_RETURN_IF(!m_BufferOwner->IsValid());
 
         const auto resolvedRange = desc.range == 0 ? VK_WHOLE_SIZE : desc.range;
-        if (resolvedRange != VK_WHOLE_SIZE && resolvedRange > m_BufferOwner->GetSize() - desc.offset)
-        {
-            return;
-        }
 
         vk::BufferViewCreateInfo createInfo;
         createInfo.buffer = m_BufferOwner->GetHandle();

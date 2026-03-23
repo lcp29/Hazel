@@ -287,17 +287,17 @@ namespace Hazel {
 
 	bool ScriptEngine::EntityClassExists(const std::string& fullClassName)
 	{
-		return s_Data->EntityClasses.find(fullClassName) != s_Data->EntityClasses.end();
+		return s_Data->EntityClasses.contains(fullClassName);
 	}
 
 	void ScriptEngine::OnCreateEntity(Entity entity)
 	{
 		const auto& sc = entity.GetComponent<ScriptComponent>();
-		if (ScriptEngine::EntityClassExists(sc.ClassName))
+		if (ScriptEngine::EntityClassExists(sc.className))
 		{
 			UUID entityID = entity.GetUUID();
 
-			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_Data->EntityClasses[sc.ClassName], entity);
+			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_Data->EntityClasses[sc.className], entity);
 			s_Data->EntityInstances[entityID] = instance;
 
 			// Copy field values

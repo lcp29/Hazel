@@ -1,0 +1,7 @@
+Project:
+  Name: Test
+  StartScene: Scenes\Untitled.hazel
+  AssetDirectory: Assets
+  ScriptModulePath: Scripts\Binaries\Test.dll
+GlobalSettings:
+  {}

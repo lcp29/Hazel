@@ -105,7 +105,19 @@ namespace Hazel
         }
     }
 
-    inline vk::ImageLayout VulkanConvertResourceState(RHIImageResourceState state)
+    inline RHISwapchainMode VulkanConvertSwapchainMode(vk::PresentModeKHR mode)
+    {
+        switch (mode)
+        {
+            #define X(rhi, vul) case vk::PresentModeKHR::vul: return RHISwapchainMode::rhi;
+            #include "TypeMappings/SwapchainModes.inl"
+            #undef X
+        default:
+            return RHISwapchainMode::FIFO;
+        }
+    }
+
+    inline vk::ImageLayout VulkanConvertImageResourceState(RHIImageResourceState state)
     {
         switch (state)
         {

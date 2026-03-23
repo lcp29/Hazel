@@ -2,80 +2,82 @@
 
 #include "Hazel/Core/Timestep.h"
 #include "Hazel/Core/UUID.h"
-#include "Hazel/Renderer/EditorCamera.h"
+#include "Hazel/Renderer/Camera.h"
 
 #include "entt.hpp"
+#include "ViewportCameraController.h"
 
 class b2World;
 
-namespace Hazel {
+namespace Hazel
+{
+    class Entity;
 
-	class Entity;
+    class Scene
+    {
+    public:
+        Scene();
+        ~Scene();
 
-	class Scene
-	{
-	public:
-		Scene();
-		~Scene();
+        static Ref<Scene> Copy(Ref<Scene> other);
 
-		static Ref<Scene> Copy(Ref<Scene> other);
+        Entity CreateEntity(const std::string& name = std::string());
+        Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
+        void DestroyEntity(Entity entity);
 
-		Entity CreateEntity(const std::string& name = std::string());
-		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
-		void DestroyEntity(Entity entity);
+        void OnRuntimeStart();
+        void OnRuntimeStop();
 
-		void OnRuntimeStart();
-		void OnRuntimeStop();
+        void OnUpdateRuntime(Timestep ts);
+        void OnUpdateSimulation(Timestep ts);
+        void OnUpdateEditor(Timestep ts);
+        void OnViewportResize(uint32_t width, uint32_t height);
 
-		void OnSimulationStart();
-		void OnSimulationStop();
+        Entity DuplicateEntity(Entity entity);
 
-		void OnUpdateRuntime(Timestep ts);
-		void OnUpdateSimulation(Timestep ts, EditorCamera& camera);
-		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
-		void OnViewportResize(uint32_t width, uint32_t height);
+        Entity FindEntityByName(std::string_view name);
+        Entity GetEntityByUUID(UUID uuid);
+        auto& GetMapUUIDToEntity() { return m_EntityMap; }
 
-		Entity DuplicateEntity(Entity entity);
+        const Camera& GetViewportCamera() const { return m_ViewportCamera; }
+        void SetViewportCamera(const Camera& camera) { m_ViewportCamera = camera; }
 
-		Entity FindEntityByName(std::string_view name);
-		Entity GetEntityByUUID(UUID uuid);
+        bool IsRunning() const { return m_IsRunning; }
+        bool IsPaused() const { return m_IsPaused; }
 
-		Entity GetPrimaryCameraEntity();
+        void SetPaused(bool paused) { m_IsPaused = paused; }
 
-		bool IsRunning() const { return m_IsRunning; }
-		bool IsPaused() const { return m_IsPaused; }
+        void Step(int frames = 1);
 
-		void SetPaused(bool paused) { m_IsPaused = paused; }
+        std::string GetName() const { return m_Name; }
+        void SetName(const std::string& name) { m_Name = name; }
 
-		void Step(int frames = 1);
+        template <typename... Components>
+        auto GetAllEntitiesWith()
+        {
+            return m_Registry.view<Components...>();
+        }
 
-		template<typename... Components>
-		auto GetAllEntitiesWith()
-		{
-			return m_Registry.view<Components...>();
-		}
-	private:
-		template<typename T>
-		void OnComponentAdded(Entity entity, T& component);
+    private:
+        template <typename T>
+        void OnComponentAdded(Entity entity, T& component);
 
-		void OnPhysics2DStart();
-		void OnPhysics2DStop();
+    private:
+        entt::registry m_Registry;
+        uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
+        bool m_IsRunning = false;
+        bool m_IsPaused = false;
+        int m_StepFrames = 0;
 
-		void RenderScene(EditorCamera& camera);
-	private:
-		entt::registry m_Registry;
-		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
-		bool m_IsRunning = false;
-		bool m_IsPaused = false;
-		int m_StepFrames = 0;
+        ViewportCameraController m_ViewportCameraController;
+        Camera m_ViewportCamera;
 
-		b2World* m_PhysicsWorld = nullptr;
+        std::string m_Name = "Untitled Scene";
 
-		std::unordered_map<UUID, entt::entity> m_EntityMap;
+        std::unordered_map<UUID, entt::entity> m_EntityMap;
 
-		friend class Entity;
-		friend class SceneSerializer;
-		friend class SceneHierarchyPanel;
-	};
-
+        friend class Entity;
+        friend class SceneSerializer;
+        friend class SceneHierarchyPanel;
+    };
 }

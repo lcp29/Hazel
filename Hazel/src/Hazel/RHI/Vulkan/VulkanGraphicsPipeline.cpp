@@ -28,16 +28,10 @@ namespace Hazel
 
         auto *vertexShader = desc.vertexShader;
         auto *fragmentShader = desc.fragmentShader;
-        if (!vertexShader || !fragmentShader || !vertexShader->IsValid() || !fragmentShader->IsValid())
-        {
-            return;
-        }
+        HZ_RHI_DEBUG_RETURN_IF(!vertexShader || !fragmentShader || !vertexShader->IsValid() || !fragmentShader->IsValid());
 
         auto *resourceSignature = desc.resourceSignature;
-        if (!resourceSignature || !resourceSignature->IsValid())
-        {
-            return;
-        }
+        HZ_RHI_DEBUG_RETURN_IF(!resourceSignature || !resourceSignature->IsValid());
         m_ResourceSignature = resourceSignature;
 
         const vk::PipelineShaderStageCreateInfo shaderStages[] = {

@@ -4,6 +4,7 @@
 
 #include "VulkanBuffer.h"
 
+#include "VulkanCommandBuffer.h"
 #include "VulkanBufferView.h"
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
@@ -106,6 +107,72 @@ namespace Hazel
         Release();
     }
 
+    RHIBuffer * RHI_VK_FUNC_IMPL(RHIBuffer, Factory)::CreateFromRawData(RHIDevice *device, RHICommandBuffer *cmd,
+                                                                        const RHIBufferDesc &desc, const void *data,
+                                                                        size_t dataSize, RHIQueue *queue, bool staged)
+    {
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !data);
+
+        RHIBufferDesc stageAndTargetDesc = desc;
+        if (staged)
+        {
+            stageAndTargetDesc.cpuAccess = RHIBufferCpuAccess::Write;
+            stageAndTargetDesc.mapOnCreate = true;
+            stageAndTargetDesc.usages = stageAndTargetDesc.usages | RHIBufferUsageFlagBits::TransferSource;
+        } else
+        {
+            stageAndTargetDesc.cpuAccess = RHIBufferCpuAccess::ReadWrite;
+            stageAndTargetDesc.mapOnCreate = true;
+        }
+
+        auto *stagingBuffer = device->CreateBuffer(stageAndTargetDesc);
+        if (!stagingBuffer || !stagingBuffer->IsValid())
+        {
+            return nullptr;
+        }
+
+        void *mappedData = stagingBuffer->Map();
+        if (!mappedData)
+        {
+            stagingBuffer->ReleaseImmediate();
+            return nullptr;
+        }
+
+        std::memcpy(mappedData, data, dataSize);
+        stagingBuffer->Unmap();
+
+        if (!staged)
+        {
+            return stagingBuffer;
+        }
+
+        stageAndTargetDesc.cpuAccess = desc.cpuAccess;
+        stageAndTargetDesc.mapOnCreate = desc.mapOnCreate;
+        stageAndTargetDesc.usages = stageAndTargetDesc.usages | RHIBufferUsageFlagBits::TransferDestination;
+
+        auto *targetBuffer = device->CreateBuffer(stageAndTargetDesc);
+        if (!targetBuffer || !targetBuffer->IsValid())
+        {
+            stagingBuffer->ReleaseImmediate();
+            return nullptr;
+        }
+
+        RHIBufferCopyRegion copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = dataSize;
+        RHIBufferCopyDesc copyDesc{};
+        copyDesc.regions.push_back(copyRegion);
+
+        stagingBuffer->ReleaseImmediate();
+        if (!cmd->CopyBuffer(stagingBuffer, targetBuffer, copyDesc))
+        {
+            targetBuffer->ReleaseImmediate();
+            return nullptr;
+        }
+        return targetBuffer;
+    }
+
     void *RHI_VK_FUNC_IMPL(RHIBuffer, Map)()
     {
         if (!m_IsValid)
@@ -177,7 +244,7 @@ namespace Hazel
                 view->ReleaseWithoutUnregister();
             }
         }
-        m_Views.clear();
+        m_Views.Clear();
 
         auto allocator = m_AllocatorOwner ? m_AllocatorOwner->GetHandle() : VK_NULL_HANDLE;
         const auto buffer = static_cast<VkBuffer>(m_Buffer);
@@ -194,8 +261,7 @@ namespace Hazel
             {
                 VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
             });
-        }
-        else
+        } else
         {
             VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
         }
@@ -219,7 +285,7 @@ namespace Hazel
                 view->ReleaseImmediateWithoutUnregister();
             }
         }
-        m_Views.clear();
+        m_Views.Clear();
 
         auto allocator = m_AllocatorOwner ? m_AllocatorOwner->GetHandle() : VK_NULL_HANDLE;
         const auto buffer = static_cast<VkBuffer>(m_Buffer);
@@ -244,21 +310,18 @@ namespace Hazel
 
     RHIBufferView *RHI_VK_FUNC_IMPL(RHIBuffer, CreateView)(const RHIBufferViewDesc &desc)
     {
-        if (!m_IsValid || !m_DeviceOwner)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !m_DeviceOwner);
 
         return m_DeviceOwner->CreateBufferView(this, desc);
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, RegisterView)(std::unique_ptr<RHIBufferView> view)
     {
-        RegisterOwnedObject(m_Views, std::move(view));
+        m_Views.Register(std::move(view));
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView *view)
     {
-        UnregisterOwnedObject(m_Views, view);
+        m_Views.Unregister(view);
     }
 } // Hazel

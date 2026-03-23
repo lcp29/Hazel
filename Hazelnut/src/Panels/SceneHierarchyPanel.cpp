@@ -75,7 +75,7 @@ namespace Hazel {
 
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 	{
-		auto& tag = entity.GetComponent<TagComponent>().Tag;
+		auto& tag = entity.GetComponent<TagComponent>().tag;
 		
 		ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -222,7 +222,7 @@ namespace Hazel {
 	{
 		if (entity.HasComponent<TagComponent>())
 		{
-			auto& tag = entity.GetComponent<TagComponent>().Tag;
+			auto& tag = entity.GetComponent<TagComponent>().tag;
 
 			char buffer[256];
 			memset(buffer, 0, sizeof(buffer));
@@ -242,13 +242,8 @@ namespace Hazel {
 		if (ImGui::BeginPopup("AddComponent"))
 		{
 			DisplayAddComponentEntry<CameraComponent>("Camera");
+		    DisplayAddComponentEntry<MeshRendererComponent>("Mesh Renderer");
 			DisplayAddComponentEntry<ScriptComponent>("Script");
-			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
-			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
-			DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
-			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
-			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
-			DisplayAddComponentEntry<TextComponent>("Text Component");
 
 			ImGui::EndPopup();
 		}
@@ -257,21 +252,21 @@ namespace Hazel {
 
 		DrawComponent<TransformComponent>("Transform", entity, [](auto& component)
 		{
-			DrawVec3Control("Translation", component.Translation);
-			glm::vec3 rotation = glm::degrees(component.Rotation);
+			DrawVec3Control("Translation", component.translation);
+			glm::vec3 rotation = glm::degrees(component.rotation);
 			DrawVec3Control("Rotation", rotation);
-			component.Rotation = glm::radians(rotation);
-			DrawVec3Control("Scale", component.Scale, 1.0f);
+			component.rotation = glm::radians(rotation);
+			DrawVec3Control("Scale", component.scale, 1.0f);
 		});
 
 		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)
 		{
-			auto& camera = component.Camera;
+			auto& camera = component.camera;
 
-			ImGui::Checkbox("Primary", &component.Primary);
+			ImGui::Checkbox("Primary", &component.isPrimary);
 
 			const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
-			const char* currentProjectionTypeString = projectionTypeStrings[(int)camera.GetProjectionType()];
+			const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.GetProjectionType())];
 			if (ImGui::BeginCombo("Projection", currentProjectionTypeString))
 			{
 				for (int i = 0; i < 2; i++)
@@ -280,7 +275,7 @@ namespace Hazel {
 					if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
 					{
 						currentProjectionTypeString = projectionTypeStrings[i];
-						camera.SetProjectionType((SceneCamera::ProjectionType)i);
+						camera.SetProjectionType(static_cast<Camera::ProjectionType>(i));
 					}
 
 					if (isSelected)
@@ -290,51 +285,49 @@ namespace Hazel {
 				ImGui::EndCombo();
 			}
 
-			if (camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective)
+			if (camera.GetProjectionType() == Camera::ProjectionType::Perspective)
 			{
-				float perspectiveVerticalFov = glm::degrees(camera.GetPerspectiveVerticalFOV());
+				float perspectiveVerticalFov = glm::degrees(camera.GetFovX());
 				if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
-					camera.SetPerspectiveVerticalFOV(glm::radians(perspectiveVerticalFov));
+					camera.SetFovX(glm::radians(perspectiveVerticalFov));
 
-				float perspectiveNear = camera.GetPerspectiveNearClip();
+				float perspectiveNear = camera.GetNearClip();
 				if (ImGui::DragFloat("Near", &perspectiveNear))
-					camera.SetPerspectiveNearClip(perspectiveNear);
+					camera.SetNearClip(perspectiveNear);
 
-				float perspectiveFar = camera.GetPerspectiveFarClip();
+				float perspectiveFar = camera.GetFarClip();
 				if (ImGui::DragFloat("Far", &perspectiveFar))
-					camera.SetPerspectiveFarClip(perspectiveFar);
+					camera.SetFarClip(perspectiveFar);
 			}
 
-			if (camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
+			if (camera.GetProjectionType() == Camera::ProjectionType::Orthographic)
 			{
-				float orthoSize = camera.GetOrthographicSize();
-				if (ImGui::DragFloat("Size", &orthoSize))
-					camera.SetOrthographicSize(orthoSize);
+				float orthoWidth = camera.GetOrthoWidth();
+				if (ImGui::DragFloat("Width", &orthoWidth))
+					camera.SetOrthoWidth(orthoWidth);
 
-				float orthoNear = camera.GetOrthographicNearClip();
+				float orthoNear = camera.GetOrthoNearClip();
 				if (ImGui::DragFloat("Near", &orthoNear))
-					camera.SetOrthographicNearClip(orthoNear);
+					camera.SetOrthoNearClip(orthoNear);
 
-				float orthoFar = camera.GetOrthographicFarClip();
+				float orthoFar = camera.GetOrthoFarClip();
 				if (ImGui::DragFloat("Far", &orthoFar))
-					camera.SetOrthographicFarClip(orthoFar);
-
-				ImGui::Checkbox("Fixed Aspect Ratio", &component.FixedAspectRatio);
+					camera.SetOrthoFarClip(orthoFar);
 			}
 		});
 
 		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable
 		{
-			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
+			bool scriptClassExists = ScriptEngine::EntityClassExists(component.className);
 
 			static char buffer[64];
-			strcpy_s(buffer, sizeof(buffer), component.ClassName.c_str());
+			strcpy_s(buffer, sizeof(buffer), component.className.c_str());
 
 			UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
 
 			if (ImGui::InputText("Class", buffer, sizeof(buffer)))
 			{
-				component.ClassName = buffer;
+				component.className = buffer;
 				return;
 			}
 
@@ -363,7 +356,7 @@ namespace Hazel {
 			{
 				if (scriptClassExists)
 				{
-					Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
+					Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.className);
 					const auto& fields = entityClass->GetFields();
 
 					auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
@@ -401,89 +394,11 @@ namespace Hazel {
 			}
 		});
 
-		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
-		{
-			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
-			
-			ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texturePath(path);
-					Ref<Texture2D> texture = Texture2D::Create(texturePath.string());
-					if (texture->IsLoaded())
-						component.Texture = texture;
-					else
-						HZ_WARN("Could not load texture {0}", texturePath.filename().string());
-				}
-				ImGui::EndDragDropTarget();
-			}
-
-			ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
-		});
-
-		DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto& component)
-		{
-			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
-			ImGui::DragFloat("Thickness", &component.Thickness, 0.025f, 0.0f, 1.0f);
-			ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
-		});
-
-		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component)
-		{
-			const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic"};
-			const char* currentBodyTypeString = bodyTypeStrings[(int)component.Type];
-			if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
-			{
-				for (int i = 0; i < 2; i++)
-				{
-					bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
-					if (ImGui::Selectable(bodyTypeStrings[i], isSelected))
-					{
-						currentBodyTypeString = bodyTypeStrings[i];
-						component.Type = (Rigidbody2DComponent::BodyType)i;
-					}
-
-					if (isSelected)
-						ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::EndCombo();
-			}
-
-			ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
-		});
-
-		DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](auto& component)
-		{
-			ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
-			ImGui::DragFloat2("Size", glm::value_ptr(component.Size));
-			ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
-		});
-
-		DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](auto& component)
-		{
-			ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
-			ImGui::DragFloat("Radius", &component.Radius);
-			ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-			ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
-		});
-
-		DrawComponent<TextComponent>("Text Renderer", entity, [](auto& component)
-		{
-			ImGui::InputTextMultiline("Text String", &component.TextString);
-			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
-			ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
-			ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
-		});
-
+	    DrawComponent<MeshRendererComponent>("Mesh Renderer", entity, [](auto& component)
+        {
+	        // TODO
+            ImGui::Text("TODO");
+        });
 	}
 	
 	template<typename T>

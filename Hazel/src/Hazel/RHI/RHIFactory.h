@@ -22,10 +22,5 @@ namespace Hazel
     };
 
     std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc &desc);
-    RHIImage *CreateImageFromLinearBuffer(RHIDevice &device,
-                                          const RHIImageDesc &desc,
-                                          const void *data,
-                                          size_t dataSize,
-                                          RHIQueue *queue = nullptr);
     RHIShader *CreateShaderFromGLSLFile(RHIDevice &device, const RHIShaderFileDesc &desc);
 } // Hazel

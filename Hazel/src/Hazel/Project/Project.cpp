@@ -8,6 +8,8 @@ namespace Hazel {
 	Ref<Project> Project::New()
 	{
 		s_ActiveProject = CreateRef<Project>();
+		s_ActiveProject->m_ProjectDirectory.clear();
+		s_ActiveProject->m_ProjectFilePath.clear();
 		return s_ActiveProject;
 	}
 
@@ -19,6 +21,7 @@ namespace Hazel {
 		if (serializer.Deserialize(path))
 		{
 			project->m_ProjectDirectory = path.parent_path();
+			project->m_ProjectFilePath = path;
 			s_ActiveProject = project;
 			return s_ActiveProject;
 		}
@@ -32,6 +35,7 @@ namespace Hazel {
 		if (serializer.Serialize(path))
 		{
 			s_ActiveProject->m_ProjectDirectory = path.parent_path();
+			s_ActiveProject->m_ProjectFilePath = path;
 			return true;
 		}
 

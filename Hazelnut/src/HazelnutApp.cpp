@@ -11,7 +11,7 @@ namespace Hazel {
 		Hazelnut(const ApplicationSpecification& spec)
 			: Application(spec)
 		{
-			PushLayer(new EditorLayer());
+			PushLayer(new EditorLayer(m_Renderer.get()));
 		}
 	};
 

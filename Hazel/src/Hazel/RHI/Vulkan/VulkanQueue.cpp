@@ -91,10 +91,7 @@ namespace Hazel
 
     RHISyncPoint RHI_VK_FUNC_IMPL(RHIQueue, SignalOnBinarySemaphore)(vk::Semaphore semaphore)
     {
-        if (!m_IsValid || !semaphore)
-        {
-            return {};
-        }
+        HZ_RHI_DEBUG_RETURN_VALUE_IF(!m_IsValid || !semaphore, {});
 
         m_TimelineValue++;
 
@@ -128,10 +125,7 @@ namespace Hazel
     bool RHI_VK_FUNC_IMPL(RHIQueue, WaitSyncPointsAndSignalBinary)(const std::vector<RHISyncPoint> &waitSyncPoints,
                                                                    vk::Semaphore semaphore)
     {
-        if (!m_IsValid || !semaphore)
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !semaphore);
 
         vk::SemaphoreSubmitInfo signalSemaphoreInfo;
         signalSemaphoreInfo.semaphore = semaphore;
@@ -143,10 +137,7 @@ namespace Hazel
         waitSemaphoreInfos.reserve(submitInfo.waitSemaphoreInfoCount);
         for (const auto &waitSyncPoint: waitSyncPoints)
         {
-            if (!waitSyncPoint.valid || !waitSyncPoint.queue)
-            {
-                return false;
-            }
+            HZ_RHI_DEBUG_FAIL_IF(!waitSyncPoint.valid || !waitSyncPoint.queue);
 
             waitSemaphoreInfos.emplace_back(waitSyncPoint.queue->GetSignalSemaphore(),
                                             waitSyncPoint.value,

@@ -50,27 +50,9 @@ namespace Hazel
                                                          uint32_t arrayElement)
     {
         const auto *bindingDesc = FindBinding(slot);
-        if (!m_IsValid || !bindingDesc || !buffer || !buffer->IsValid())
-        {
-            return false;
-        }
-
-        if (bindingDesc->type != RHIResourceBindingType::UniformBuffer
-            && bindingDesc->type != RHIResourceBindingType::StorageBuffer)
-        {
-            return false;
-        }
-
-        if (arrayElement >= bindingDesc->count || offset > buffer->GetSize())
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !buffer || !buffer->IsValid());
 
         const auto resolvedRange = range == 0 ? buffer->GetSize() - offset : range;
-        if (resolvedRange == 0 || resolvedRange > buffer->GetSize() - offset)
-        {
-            return false;
-        }
 
         vk::DescriptorBufferInfo bufferInfo;
         bufferInfo.buffer = buffer->GetHandle();
@@ -95,25 +77,11 @@ namespace Hazel
                                                             uint32_t arrayElement)
     {
         const auto *bindingDesc = FindBinding(slot);
-        if (!m_IsValid || !bindingDesc || !imageView || !imageView->IsValid())
-        {
-            return false;
-        }
-
-        if (bindingDesc->type != RHIResourceBindingType::SampledImage
-            && bindingDesc->type != RHIResourceBindingType::StorageImage)
-        {
-            return false;
-        }
-
-        if (arrayElement >= bindingDesc->count)
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !imageView || !imageView->IsValid());
 
         vk::DescriptorImageInfo imageInfo;
         imageInfo.imageView = imageView->GetHandle();
-        imageInfo.imageLayout = VulkanConvertResourceState(state);
+        imageInfo.imageLayout = VulkanConvertImageResourceState(state);
 
         vk::WriteDescriptorSet writeDescriptorSet;
         writeDescriptorSet.dstSet = m_DescriptorSet;
@@ -132,20 +100,7 @@ namespace Hazel
                                                           uint32_t arrayElement)
     {
         const auto *bindingDesc = FindBinding(slot);
-        if (!m_IsValid || !bindingDesc || !sampler || !sampler->IsValid())
-        {
-            return false;
-        }
-
-        if (bindingDesc->type != RHIResourceBindingType::Sampler)
-        {
-            return false;
-        }
-
-        if (arrayElement >= bindingDesc->count)
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !sampler || !sampler->IsValid());
 
         vk::DescriptorImageInfo imageInfo;
         imageInfo.sampler = sampler->GetHandle();
@@ -169,25 +124,12 @@ namespace Hazel
                                                                    uint32_t arrayElement)
     {
         const auto *bindingDesc = FindBinding(slot);
-        if (!m_IsValid || !bindingDesc || !sampler || !imageView || !sampler->IsValid() || !imageView->IsValid())
-        {
-            return false;
-        }
-
-        if (bindingDesc->type != RHIResourceBindingType::SamplerWithImage)
-        {
-            return false;
-        }
-
-        if (arrayElement >= bindingDesc->count)
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !sampler || !imageView || !sampler->IsValid() || !imageView->IsValid());
 
         vk::DescriptorImageInfo imageInfo;
         imageInfo.sampler = sampler->GetHandle();
         imageInfo.imageView = imageView->GetHandle();
-        imageInfo.imageLayout = VulkanConvertResourceState(state);
+        imageInfo.imageLayout = VulkanConvertImageResourceState(state);
 
         vk::WriteDescriptorSet writeDescriptorSet;
         writeDescriptorSet.dstSet = m_DescriptorSet;
@@ -206,21 +148,7 @@ namespace Hazel
                                                              uint32_t arrayElement)
     {
         const auto *bindingDesc = FindBinding(slot);
-        if (!m_IsValid || !bindingDesc || !bufferView || !bufferView->IsValid())
-        {
-            return false;
-        }
-
-        if (bindingDesc->type != RHIResourceBindingType::UniformTexelBuffer
-            && bindingDesc->type != RHIResourceBindingType::StorageTexelBuffer)
-        {
-            return false;
-        }
-
-        if (arrayElement >= bindingDesc->count)
-        {
-            return false;
-        }
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !bufferView || !bufferView->IsValid());
 
         const auto bufferViewHandle = bufferView->GetHandle();
         vk::WriteDescriptorSet writeDescriptorSet;

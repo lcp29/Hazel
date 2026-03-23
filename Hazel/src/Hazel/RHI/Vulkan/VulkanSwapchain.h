@@ -18,9 +18,11 @@ namespace Hazel
     public:
         bool IsValid() const { return m_IsValid; }
         RHISwapchainAcquireResult AcquireImage();
-        const RHIImageView *FetchImageView(uint32_t frameNumber) const;
+        RHIImage *FetchImage(uint32_t frameNumber) const;
+        RHIImageView *FetchImageView(uint32_t frameNumber) const;
         bool SubmitFrame(uint32_t frameNumber, const std::vector<RHISyncPoint> &waitSyncPoints);
         void Release();
+        void ReleaseImmediate();
         ~RHISwapchainImpl();
 
         const RHISwapchainDesc &GetDesc() const { return m_Desc; }
@@ -28,11 +30,9 @@ namespace Hazel
         uint32_t GetImageCount() const { return m_ImageCount; }
 
         vk::SwapchainKHR GetHandle() const { return m_Swapchain; }
-        const std::vector<vk::Image> &GetImages() const { return m_Images; }
 
     private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
-        friend class RHIImageViewImpl<RHIBackend::Vulkan>;
 
         RHISwapchainImpl(vk::PhysicalDevice physicalDevice,
                          RHIDevice *deviceOwner,
@@ -40,17 +40,17 @@ namespace Hazel
                          uint32_t presentQueueFamilyIndex);
 
         void ReleaseWithoutUnregister();
-        void UnregisterImageView(RHIImageView *view);
+        void ReleaseImmediateWithoutUnregister();
 
         bool m_IsValid = false;
-        RHIDevice *m_DeviceOwner = nullptr;
+        RHIDevice* m_DeviceOwner = nullptr;
         RHISwapchainDesc m_Desc;
         RHIFormat m_Format = RHIFormat::Undefined;
         uint32_t m_ImageCount = 0;
         vk::Device m_Device;
         vk::SwapchainKHR m_Swapchain = VK_NULL_HANDLE;
-        std::vector<vk::Image> m_Images;
-        std::vector<std::unique_ptr<RHIImageView>> m_ImageViews;
+        std::vector<std::unique_ptr<RHIImage>> m_Images;
+        std::vector<RHIImageView*> m_ImageViews;
         std::vector<vk::Semaphore> m_ImageAvailableSemaphores;
         std::vector<vk::Semaphore> m_PresentSemaphores;
         uint32_t m_NextAcquireSemaphoreIndex = 0;

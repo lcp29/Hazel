@@ -19,6 +19,8 @@ namespace Hazel
         bool supportGpuAddress = false;
         bool supportTimelineSemaphore = false;
         bool supportSynchronization2 = false;
+        bool supportFragmentStoresAndAtomics = false;
+        bool supportVertexPipelineStoresAndAtomics = false;
     };
 
     RHI_VK_CLASS_IMPL(RHIAdapter)

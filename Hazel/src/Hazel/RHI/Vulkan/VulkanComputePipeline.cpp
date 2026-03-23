@@ -27,16 +27,10 @@ namespace Hazel
         }
 
         auto *computeShader = desc.computeShader;
-        if (!computeShader || !computeShader->IsValid())
-        {
-            return;
-        }
+        HZ_RHI_DEBUG_RETURN_IF(!computeShader || !computeShader->IsValid());
 
         auto *resourceSignature = desc.resourceSignature;
-        if (!resourceSignature || !resourceSignature->IsValid())
-        {
-            return;
-        }
+        HZ_RHI_DEBUG_RETURN_IF(!resourceSignature || !resourceSignature->IsValid());
         m_ResourceSignature = resourceSignature;
 
         vk::PipelineShaderStageCreateInfo shaderStage(

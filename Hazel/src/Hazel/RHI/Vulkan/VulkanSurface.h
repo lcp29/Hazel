@@ -25,8 +25,6 @@ namespace Hazel
         friend class RHIInstanceImpl<RHIBackend::Vulkan>;
 
         RHISurfaceImpl(RHIInstance *instanceOwner, vk::Instance instance, const RHISurfaceDesc &desc);
-        RHISurfaceImpl(const RHISurfaceImpl &) = delete;
-        RHISurfaceImpl &operator=(const RHISurfaceImpl &) = delete;
         void ReleaseWithoutUnregister();
 
         bool m_IsValid = false;

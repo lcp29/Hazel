@@ -3,773 +3,1162 @@
 #include "Hazel/Utils/PlatformUtils.h"
 #include "Hazel/Math/Math.h"
 #include "Hazel/Scripting/ScriptEngine.h"
-#include "Hazel/Renderer/Font.h"
+#include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/RHI/RHI.h"
 
 #include <imgui.h>
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "ImGuizmo.h"
 
-namespace Hazel {
+#include <fstream>
 
-	static Ref<Font> s_Font;
+namespace Hazel
+{
+    namespace
+    {
+        constexpr const char* s_ProjectFileFilter = "Hazel Project (*.hproj)\0*.hproj\0";
+        constexpr const char* s_SceneFileFilter = "Hazel Scene (*.hazel)\0*.hazel\0";
 
-	EditorLayer::EditorLayer()
-		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
-	{
-		s_Font = Font::GetDefault();
-	}
+        EditorLayer::EditorUITexture CreateEditorUITexture(Renderer* renderer,
+                                                           RHICommandBuffer* commandBuffer, RHISampler* sampler,
+                                                           const std::filesystem::path& path)
+        {
+            EditorLayer::EditorUITexture texture;
+            if (!renderer || !commandBuffer || !sampler)
+                return texture;
 
-	void EditorLayer::OnAttach()
-	{
-		HZ_PROFILE_FUNCTION();
+            RHIImageDesc imageDesc{};
+            imageDesc.format = RHIFormat::RGBA8SRGB;
+            imageDesc.usages = RHIImageUsageFlagBits::Sampled;
+            imageDesc.initialState = RHIImageResourceState::ShaderRead;
 
-		m_CheckerboardTexture = Texture2D::Create("assets/textures/Checkerboard.png");
-		m_IconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
-		m_IconPause = Texture2D::Create("Resources/Icons/PauseButton.png");
-		m_IconSimulate = Texture2D::Create("Resources/Icons/SimulateButton.png");
-		m_IconStep = Texture2D::Create("Resources/Icons/StepButton.png");
-		m_IconStop = Texture2D::Create("Resources/Icons/StopButton.png");
+            texture.Image = RHIImage::Factory::CreateFromFile(
+                renderer->GetDevice(),
+                commandBuffer,
+                imageDesc,
+                path,
+                renderer->GetDevice()->GetUniformQueue());
+            if (!texture.Image)
+                return texture;
 
-		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
-		fbSpec.Width = 1280;
-		fbSpec.Height = 720;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
+            RHIImageViewDesc viewDesc{};
+            viewDesc.format = imageDesc.format;
+            viewDesc.viewType = RHIImageViewType::Image2D;
+            viewDesc.subresourceRange.levelCount = 1;
+            viewDesc.subresourceRange.layerCount = 1;
+            viewDesc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
 
-		m_EditorScene = CreateRef<Scene>();
-		m_ActiveScene = m_EditorScene;
+            texture.View = texture.Image->CreateView(viewDesc);
+            if (!texture.View)
+            {
+                texture.Image->Release();
+                texture.Image = nullptr;
+                return texture;
+            }
 
-		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
-		if (commandLineArgs.Count > 1)
-		{
-			auto projectFilePath = commandLineArgs[1];
-			OpenProject(projectFilePath);
-		}
-		else
-		{
-			// TODO(Yan): prompt the user to select a directory
-			// NewProject();
+            texture.ImGuiTexture = Application::Get().GetImGuiLayer()->AddTexture(
+                sampler, texture.View, RHIImageResourceState::ShaderRead);
+            return texture;
+        }
 
-			// If no project is opened, close Hazelnut
-			// NOTE: this is while we don't have a new project path
-			if (!OpenProject())
-				Application::Get().Close();
+        void ReleaseEditorUITexture(EditorLayer::EditorUITexture& texture)
+        {
+            if (texture.ImGuiTexture)
+            {
+                Application::Get().GetImGuiLayer()->RemoveTexture(texture.ImGuiTexture);
+                texture.ImGuiTexture = nullptr;
+            }
+            if (texture.View)
+            {
+                texture.View->Release();
+                texture.View = nullptr;
+            }
+            if (texture.Image)
+            {
+                texture.Image->Release();
+                texture.Image = nullptr;
+            }
+        }
 
-		}
+        bool IsPathUnderDirectory(const std::filesystem::path& path, const std::filesystem::path& directory)
+        {
+            std::error_code errorCode;
+            const std::filesystem::path normalizedPath = std::filesystem::weakly_canonical(path, errorCode);
+            if (errorCode)
+            {
+                return false;
+            }
 
-		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
-		Renderer2D::SetLineWidth(4.0f);
-	}
+            const std::filesystem::path normalizedDirectory = std::filesystem::weakly_canonical(directory, errorCode);
+            if (errorCode)
+            {
+                return false;
+            }
 
-	void EditorLayer::OnDetach()
-	{
-		HZ_PROFILE_FUNCTION();
-	}
+            auto dirIt = normalizedDirectory.begin();
+            auto pathIt = normalizedPath.begin();
+            for (; dirIt != normalizedDirectory.end(); ++dirIt, ++pathIt)
+            {
+                if (pathIt == normalizedPath.end() || *dirIt != *pathIt)
+                {
+                    return false;
+                }
+            }
 
-	void EditorLayer::OnUpdate(Timestep ts)
-	{
-		HZ_PROFILE_FUNCTION();
+            return true;
+        }
 
-		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        void WriteProjectMakefile(const std::filesystem::path& makefilePath,
+                                  const std::string& projectName,
+                                  const std::filesystem::path& outputDllRelativePath)
+        {
+            std::ofstream fout(makefilePath);
+            fout << "PROJECT_NAME := " << projectName << "\n";
+            fout << "SCRIPT_DIR := Assets/Scripts\n";
+            fout << "BIN_DIR := Assets/Scripts/Binaries\n";
+            fout << "OUTPUT := " << outputDllRelativePath.generic_string() << "\n";
+            fout << "SCRIPT_CORE := Resources/Scripts/Hazel-ScriptCore.dll\n";
+            fout << "CS_FILES := $(shell find $(SCRIPT_DIR) -name '*.cs')\n\n";
+            fout << "all: $(OUTPUT)\n\n";
+            fout << "$(OUTPUT): $(CS_FILES)\n";
+            fout << "\t@mkdir -p $(BIN_DIR)\n";
+            fout << "\tmcs -target:library -sdk:4.5 -r:$(SCRIPT_CORE) -out:$(OUTPUT) $(CS_FILES)\n\n";
+            fout << "clean:\n";
+            fout << "\trm -f $(OUTPUT)\n";
+        }
+    }
 
-		// Resize
-		if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
-			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
-			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
-		{
-			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_CameraController.OnResize(m_ViewportSize.x, m_ViewportSize.y);
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
-		}
+    EditorLayer::EditorLayer(Renderer* renderer)
+        : Layer("EditorLayer"), m_Renderer(renderer) {}
 
-		// Render
-		Renderer2D::ResetStats();
-		m_Framebuffer->Bind();
-		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-		RenderCommand::Clear();
+    void EditorLayer::OnAttach()
+    {
+        HZ_PROFILE_FUNCTION();
 
-		// Clear our entity ID attachment to -1
-		m_Framebuffer->ClearAttachment(1, -1);
+        // Get device and queue from the graphics context
+        auto* device = m_Renderer->GetDevice();
+        auto* graphicsQueue = device->GetQueue(RHIQueueType::Graphics);
 
-		switch (m_SceneState)
-		{
-			case SceneState::Edit:
-			{
-				if (m_ViewportFocused)
-					m_CameraController.OnUpdate(ts);
+        // Create a temporary command pool and buffer for uploading editor UI textures
+        RHICommandPoolDesc uploadPoolDesc{};
+        uploadPoolDesc.queueType = RHIQueueType::Graphics;
+        uploadPoolDesc.transient = true;
+        uploadPoolDesc.allowCommandBufferReset = false;
+        RHICommandPool* uploadPool = device->CreateCommandPool(uploadPoolDesc);
 
-				m_EditorCamera.OnUpdate(ts);
+        RHICommandBufferDesc uploadBufferDesc{};
+        RHICommandBuffer* uploadCommandBuffer = uploadPool->CreateCommandBuffer(uploadBufferDesc);
 
-				m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
-				break;
-			}
-			case SceneState::Simulate:
-			{
-				m_EditorCamera.OnUpdate(ts);
+        uploadCommandBuffer->Begin(true);
 
-				m_ActiveScene->OnUpdateSimulation(ts, m_EditorCamera);
-				break;
-			}
-			case SceneState::Play:
-			{
-				m_ActiveScene->OnUpdateRuntime(ts);
-				break;
-			}
-		}
+        RHISamplerDesc uiSamplerDesc{};
+        uiSamplerDesc.minFilter = RHISamplerFilter::Linear;
+        uiSamplerDesc.magFilter = RHISamplerFilter::Linear;
+        uiSamplerDesc.mipFilter = RHISamplerFilter::Linear;
+        uiSamplerDesc.addressModeU = RHISamplerAddressMode::ClampToEdge;
+        uiSamplerDesc.addressModeV = RHISamplerAddressMode::ClampToEdge;
+        uiSamplerDesc.addressModeW = RHISamplerAddressMode::ClampToEdge;
+        m_UISampler = device->CreateSampler(uiSamplerDesc);
 
-		auto[mx, my] = ImGui::GetMousePos();
-		mx -= m_ViewportBounds[0].x;
-		my -= m_ViewportBounds[0].y;
-		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-		my = viewportSize.y - my;
-		int mouseX = (int)mx;
-		int mouseY = (int)my;
+        RHISamplerDesc checkerboardSamplerDesc{};
+        checkerboardSamplerDesc.minFilter = RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.magFilter = RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.mipFilter = RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.addressModeU = RHISamplerAddressMode::Repeat;
+        checkerboardSamplerDesc.addressModeV = RHISamplerAddressMode::Repeat;
+        checkerboardSamplerDesc.addressModeW = RHISamplerAddressMode::Repeat;
+        m_CheckerboardSampler = device->CreateSampler(checkerboardSamplerDesc);
 
-		if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
-		{
-			int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
-		}
+        m_IconPlay = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                           "Resources/Icons/PlayButton.png");
+        m_IconPause = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                            "Resources/Icons/PauseButton.png");
+        m_IconStep = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                           "Resources/Icons/StepButton.png");
+        m_IconStop = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                           "Resources/Icons/StopButton.png");
+        m_ContentBrowserDirectoryIcon = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                                              "Resources/Icons/ContentBrowser/DirectoryIcon.png");
+        m_ContentBrowserFileIcon = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+                                                         "Resources/Icons/ContentBrowser/FileIcon.png");
+        m_CheckerboardTexture = CreateEditorUITexture(m_Renderer, uploadCommandBuffer,
+                                                      m_CheckerboardSampler,
+                                                      "assets/textures/Checkerboard.png");
 
-		OnOverlayRender();
+        uploadCommandBuffer->End();
 
-		m_Framebuffer->Unbind();
-	}
+        RHIQueueSubmitDesc submitDesc{};
+        submitDesc.commandBuffers.push_back(uploadCommandBuffer);
+        graphicsQueue->Submit(submitDesc);
+        device->WaitIdle();
 
-	void EditorLayer::OnImGuiRender()
-	{
-		HZ_PROFILE_FUNCTION();
+        uploadPool->Release();
 
-		// Note: Switch this to true to enable dockspace
-		static bool dockspaceOpen = true;
-		static bool opt_fullscreen_persistant = true;
-		bool opt_fullscreen = opt_fullscreen_persistant;
-		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+        RecreateObjectIDRenderData();
+        RecreateDefaultRenderTextureData();
 
-		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-		// because it would be confusing to have two docking targets within each others.
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-		if (opt_fullscreen)
-		{
-			ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->Pos);
-			ImGui::SetNextWindowSize(viewport->Size);
-			ImGui::SetNextWindowViewport(viewport->ID);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-		}
+        // Create an empty scene for the editor
+        m_EditorScene = CreateRef<Scene>();
+        m_ActiveScene = m_EditorScene;
+        m_SceneHierarchyPanel.SetContext(m_EditorScene);
 
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-			window_flags |= ImGuiWindowFlags_NoBackground;
+        auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
+        if (commandLineArgs.Count > 1)
+        {
+            auto projectFilePath = commandLineArgs[1];
+            OpenProject(projectFilePath);
+        }
+    }
 
-		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
-		// all active windows docked into it will lose their parent and become undocked.
-		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
-		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
-		ImGui::PopStyleVar();
+    void EditorLayer::OnDetach()
+    {
+        HZ_PROFILE_FUNCTION();
 
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
+        if (HasOpenProject())
+        {
+            if (m_SceneState == SceneState::Play && m_ActiveScene)
+            {
+                OnSceneStop();
+            }
+            ScriptEngine::Shutdown();
+            Project::CloseActive();
+        }
 
-		// DockSpace
-		ImGuiIO& io = ImGui::GetIO();
-		ImGuiStyle& style = ImGui::GetStyle();
-		float minWinSizeX = style.WindowMinSize.x;
-		style.WindowMinSize.x = 370.0f;
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		}
+        ReleaseEditorUITexture(m_IconPlay);
+        ReleaseEditorUITexture(m_IconPause);
+        ReleaseEditorUITexture(m_IconStep);
+        ReleaseEditorUITexture(m_IconStop);
+        ReleaseEditorUITexture(m_ContentBrowserDirectoryIcon);
+        ReleaseEditorUITexture(m_ContentBrowserFileIcon);
+        ReleaseEditorUITexture(m_CheckerboardTexture);
+        if (m_UISampler)
+        {
+            m_UISampler->Release();
+            m_UISampler = nullptr;
+        }
+        if (m_CheckerboardSampler)
+        {
+            m_CheckerboardSampler->Release();
+            m_CheckerboardSampler = nullptr;
+        }
+    }
 
-		style.WindowMinSize.x = minWinSizeX;
+    void EditorLayer::OnUpdate(Timestep ts)
+    {
+        HZ_PROFILE_FUNCTION();
 
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Open Project...", "Ctrl+O"))
-					OpenProject();
+        if (!HasOpenProject() || !m_ActiveScene || !m_ContentBrowserPanel)
+        {
+            return;
+        }
 
-				ImGui::Separator();
+        m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x),
+                                        static_cast<uint32_t>(m_ViewportSize.y));
 
-				if (ImGui::MenuItem("New Scene", "Ctrl+N"))
-					NewScene();
+        auto renderTexture = m_Renderer->GetDefaultRenderTexture();
+        if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f &&
+            (renderTexture->GetDesc().width != static_cast<uint32_t>(m_ViewportSize.x) ||
+                renderTexture->GetDesc().height != static_cast<uint32_t>(m_ViewportSize.y)))
+        {
+            // the render texture may be rebuilt here
+            m_Renderer->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x),
+                                         static_cast<uint32_t>(m_ViewportSize.y));
+            RecreateObjectIDRenderData();
+            RecreateDefaultRenderTextureData();
+        }
 
-				if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-					SaveScene();
+        switch (m_SceneState)
+        {
+        case SceneState::Edit:
+            {
+                if (m_ViewportFocused)
+                    m_ViewportCameraController.OnUpdate(ts);
 
-				if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
-					SaveSceneAs();
+                m_ActiveScene->OnUpdateEditor(ts);
+                break;
+            }
+        case SceneState::Play:
+            {
+                m_ActiveScene->OnUpdateRuntime(ts);
+                break;
+            }
+        }
 
-				ImGui::Separator();
+        // render frame buffer
+        // TODO
+        Camera camera;
+        m_Renderer->Render(camera);
 
-				if (ImGui::MenuItem("Exit"))
-					Application::Get().Close();
-				
-				ImGui::EndMenu();
-			}
+        // separate object id map pass
+        OnObjectIDMapRender();
 
-			if (ImGui::BeginMenu("Script"))
-			{
-				if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
-					ScriptEngine::ReloadAssembly();
-				
-				ImGui::EndMenu();
-			}
+        auto [mx, my] = ImGui::GetMousePos();
+        mx -= m_ViewportBounds[0].x;
+        my -= m_ViewportBounds[0].y;
+        glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+        my = viewportSize.y - my;
+        int mouseX = static_cast<int>(mx);
+        int mouseY = static_cast<int>(my);
 
-			ImGui::EndMenuBar();
-		}
+        uint64_t currentFrameIndex = m_Renderer->GetCurrentFrameIndex();
+        if (mouseX >= 0 && mouseY >= 0 && mouseX < static_cast<int>(viewportSize.x) &&
+            mouseY < static_cast<int>(viewportSize.y) &&
+            currentFrameIndex > 0)
+        {
+            auto syncPoint = m_Renderer->GetFrameData(currentFrameIndex - 1).renderCompleteSyncPoint;
+            m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);
+            size_t pixelIndex = (mouseY * static_cast<size_t>(viewportSize.x) + mouseX);
+            int pixelData =
+                *(static_cast<uint32_t*>(m_ObjectIDRenderTextureBuffer[(currentFrameIndex - 1) % m_Renderer->
+                    GetMaxFramesInFlight()]->Map()) + pixelIndex);
+            m_HoveredEntity = pixelData == -1
+                                  ? Entity()
+                                  : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
+        }
 
-		m_SceneHierarchyPanel.OnImGuiRender();
-		m_ContentBrowserPanel->OnImGuiRender();
+        OnOverlayRender();
+    }
 
-		ImGui::Begin("Stats");
+    void EditorLayer::RecreateDefaultRenderTextureData()
+    {
+        for (auto& data : m_DefaultRenderTextureUIData)
+        {
+            if (data.ImGuiTexture)
+            {
+                Application::Get().GetImGuiLayer()->RemoveTexture(data.ImGuiTexture);
+            }
+        }
+        m_DefaultRenderTextureUIData.clear();
+        RenderTexture* defaultRenderTexture = m_Renderer->GetDefaultRenderTexture();
+        auto images = defaultRenderTexture->GetAllImages();
+        auto imageViews = defaultRenderTexture->GetAllImageViews();
+        for (int i = 0; i < images.size(); i++)
+        {
+            void* texture = Application::Get().GetImGuiLayer()->AddTexture(
+                m_UISampler, imageViews[i], RHIImageResourceState::ShaderRead);
+            m_DefaultRenderTextureUIData.push_back({images[i], imageViews[i], texture});
+        }
+    }
+
+    void EditorLayer::RecreateObjectIDRenderData()
+    {
+        if (m_ObjectIDRenderTexture && m_ObjectIDRenderTexture->IsValid())
+        {
+            m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
+        }
+
+        RenderTextureDesc objectIDRenderTextureDesc{};
+        objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
+        objectIDRenderTextureDesc.height = static_cast<uint32_t>(m_ViewportSize.y);
+        objectIDRenderTextureDesc.format = RHIFormat::R32SInt;
+        objectIDRenderTextureDesc.perFrame = true;
+        objectIDRenderTextureDesc.useMipmap = false;
+        m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(objectIDRenderTextureDesc);
+
+        RHIBufferDesc objectIDBufferDesc{};
+        objectIDBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
+        objectIDBufferDesc.usages = RHIBufferUsageFlagBits::TransferDestination;
+        objectIDBufferDesc.allowGpuAddress = false;
+        objectIDBufferDesc.cpuAccess = RHIBufferCpuAccess::Read;
+        objectIDBufferDesc.mapOnCreate = true;
+
+        int maxFramesInFlight = m_Renderer->GetMaxFramesInFlight();
+        m_ObjectIDRenderTextureBuffer.resize(maxFramesInFlight, nullptr);
+        for (auto*& buffer : m_ObjectIDRenderTextureBuffer)
+        {
+            if (buffer && buffer->IsValid())
+            {
+                buffer->ReleaseImmediate();
+            }
+            buffer = m_Renderer->GetDevice()->CreateBuffer(objectIDBufferDesc);
+        }
+    }
+
+    void EditorLayer::OnObjectIDMapRender()
+    {
+        auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
+        auto* objectIDImage = m_ObjectIDRenderTexture->GetImage();
+        auto* objectIDImageView = m_ObjectIDRenderTexture->GetImageView();
+        auto* objectIDImageBuffer = m_ObjectIDRenderTextureBuffer[m_Renderer->GetCurrentFrameInFlightIndex()];
+
+        RHIRenderingAttachmentDesc objectIDAttachmentDesc{};
+        objectIDAttachmentDesc.imageView = objectIDImageView;
+        objectIDAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
+        objectIDAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
+        objectIDAttachmentDesc.clearColorValue.uint32[0] = -1;
+        objectIDAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
+
+        RHIRenderingInfo renderingInfo{};
+        renderingInfo.colorAttachments = {objectIDAttachmentDesc};
+        renderingInfo.renderOffset = {0, 0};
+        renderingInfo.renderViewSize = {
+            static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y)
+        };
+        renderingInfo.colorAttachments = {objectIDAttachmentDesc};
+
+        objectIDImage->Transition(commandBuffer, objectIDImage->GetCurrentState(),
+                                  RHIImageResourceState::ColorAttachment);
+        commandBuffer->BeginRendering(renderingInfo);
+        // TODO: rendering
+        commandBuffer->EndRendering();
+        objectIDImage->Transition(commandBuffer, objectIDImage->GetCurrentState(),
+                                  RHIImageResourceState::TransferSource);
+
+        commandBuffer->CopyImageToBuffer(objectIDImage, objectIDImageBuffer, 0,
+                                         {
+                                             static_cast<uint32_t>(m_ViewportSize.x),
+                                             static_cast<uint32_t>(m_ViewportSize.y)
+                                         },
+                                         {0, 0, 0},
+                                         {objectIDImage->GetDesc().width, objectIDImage->GetDesc().height, 1},
+                                         {
+                                             0, 0, 1, RHIImagePlaneFlagBits::Color
+                                         });
+    }
+
+    void EditorLayer::ResetProjectContext()
+    {
+        if (m_SceneState == SceneState::Play && m_ActiveScene)
+        {
+            OnSceneStop();
+        }
+
+        if (Project::HasActive())
+        {
+            ScriptEngine::Shutdown();
+            Project::CloseActive();
+        }
+
+        m_ContentBrowserPanel.reset();
+        m_EditorScenePath.clear();
+        m_HoveredEntity = {};
+        m_EditorScene = CreateRef<Scene>();
+        m_ActiveScene = m_EditorScene;
+        m_SceneHierarchyPanel.SetContext(m_EditorScene);
+    }
+
+    bool EditorLayer::HasOpenProject() const
+    {
+        return Project::HasActive();
+    }
+
+    void EditorLayer::DrawProjectSelectionScreen()
+    {
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        const ImVec2 windowSize(420.0f, 180.0f);
+        ImGui::SetNextWindowPos(
+            ImVec2(viewport->GetCenter().x - windowSize.x * 0.5f, viewport->GetCenter().y - windowSize.y * 0.5f));
+        ImGui::SetNextWindowSize(windowSize);
+
+        ImGui::Begin("Project", nullptr,
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking);
+        ImGui::TextUnformatted("No project is currently open.");
+        ImGui::Spacing();
+        ImGui::TextWrapped("Create a new Hazel project or open an existing .hproj file.");
+        ImGui::Dummy(ImVec2(0.0f, 16.0f));
+
+        const float buttonWidth = 160.0f;
+        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::SetCursorPosX((availableWidth - buttonWidth * 2.0f - 12.0f) * 0.5f);
+        if (ImGui::Button("New Project", ImVec2(buttonWidth, 0.0f)))
+        {
+            NewProject();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Open Project", ImVec2(buttonWidth, 0.0f)))
+        {
+            OpenProject();
+        }
+
+        ImGui::End();
+    }
+
+    void EditorLayer::OnImGuiRender()
+    {
+        HZ_PROFILE_FUNCTION();
+
+        if (!HasOpenProject())
+        {
+            DrawProjectSelectionScreen();
+            return;
+        }
+
+        // Note: Switch this to true to enable dockspace
+        static bool dockspaceOpen = true;
+        static bool opt_fullscreen_persistant = true;
+        bool opt_fullscreen = opt_fullscreen_persistant;
+        static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+        // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+        // because it would be confusing to have two docking targets within each others.
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        if (opt_fullscreen)
+        {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->Pos);
+            ImGui::SetNextWindowSize(viewport->Size);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoMove;
+            window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        }
+
+        // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+        if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+            window_flags |= ImGuiWindowFlags_NoBackground;
+
+        // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+        // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+        // all active windows docked into it will lose their parent and become undocked.
+        // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+        // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+        ImGui::PopStyleVar();
+
+        if (opt_fullscreen)
+            ImGui::PopStyleVar(2);
+
+        // DockSpace
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiStyle& style = ImGui::GetStyle();
+        float minWinSizeX = style.WindowMinSize.x;
+        style.WindowMinSize.x = 370.0f;
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        }
+
+        style.WindowMinSize.x = minWinSizeX;
+
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("New Project..."))
+                    NewProject();
+
+                if (ImGui::MenuItem("Open Project...", "Ctrl+O"))
+                    OpenProject();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Save Project"))
+                    SaveProject();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                    NewScene();
+
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+                    SaveScene();
+
+                if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+                    SaveSceneAs();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Exit"))
+                    Application::Get().Close();
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Script"))
+            {
+                if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
+                    ScriptEngine::ReloadAssembly();
+
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenuBar();
+        }
+
+        m_SceneHierarchyPanel.OnImGuiRender();
+        if (m_ContentBrowserPanel)
+        {
+            m_ContentBrowserPanel->OnImGuiRender();
+        }
+
+        // ImGui::Begin("Stats");
 
 #if 0
-		std::string name = "None";
-		if (m_HoveredEntity)
-			name = m_HoveredEntity.GetComponent<TagComponent>().Tag;
-		ImGui::Text("Hovered Entity: %s", name.c_str());
+        std::string name = "None";
+        if (m_HoveredEntity)
+            name = m_HoveredEntity.GetComponent<TagComponent>().tag;
+        ImGui::Text("Hovered Entity: %s", name.c_str());
 #endif
 
-		auto stats = Renderer2D::GetStats();
-		ImGui::Text("Renderer2D Stats:");
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quads: %d", stats.QuadCount);
-		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-
-		ImGui::End();
-
-		ImGui::Begin("Settings");
-		ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
-
-		ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), { 512,512 }, {0, 1}, {1, 0});
-
-
-		ImGui::End();
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-		ImGui::Begin("Viewport");
-		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-		auto viewportOffset = ImGui::GetWindowPos();
-		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-		m_ViewportFocused = ImGui::IsWindowFocused();
-		m_ViewportHovered = ImGui::IsWindowHovered();
-
-		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportHovered);
-
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-
-		uint64_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-			{
-				const wchar_t* path = (const wchar_t*)payload->Data;
-				OpenScene(path);
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		// Gizmos
-		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
-		if (selectedEntity && m_GizmoType != -1)
-		{
-			ImGuizmo::SetOrthographic(false);
-			ImGuizmo::SetDrawlist();
-
-			ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
-
-			// Camera
-			
-			// Runtime camera from entity
-			// auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
-			// const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
-			// const glm::mat4& cameraProjection = camera.GetProjection();
-			// glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
-
-			// Editor camera
-			const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
-			glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
-
-			// Entity transform
-			auto& tc = selectedEntity.GetComponent<TransformComponent>();
-			glm::mat4 transform = tc.GetTransform();
-
-			// Snapping
-			bool snap = Input::IsKeyPressed(Key::LeftControl);
-			float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-			// Snap to 45 degrees for rotation
-			if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-				snapValue = 45.0f;
-
-			float snapValues[3] = { snapValue, snapValue, snapValue };
-
-			ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-				(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
-				nullptr, snap ? snapValues : nullptr);
-
-			if (ImGuizmo::IsUsing())
-			{
-				glm::vec3 translation, rotation, scale;
-				Math::DecomposeTransform(transform, translation, rotation, scale);
-
-				glm::vec3 deltaRotation = rotation - tc.Rotation;
-				tc.Translation = translation;
-				tc.Rotation += deltaRotation;
-				tc.Scale = scale;
-			}
-		}
-
-
-		ImGui::End();
-		ImGui::PopStyleVar();
-
-		UI_Toolbar();
-
-		ImGui::End();
-	}
-
-	void EditorLayer::UI_Toolbar()
-	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-		auto& colors = ImGui::GetStyle().Colors;
-		const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-		const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
-
-		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-		bool toolbarEnabled = (bool)m_ActiveScene;
-
-		ImVec4 tintColor = ImVec4(1, 1, 1, 1);
-		if (!toolbarEnabled)
-			tintColor.w = 0.5f;
-
-		float size = ImGui::GetWindowHeight() - 4.0f;
-		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-
-		bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
-		bool hasSimulateButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate;
-		bool hasPauseButton = m_SceneState != SceneState::Edit;
-
-		if (hasPlayButton)
-		{
-			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
-			if (ImGui::ImageButton("PlayButton", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-			{
-				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
-					OnScenePlay();
-				else if (m_SceneState == SceneState::Play)
-					OnSceneStop();
-			}
-		}
-
-		if (hasSimulateButton)
-		{
-			if (hasPlayButton)
-				ImGui::SameLine();
-
-			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;
-			if (ImGui::ImageButton("SimButton", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-			{
-				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play)
-					OnSceneSimulate();
-				else if (m_SceneState == SceneState::Simulate)
-					OnSceneStop();
-			}
-		}
-		if (hasPauseButton)
-		{
-			bool isPaused = m_ActiveScene->IsPaused();
-			ImGui::SameLine();
-			{
-				Ref<Texture2D> icon = m_IconPause;
-				if (ImGui::ImageButton("PauseButton", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-				{
-					m_ActiveScene->SetPaused(!isPaused);
-				}
-			}
-
-			// Step button
-			if (isPaused)
-			{
-				ImGui::SameLine();
-				{
-					Ref<Texture2D> icon = m_IconStep;
-					bool isPaused = m_ActiveScene->IsPaused();
-					if (ImGui::ImageButton("StepButton", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-					{
-						m_ActiveScene->Step();
-					}
-				}
-			}
-		}
-		ImGui::PopStyleVar(2);
-		ImGui::PopStyleColor(3);
-		ImGui::End();
-	}
-
-	void EditorLayer::OnEvent(Event& e)
-	{
-		m_CameraController.OnEvent(e);
-		if (m_SceneState == SceneState::Edit)
-		{
-			m_EditorCamera.OnEvent(e);
-		}
-
-		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<KeyPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
-		dispatcher.Dispatch<MouseButtonPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
-	}
-
-	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
-	{
-		// Shortcuts
-		if (e.IsRepeat())
-			return false;
-
-		bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
-		bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
-
-		switch (e.GetKeyCode())
-		{
-			case Key::N:
-			{
-				if (control)
-					NewScene();
-
-				break;
-			}
-			case Key::O:
-			{
-				if (control)
-					OpenProject();
-
-				break;
-			}
-			case Key::S:
-			{
-				if (control)
-				{
-					if (shift)
-						SaveSceneAs();
-					else
-						SaveScene();
-				}
-
-				break;
-			}
-
-			// Scene Commands
-			case Key::D:
-			{
-				if (control)
-					OnDuplicateEntity();
-
-				break;
-			}
-
-			// Gizmos
-			case Key::Q:
-			{
-				if (!ImGuizmo::IsUsing())
-					m_GizmoType = -1;
-				break;
-			}
-			case Key::W:
-			{
-				if (!ImGuizmo::IsUsing())
-					m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
-				break;
-			}
-			case Key::E:
-			{
-				if (!ImGuizmo::IsUsing())
-					m_GizmoType = ImGuizmo::OPERATION::ROTATE;
-				break;
-			}
-			case Key::R:
-			{
-				if (control)
-				{
-					ScriptEngine::ReloadAssembly();
-				}
-				else
-				{
-					if (!ImGuizmo::IsUsing())
-						m_GizmoType = ImGuizmo::OPERATION::SCALE;
-				}
-				break;
-			}
-			case Key::Delete:
-			{
-				if (Application::Get().GetImGuiLayer()->GetActiveWidgetID() == 0)
-				{
-					Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
-					if (selectedEntity)
-					{
-						m_SceneHierarchyPanel.SetSelectedEntity({});
-						m_ActiveScene->DestroyEntity(selectedEntity);
-					}
-				}
-				break;
-			}
-		}
-
-		return false;
-	}
-
-	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
-	{
-		if (e.GetMouseButton() == Mouse::ButtonLeft)
-		{
-			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
-				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
-		}
-		return false;
-	}
-
-	void EditorLayer::OnOverlayRender()
-	{
-		if (m_SceneState == SceneState::Play)
-		{
-			Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
-			if (!camera)
-				return;
-			
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
-		}
-		else
-		{
-			Renderer2D::BeginScene(m_EditorCamera);
-		}
-
-		if (m_ShowPhysicsColliders)
-		{
-			// Box Colliders
-			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
-				for (auto entity : view)
-				{
-					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
-
-					glm::vec3 translation = tc.Translation + glm::vec3(bc2d.Offset, 0.001f);
-					glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
-
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
-						* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
-						* glm::translate(glm::mat4(1.0f), glm::vec3(bc2d.Offset, 0.001f))
-						* glm::scale(glm::mat4(1.0f), scale);
-				
-					Renderer2D::DrawRect(transform, glm::vec4(0, 1, 0, 1));
-				}
-			}
-
-			// Circle Colliders
-			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
-				for (auto entity : view)
-				{
-					auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
-
-					glm::vec3 translation = tc.Translation + glm::vec3(cc2d.Offset, 0.001f);
-					glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
-
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
-						* glm::scale(glm::mat4(1.0f), scale);
-
-					Renderer2D::DrawCircle(transform, glm::vec4(0, 1, 0, 1), 0.01f);
-				}
-			}
-		}
-
-		// Draw selected entity outline 
-		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
-		{
-			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
-			Renderer2D::DrawRect(transform.GetTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
-		}
-
-		Renderer2D::EndScene();
-	}
-
-	void EditorLayer::NewProject()
-	{
-		Project::New();
-	}
-
-	void EditorLayer::OpenProject(const std::filesystem::path& path)
-	{
-		if (Project::Load(path))
-		{
-			ScriptEngine::Init();
-
-			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
-			OpenScene(startScenePath);
-			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
-			 
-		}
-	}
-
-	bool EditorLayer::OpenProject()
-	{
-		std::string filepath = FileDialogs::OpenFile("Hazel Project (*.hproj)\0*.hproj\0");
-		if (filepath.empty())
-			return false;
-
-		OpenProject(filepath);
-		return true;
-	}
-
-	void EditorLayer::SaveProject()
-	{
-		// Project::SaveActive();
-	}
-
-	void EditorLayer::NewScene()
-	{
-		m_ActiveScene = CreateRef<Scene>();
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-		
-		m_EditorScenePath = std::filesystem::path();
-	}
-
-	void EditorLayer::OpenScene()
-	{
-		std::string filepath = FileDialogs::OpenFile("Hazel Scene (*.hazel)\0*.hazel\0");
-		if (!filepath.empty())
-			OpenScene(filepath);
-	}
-
-	void EditorLayer::OpenScene(const std::filesystem::path& path)
-	{
-		if (m_SceneState != SceneState::Edit)
-			OnSceneStop();
-
-		if (path.extension().string() != ".hazel")
-		{
-			HZ_WARN("Could not load {0} - not a scene file", path.filename().string());
-			return;
-		}
-		
-		Ref<Scene> newScene = CreateRef<Scene>();
-		SceneSerializer serializer(newScene);
-		if (serializer.Deserialize(path.string()))
-		{
-			m_EditorScene = newScene;
-			m_SceneHierarchyPanel.SetContext(m_EditorScene);
-
-			m_ActiveScene = m_EditorScene;
-			m_EditorScenePath = path;
-		}
-	}
-
-	void EditorLayer::SaveScene()
-	{
-		if (!m_EditorScenePath.empty())
-			SerializeScene(m_ActiveScene, m_EditorScenePath);
-		else
-			SaveSceneAs();
-	}
-
-	void EditorLayer::SaveSceneAs()
-	{
-		std::string filepath = FileDialogs::SaveFile("Hazel Scene (*.hazel)\0*.hazel\0");
-		if (!filepath.empty())
-		{
-			SerializeScene(m_ActiveScene, filepath);
-			m_EditorScenePath = filepath;
-		}
-	}
-
-	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
-	{
-		SceneSerializer serializer(scene);
-		serializer.Serialize(path.string());
-	}
-
-	void EditorLayer::OnScenePlay()
-	{
-		if (m_SceneState == SceneState::Simulate)
-			OnSceneStop();
-
-		m_SceneState = SceneState::Play;
-
-		m_ActiveScene = Scene::Copy(m_EditorScene);
-		m_ActiveScene->OnRuntimeStart();
-
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-	}
-
-	void EditorLayer::OnSceneSimulate()
-	{
-		if (m_SceneState == SceneState::Play)
-			OnSceneStop();
-
-		m_SceneState = SceneState::Simulate;
-
-		m_ActiveScene = Scene::Copy(m_EditorScene);
-		m_ActiveScene->OnSimulationStart();
-
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-	}
-
-	void EditorLayer::OnSceneStop()
-	{
-		HZ_CORE_ASSERT(m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate);
-
-		if (m_SceneState == SceneState::Play)
-			m_ActiveScene->OnRuntimeStop();
-		else if (m_SceneState == SceneState::Simulate)
-			m_ActiveScene->OnSimulationStop();
-
-		m_SceneState = SceneState::Edit;
-
-		m_ActiveScene = m_EditorScene;
-
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-	}
-
-	void EditorLayer::OnScenePause()
-	{
-		if (m_SceneState == SceneState::Edit)
-			return;
-
-		m_ActiveScene->SetPaused(true);
-	}
-
-	void EditorLayer::OnDuplicateEntity()
-	{
-		if (m_SceneState != SceneState::Edit)
-			return;
-
-		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
-		if (selectedEntity)
-		{
-			Entity newEntity = m_EditorScene->DuplicateEntity(selectedEntity);
-			m_SceneHierarchyPanel.SetSelectedEntity(newEntity);
-		}
-	}
+        // auto stats = Renderer2D::GetStats();
+        // ImGui::Text("Renderer2D Stats:");
+        // ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+        // ImGui::Text("Quads: %d", stats.QuadCount);
+        // ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+        // ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+        //
+        // ImGui::End();
+        //
+        // ImGui::Begin("Settings");
+        // ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
+        //
+        // ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
+        //
+        //
+        // ImGui::End();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        ImGui::Begin("Viewport");
+        auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+        auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+        auto viewportOffset = ImGui::GetWindowPos();
+        m_ViewportBounds[0] = {viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y};
+        m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
+
+        m_ViewportFocused = ImGui::IsWindowFocused();
+        m_ViewportHovered = ImGui::IsWindowHovered();
+
+        Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportHovered);
+
+        ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+        m_ViewportSize = {viewportPanelSize.x, viewportPanelSize.y};
+
+        if (!m_DefaultRenderTextureUIData.empty())
+        {
+            void* textureID = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].ImGuiTexture;
+            ImGui::Image(textureID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
+        }
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                const wchar_t* path = (const wchar_t*)payload->Data;
+                OpenScene(path);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // TODO: Gizmos
+        // Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+        // if (selectedEntity && m_GizmoType != -1)
+        // {
+        //     ImGuizmo::SetOrthographic(false);
+        //     ImGuizmo::SetDrawlist();
+        //
+        //     ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y,
+        //                       m_ViewportBounds[1].x - m_ViewportBounds[0].x,
+        //                       m_ViewportBounds[1].y - m_ViewportBounds[0].y);
+        //
+        //     // Camera
+        //
+        //     // Runtime camera from entity
+        //     // auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
+        //     // const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
+        //     // const glm::mat4& cameraProjection = camera.GetProjection();
+        //     // glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
+        //
+        //     // Editor camera
+        //     const glm::mat4& cameraProjection = m_ActiveScene->GetViewportCamera().GetProjection();
+        //     glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
+        //
+        //     // Entity transform
+        //     auto& tc = selectedEntity.GetComponent<TransformComponent>();
+        //     glm::mat4 transform = tc.GetTransform();
+        //
+        //     // Snapping
+        //     bool snap = Input::IsKeyPressed(Key::LeftControl);
+        //     float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+        //     // Snap to 45 degrees for rotation
+        //     if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+        //         snapValue = 45.0f;
+        //
+        //     float snapValues[3] = {snapValue, snapValue, snapValue};
+        //
+        //     ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+        //                          (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
+        //                          nullptr, snap ? snapValues : nullptr);
+        //
+        //     if (ImGuizmo::IsUsing())
+        //     {
+        //         glm::vec3 translation, rotation, scale;
+        //         Math::DecomposeTransform(transform, translation, rotation, scale);
+        //
+        //         glm::vec3 deltaRotation = rotation - tc.rotation;
+        //         tc.translation = translation;
+        //         tc.rotation += deltaRotation;
+        //         tc.scale = scale;
+        //     }
+        // }
+
 
+        ImGui::End();
+        ImGui::PopStyleVar();
+
+        UI_Toolbar();
+
+        ImGui::End();
+    }
+
+    void EditorLayer::UI_Toolbar()
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        auto& colors = ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+        ImGui::Begin("##toolbar", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        bool toolbarEnabled = (bool)m_ActiveScene;
+
+        ImVec4 tintColor = ImVec4(1, 1, 1, 1);
+        if (!toolbarEnabled)
+            tintColor.w = 0.5f;
+
+        float size = ImGui::GetWindowHeight() - 4.0f;
+        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+
+        bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
+        bool hasPauseButton = m_SceneState != SceneState::Edit;
+
+        if (hasPlayButton)
+        {
+            void* icon = m_SceneState == SceneState::Edit
+                             ? m_IconPlay.ImGuiTexture
+                             : m_IconStop.ImGuiTexture;
+            if (ImGui::ImageButton("PlayButton", icon, ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+                                   ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+            {
+                if (m_SceneState == SceneState::Edit)
+                    OnScenePlay();
+                else if (m_SceneState == SceneState::Play)
+                    OnSceneStop();
+            }
+        }
+
+        if (hasPauseButton)
+        {
+            bool isPaused = m_ActiveScene->IsPaused();
+            ImGui::SameLine();
+            {
+                if (ImGui::ImageButton("PauseButton", m_IconPause.ImGuiTexture, ImVec2(size, size), ImVec2(0, 0),
+                                       ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+                {
+                    m_ActiveScene->SetPaused(!isPaused);
+                }
+            }
+
+            // Step button
+            if (isPaused)
+            {
+                ImGui::SameLine();
+                {
+                    bool isPaused = m_ActiveScene->IsPaused();
+                    if (ImGui::ImageButton("StepButton", m_IconStep.ImGuiTexture, ImVec2(size, size), ImVec2(0, 0),
+                                           ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+                    {
+                        m_ActiveScene->Step();
+                    }
+                }
+            }
+        }
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
+        ImGui::End();
+    }
+
+    void EditorLayer::OnEvent(Event& e)
+    {
+        //m_CameraController.OnEvent(e);
+        if (m_SceneState == SceneState::Edit)
+        {
+            //m_EditorCamera.OnEvent(e);
+        }
+
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<KeyPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+        dispatcher.Dispatch<MouseButtonPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
+    }
+
+    bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+    {
+        // Shortcuts
+        if (e.IsRepeat())
+            return false;
+
+        bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
+        bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+
+        switch (e.GetKeyCode())
+        {
+        case Key::N:
+            {
+                if (control && HasOpenProject())
+                    NewScene();
+
+                break;
+            }
+        case Key::O:
+            {
+                if (control)
+                    OpenProject();
+
+                break;
+            }
+        case Key::S:
+            {
+                if (control && HasOpenProject())
+                {
+                    if (shift)
+                        SaveSceneAs();
+                    else
+                        SaveScene();
+                }
+
+                break;
+            }
+
+        // Scene Commands
+        case Key::D:
+            {
+                if (control && HasOpenProject())
+                    OnDuplicateEntity();
+
+                break;
+            }
+
+        // Gizmos
+        case Key::Q:
+            {
+                if (!ImGuizmo::IsUsing())
+                    m_GizmoType = -1;
+                break;
+            }
+        case Key::W:
+            {
+                if (!ImGuizmo::IsUsing())
+                    m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+                break;
+            }
+        case Key::E:
+            {
+                if (!ImGuizmo::IsUsing())
+                    m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+                break;
+            }
+        case Key::R:
+            {
+                if (control && HasOpenProject())
+                {
+                    ScriptEngine::ReloadAssembly();
+                }
+                else
+                {
+                    if (!ImGuizmo::IsUsing())
+                        m_GizmoType = ImGuizmo::OPERATION::SCALE;
+                }
+                break;
+            }
+        case Key::Delete:
+            {
+                if (Application::Get().GetImGuiLayer()->GetActiveWidgetID() == 0)
+                {
+                    Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+                    if (selectedEntity)
+                    {
+                        m_SceneHierarchyPanel.SetSelectedEntity({});
+                        m_ActiveScene->DestroyEntity(selectedEntity);
+                    }
+                }
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+    {
+        if (e.GetMouseButton() == Mouse::ButtonLeft)
+        {
+            if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
+                m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+        }
+        return false;
+    }
+
+    void EditorLayer::OnOverlayRender()
+    {
+        // draw selected entity outline
+        if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity()) {}
+    }
+
+    void EditorLayer::NewProject()
+    {
+        if (HasOpenProject())
+        {
+            ResetProjectContext();
+        }
+
+        std::string filepath = FileDialogs::SaveFile(s_ProjectFileFilter);
+        if (filepath.empty())
+        {
+            return;
+        }
+
+        std::filesystem::path projectFilePath = filepath;
+        if (projectFilePath.extension() != ".hproj")
+        {
+            projectFilePath.replace_extension(".hproj");
+        }
+
+        const std::filesystem::path projectDirectory = projectFilePath.parent_path();
+        const std::string projectName = projectFilePath.stem().string();
+        const std::filesystem::path assetDirectory = projectDirectory / "Assets";
+        const std::filesystem::path scenesDirectory = assetDirectory / "Scenes";
+        const std::filesystem::path scriptsDirectory = assetDirectory / "Scripts";
+        const std::filesystem::path binariesDirectory = scriptsDirectory / "Binaries";
+        const std::filesystem::path defaultSceneRelativePath = std::filesystem::path("Scenes") / "Untitled.hazel";
+        const std::filesystem::path defaultScenePath = assetDirectory / defaultSceneRelativePath;
+        const std::filesystem::path scriptModuleRelativePath =
+            std::filesystem::path("Scripts") / "Binaries" / (projectName + ".dll");
+
+        std::filesystem::create_directories(scenesDirectory);
+        std::filesystem::create_directories(binariesDirectory);
+
+        Ref<Project> project = Project::New();
+        auto& config = project->GetConfig();
+        config.Name = projectName;
+        config.AssetDirectory = "Assets";
+        config.StartScene = defaultSceneRelativePath;
+        config.ScriptModulePath = scriptModuleRelativePath;
+
+        if (!Project::SaveActive(projectFilePath))
+        {
+            return;
+        }
+
+        Ref<Scene> defaultScene = CreateRef<Scene>();
+        SerializeScene(defaultScene, defaultScenePath);
+        WriteProjectMakefile(projectDirectory / "Makefile", projectName,
+                             assetDirectory.filename() / scriptModuleRelativePath);
+
+        Project::CloseActive();
+        OpenProject(projectFilePath);
+    }
+
+    void EditorLayer::OpenProject(const std::filesystem::path& path)
+    {
+        if (!path.empty() && HasOpenProject())
+        {
+            ResetProjectContext();
+        }
+
+        Ref<Project> project = Project::Load(path);
+        if (!project)
+        {
+            return;
+        }
+
+        ScriptEngine::Init();
+        m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>(
+            m_ContentBrowserDirectoryIcon.ImGuiTexture,
+            m_ContentBrowserFileIcon.ImGuiTexture);
+
+        const auto& startSceneRelativePath = project->GetConfig().StartScene;
+        const std::filesystem::path startScenePath = Project::GetAssetFileSystemPath(startSceneRelativePath);
+        if (!startSceneRelativePath.empty() && std::filesystem::exists(startScenePath))
+        {
+            OpenScene(startScenePath);
+        }
+        else
+        {
+            NewScene();
+        }
+
+        RecreateObjectIDRenderData();
+        RecreateDefaultRenderTextureData();
+    }
+
+    bool EditorLayer::OpenProject()
+    {
+        std::string filepath = FileDialogs::OpenFile(s_ProjectFileFilter);
+        if (filepath.empty())
+            return false;
+
+        OpenProject(filepath);
+        return HasOpenProject();
+    }
+
+    void EditorLayer::SaveProject()
+    {
+        if (!HasOpenProject())
+        {
+            return;
+        }
+
+        Project::SaveActive(Project::GetProjectFilePath());
+    }
+
+    void EditorLayer::NewScene()
+    {
+        if (!HasOpenProject())
+        {
+            return;
+        }
+
+        if (m_SceneState != SceneState::Edit)
+        {
+            OnSceneStop();
+        }
+
+        m_EditorScene = CreateRef<Scene>();
+        m_ActiveScene = m_EditorScene;
+        m_SceneHierarchyPanel.SetContext(m_EditorScene);
+        m_EditorScenePath.clear();
+        m_HoveredEntity = {};
+    }
+
+    void EditorLayer::OpenScene()
+    {
+        if (!HasOpenProject())
+        {
+            return;
+        }
+
+        std::string filepath = FileDialogs::OpenFile(s_SceneFileFilter);
+        if (!filepath.empty())
+            OpenScene(filepath);
+    }
+
+    void EditorLayer::OpenScene(const std::filesystem::path& path)
+    {
+        if (!HasOpenProject())
+        {
+            return;
+        }
+
+        if (m_SceneState != SceneState::Edit)
+            OnSceneStop();
+
+        if (path.extension().string() != ".hazel")
+        {
+            HZ_WARN("Could not load {0} - not a scene file", path.filename().string());
+            return;
+        }
+
+        Ref<Scene> newScene = CreateRef<Scene>();
+        SceneSerializer serializer(newScene);
+        if (serializer.Deserialize(path.string()))
+        {
+            m_EditorScene = newScene;
+            m_ActiveScene = m_EditorScene;
+            m_SceneHierarchyPanel.SetContext(m_EditorScene);
+            m_EditorScenePath = path;
+            m_HoveredEntity = {};
+        }
+    }
+
+    void EditorLayer::SaveScene()
+    {
+        if (!HasOpenProject() || !m_ActiveScene)
+        {
+            return;
+        }
+
+        if (!m_EditorScenePath.empty())
+            SerializeScene(m_ActiveScene, m_EditorScenePath);
+        else
+            SaveSceneAs();
+    }
+
+    void EditorLayer::SaveSceneAs()
+    {
+        if (!HasOpenProject() || !m_ActiveScene)
+        {
+            return;
+        }
+
+        std::string filepath = FileDialogs::SaveFile(s_SceneFileFilter);
+        if (!filepath.empty())
+        {
+            std::filesystem::path scenePath = filepath;
+            if (scenePath.extension() != ".hazel")
+            {
+                scenePath.replace_extension(".hazel");
+            }
+
+            SerializeScene(m_ActiveScene, scenePath);
+            m_EditorScenePath = scenePath;
+
+            const std::filesystem::path assetDirectory = Project::GetAssetDirectory();
+            if (IsPathUnderDirectory(scenePath, assetDirectory))
+            {
+                Project::GetActive()->GetConfig().StartScene = std::filesystem::relative(scenePath, assetDirectory);
+                SaveProject();
+            }
+        }
+    }
+
+    void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+    {
+        SceneSerializer serializer(scene);
+        serializer.Serialize(path.string());
+    }
+
+    void EditorLayer::OnScenePlay()
+    {
+        m_SceneState = SceneState::Play;
+
+        m_ActiveScene = Scene::Copy(m_EditorScene);
+        m_ActiveScene->OnRuntimeStart();
+
+        m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+    }
+
+    void EditorLayer::OnSceneStop()
+    {
+        HZ_CORE_ASSERT(m_SceneState == SceneState::Play);
+
+        m_ActiveScene->OnRuntimeStop();
+
+        m_SceneState = SceneState::Edit;
+
+        m_ActiveScene = m_EditorScene;
+
+        m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+    }
+
+    void EditorLayer::OnScenePause()
+    {
+        if (m_SceneState == SceneState::Edit)
+            return;
+
+        m_ActiveScene->SetPaused(true);
+    }
+
+    void EditorLayer::OnDuplicateEntity()
+    {
+        if (m_SceneState != SceneState::Edit)
+            return;
+
+        Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+        if (selectedEntity)
+        {
+            Entity newEntity = m_EditorScene->DuplicateEntity(selectedEntity);
+            m_SceneHierarchyPanel.SetSelectedEntity(newEntity);
+        }
+    }
 }

@@ -14,11 +14,23 @@ namespace Hazel
 {
     enum class RHIBufferCpuAccess : uint8_t
     {
-        None,
-        Write,
-        Read,
-        ReadWrite
+        None = 0,
+        Write = 1,
+        Read = 2,
+        ReadWrite = 3
     };
+
+    inline RHIBufferCpuAccess operator|(RHIBufferCpuAccess lhs, RHIBufferCpuAccess rhs)
+    {
+        return static_cast<RHIBufferCpuAccess>(static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(lhs) |
+                                               static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
+    }
+
+    inline RHIBufferCpuAccess operator&(RHIBufferCpuAccess lhs, RHIBufferCpuAccess rhs)
+    {
+        return static_cast<RHIBufferCpuAccess>(static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(lhs) &
+                                               static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
+    }
 
     enum class RHIBufferUsageFlagBits : uint16_t
     {

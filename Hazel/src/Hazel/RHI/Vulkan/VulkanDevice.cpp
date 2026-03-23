@@ -40,41 +40,38 @@ namespace Hazel
             return (flags & bit) == bit;
         }
 
-        std::optional<uint32_t> FindQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties> &queueFamilies,
+        std::optional<uint32_t> FindQueueFamilyIndex(const std::vector<vk::QueueFamilyProperties>& queueFamilies,
                                                      RHIQueueType type)
         {
-            const auto matches = [type](const vk::QueueFamilyProperties &queueFamily)
+            const auto matches = [type](const vk::QueueFamilyProperties& queueFamily)
             {
                 switch (type)
                 {
-                    case RHIQueueType::Graphics:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics);
-                    case RHIQueueType::Compute:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eCompute);
-                    case RHIQueueType::Transfer:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eTransfer);
-                    case RHIQueueType::Present:
-                        return false;
+                case RHIQueueType::Graphics:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics);
+                case RHIQueueType::Compute:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eCompute);
+                case RHIQueueType::Transfer:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eTransfer);
+                case RHIQueueType::Present:
+                    return false;
                 }
 
                 return false;
             };
 
-            const auto preferred = [type](const vk::QueueFamilyProperties &queueFamily)
+            const auto preferred = [type](const vk::QueueFamilyProperties& queueFamily)
             {
                 switch (type)
                 {
-                    case RHIQueueType::Graphics:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics);
-                    case RHIQueueType::Compute:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eCompute)
-                               && !QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics);
-                    case RHIQueueType::Transfer:
-                        return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eTransfer)
-                               && !QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics)
-                               && !QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eCompute);
-                    case RHIQueueType::Present:
-                        return false;
+                case RHIQueueType::Graphics:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eGraphics);
+                case RHIQueueType::Compute:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eCompute);
+                case RHIQueueType::Transfer:
+                    return QueueFlagsMatch(queueFamily.queueFlags, vk::QueueFlagBits::eTransfer);
+                case RHIQueueType::Present:
+                    return false;
                 }
 
                 return false;
@@ -100,7 +97,7 @@ namespace Hazel
         }
 
         std::optional<uint32_t> FindPresentQueueFamilyIndex(vk::PhysicalDevice physicalDevice,
-                                                            const std::vector<vk::QueueFamilyProperties> &queueFamilies,
+                                                            const std::vector<vk::QueueFamilyProperties>& queueFamilies,
                                                             vk::SurfaceKHR surface)
         {
             for (uint32_t i = 0; i < queueFamilies.size(); i++)
@@ -120,11 +117,11 @@ namespace Hazel
         }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHIDevice, RHIDeviceImpl)(RHIInstance *instanceOwner,
+    RHI_VK_FUNC_IMPL(RHIDevice, RHIDeviceImpl)(RHIInstance* instanceOwner,
                                                vk::Instance instance,
-                                               const RHIAdapter &adapter,
-                                               const RHIDeviceCapabilities &caps,
-                                               const RHISurface *surface)
+                                               const RHIAdapter& adapter,
+                                               const RHIDeviceCapabilities& caps,
+                                               const RHISurface* surface)
         : m_InstanceOwner(instanceOwner), m_Adapter(adapter), m_Capabilities(caps), m_Instance(instance)
     {
         if (!adapter.CanCreateDevice(caps))
@@ -176,7 +173,7 @@ namespace Hazel
         }
 
         std::array<std::optional<uint32_t>, 4> queueFamilyIndices{};
-        for (const auto queueType: requestedQueues)
+        for (const auto queueType : requestedQueues)
         {
             std::optional<uint32_t> queueFamilyIndex;
             if (queueType == RHIQueueType::Present)
@@ -197,7 +194,7 @@ namespace Hazel
         }
 
         std::set<uint32_t> uniqueQueueFamilies;
-        for (const auto &queueFamilyIndex: queueFamilyIndices)
+        for (const auto& queueFamilyIndex : queueFamilyIndices)
         {
             if (queueFamilyIndex.has_value())
             {
@@ -205,9 +202,11 @@ namespace Hazel
             }
         }
 
+        m_IsUniformQueue = uniqueQueueFamilies.size() == 1 ? true : false;
+
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         queueCreateInfos.reserve(uniqueQueueFamilies.size());
-        for (const auto queueFamilyIndex: uniqueQueueFamilies)
+        for (const auto queueFamilyIndex : uniqueQueueFamilies)
         {
             queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), queueFamilyIndex, 1, &s_QueuePriority);
         }
@@ -219,8 +218,11 @@ namespace Hazel
         enabledFeatures.pNext = &vulkan11Features;
         vulkan11Features.pNext = &vulkan12Features;
         vulkan12Features.pNext = &vulkan13Features;
+        enabledFeatures.features.fragmentStoresAndAtomics = VK_TRUE;
+        enabledFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
         vulkan12Features.bufferDeviceAddress = VK_TRUE;
         vulkan12Features.descriptorIndexing = VK_TRUE;
+        vulkan13Features.synchronization2 = VK_TRUE;
         vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
         vulkan12Features.timelineSemaphore = VK_TRUE;
         vulkan13Features.dynamicRendering = VK_TRUE;
@@ -229,7 +231,7 @@ namespace Hazel
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
         createInfo.enabledExtensionCount = 1;
-        const char *deviceExtensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        const char* deviceExtensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
         createInfo.ppEnabledExtensionNames = deviceExtensions;
         createInfo.pNext = &enabledFeatures;
 
@@ -240,7 +242,7 @@ namespace Hazel
             return;
         }
 
-        for (const auto queueType: requestedQueues)
+        for (const auto queueType : requestedQueues)
         {
             const auto queueFamilyIndex = queueFamilyIndices[GetQueueSlot(queueType)];
             if (!queueFamilyIndex.has_value())
@@ -258,23 +260,25 @@ namespace Hazel
                 continue;
             }
 
-            auto *queuePtr = RegisterOwnedObject(m_Queues, std::move(queue));
+            auto* queuePtr = m_Queues.Register(std::move(queue));
             m_QueueLookup[GetQueueSlot(queueType)] = queuePtr;
 
             switch (queueType)
             {
-                case RHIQueueType::Graphics:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Graphics;
-                    break;
-                case RHIQueueType::Compute:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Compute;
-                    break;
-                case RHIQueueType::Transfer:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Transfer;
-                    break;
-                case RHIQueueType::Present:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Present;
-                    break;
+            case RHIQueueType::Graphics:
+                m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Graphics;
+                break;
+            case RHIQueueType::Compute:
+                m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Compute;
+                break;
+            case RHIQueueType::Transfer:
+                m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Transfer;
+                break;
+            case RHIQueueType::Present:
+                m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Present;
+                break;
+            default:
+                break;
             }
         }
 
@@ -282,7 +286,7 @@ namespace Hazel
         if (!m_Allocator || !m_Allocator->IsValid())
         {
             m_QueueLookup = {};
-            m_Queues.clear();
+            m_Queues.Clear();
             m_Allocator.reset();
             m_Device.destroy();
             m_Device = VK_NULL_HANDLE;
@@ -297,7 +301,7 @@ namespace Hazel
         Release();
     }
 
-    RHIQueue *RHI_VK_FUNC_IMPL(RHIDevice, GetQueue)(RHIQueueType type) const
+    RHIQueue*RHI_VK_FUNC_IMPL(RHIDevice, GetQueue)(RHIQueueType type) const
     {
         return m_QueueLookup[GetQueueSlot(type)];
     }
@@ -310,6 +314,25 @@ namespace Hazel
         }
 
         return m_Device.waitIdle() == vk::Result::eSuccess;
+    }
+
+    bool RHI_VK_FUNC_IMPL(RHIDevice, WaitSyncPoint)(RHISyncPoint* syncPoint, uint64_t timeout)
+    {
+        if (!m_Device)
+        {
+            return false;
+        }
+
+        auto semaphore = syncPoint->queue->GetSignalSemaphore();
+
+        vk::SemaphoreWaitInfo waitInfo{};
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = &semaphore;
+        waitInfo.pValues = &syncPoint->value;
+
+        auto result = m_Device.waitSemaphores(&waitInfo, timeout);
+
+        return result == vk::Result::eSuccess;
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, FlushDeferredDeletions)()
@@ -329,13 +352,10 @@ namespace Hazel
         DeletionQueue::Execute(std::move(pendingOperations));
     }
 
-    RHICommandPool *RHI_VK_FUNC_IMPL(RHIDevice, CreateCommandPool)(const RHICommandPoolDesc &desc)
+    RHICommandPool*RHI_VK_FUNC_IMPL(RHIDevice, CreateCommandPool)(const RHICommandPoolDesc& desc)
     {
-        auto *queue = GetQueue(desc.queueType);
-        if (!queue)
-        {
-            return nullptr;
-        }
+        auto* queue = GetQueue(desc.queueType);
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!queue);
 
         std::unique_ptr<RHICommandPool> commandPool(new RHICommandPool(this, m_Device, desc, queue->GetFamilyIndex()));
         if (!commandPool || !commandPool->IsValid())
@@ -343,17 +363,30 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *commandPoolPtr = commandPool.get();
+        auto* commandPoolPtr = commandPool.get();
         RegisterCommandPool(std::move(commandPool));
         return commandPoolPtr;
     }
 
-    RHIBuffer *RHI_VK_FUNC_IMPL(RHIDevice, CreateBuffer)(const RHIBufferDesc &desc)
+    RHICommandPool*RHI_VK_FUNC_IMPL(RHIDevice, CreateCommandPoolUniformQueue)(const RHICommandPoolDesc& desc)
     {
-        if (!m_Allocator || !m_Allocator->IsValid())
+        auto* queue = GetUniformQueue();
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!queue);
+
+        std::unique_ptr<RHICommandPool> commandPool(new RHICommandPool(this, m_Device, desc, queue->GetFamilyIndex()));
+        if (!commandPool || !commandPool->IsValid())
         {
             return nullptr;
         }
+
+        auto* commandPoolPtr = commandPool.get();
+        RegisterCommandPool(std::move(commandPool));
+        return commandPoolPtr;
+    }
+
+    RHIBuffer*RHI_VK_FUNC_IMPL(RHIDevice, CreateBuffer)(const RHIBufferDesc& desc)
+    {
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Allocator || !m_Allocator->IsValid());
 
         std::unique_ptr<RHIBuffer> buffer(new RHIBuffer(this, m_Allocator.get(), desc));
         if (!buffer || !buffer->IsValid())
@@ -361,17 +394,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *bufferPtr = buffer.get();
+        auto* bufferPtr = buffer.get();
         RegisterBuffer(std::move(buffer));
         return bufferPtr;
     }
 
-    RHIBufferView *RHI_VK_FUNC_IMPL(RHIDevice, CreateBufferView)(RHIBuffer *buffer, const RHIBufferViewDesc &desc)
+    RHIBufferView*RHI_VK_FUNC_IMPL(RHIDevice, CreateBufferView)(RHIBuffer* buffer, const RHIBufferViewDesc& desc)
     {
-        if (!m_Device || !buffer)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device || !buffer);
 
         std::unique_ptr<RHIBufferView> bufferView(new RHIBufferView(this, buffer, desc));
         if (!bufferView || !bufferView->IsValid())
@@ -379,17 +409,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *bufferViewPtr = bufferView.get();
+        auto* bufferViewPtr = bufferView.get();
         bufferView.release();
         return bufferViewPtr;
     }
 
-    RHIImage *RHI_VK_FUNC_IMPL(RHIDevice, CreateImage)(const RHIImageDesc &desc)
+    RHIImage*RHI_VK_FUNC_IMPL(RHIDevice, CreateImage)(const RHIImageDesc& desc)
     {
-        if (!m_Allocator || !m_Allocator->IsValid())
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Allocator || !m_Allocator->IsValid());
 
         std::unique_ptr<RHIImage> image(new RHIImage(this, m_Allocator.get(), desc));
         if (!image || !image->IsValid())
@@ -397,17 +424,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *imagePtr = image.get();
+        auto* imagePtr = image.get();
         RegisterImage(std::move(image));
         return imagePtr;
     }
 
-    RHIResourceHeap *RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceHeap)(const RHIResourceHeapDesc &desc)
+    RHIResourceHeap*RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceHeap)(const RHIResourceHeapDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIResourceHeap> heap(new RHIResourceHeap(this, m_Device, desc));
         if (!heap || !heap->IsValid())
@@ -415,17 +439,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *heapPtr = heap.get();
+        auto* heapPtr = heap.get();
         RegisterResourceHeap(std::move(heap));
         return heapPtr;
     }
 
-    RHIResourceLayout *RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceLayout)(const RHIResourceLayoutDesc &desc)
+    RHIResourceLayout*RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceLayout)(const RHIResourceLayoutDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIResourceLayout> layout(new RHIResourceLayout(this, m_Device, desc));
         if (!layout || !layout->IsValid())
@@ -433,17 +454,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *layoutPtr = layout.get();
+        auto* layoutPtr = layout.get();
         RegisterResourceLayout(std::move(layout));
         return layoutPtr;
     }
 
-    RHIResourceSignature *RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceSignature)(const RHIResourceSignatureDesc &desc)
+    RHIResourceSignature*RHI_VK_FUNC_IMPL(RHIDevice, CreateResourceSignature)(const RHIResourceSignatureDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIResourceSignature> signature(new RHIResourceSignature(this, m_Device, desc));
         if (!signature || !signature->IsValid())
@@ -451,17 +469,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *signaturePtr = signature.get();
+        auto* signaturePtr = signature.get();
         RegisterResourceSignature(std::move(signature));
         return signaturePtr;
     }
 
-    RHISampler *RHI_VK_FUNC_IMPL(RHIDevice, CreateSampler)(const RHISamplerDesc &desc)
+    RHISampler*RHI_VK_FUNC_IMPL(RHIDevice, CreateSampler)(const RHISamplerDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHISampler> sampler(new RHISampler(this, m_Device, desc));
         if (!sampler || !sampler->IsValid())
@@ -469,17 +484,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *samplerPtr = sampler.get();
+        auto* samplerPtr = sampler.get();
         RegisterSampler(std::move(sampler));
         return samplerPtr;
     }
 
-    RHIShader *RHI_VK_FUNC_IMPL(RHIDevice, CreateShader)(const RHIShaderDesc &desc)
+    RHIShader*RHI_VK_FUNC_IMPL(RHIDevice, CreateShader)(const RHIShaderDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIShader> shader(new RHIShader(this, m_Device, desc));
         if (!shader || !shader->IsValid())
@@ -487,17 +499,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *shaderPtr = shader.get();
+        auto* shaderPtr = shader.get();
         RegisterShader(std::move(shader));
         return shaderPtr;
     }
 
-    RHIGraphicsPipeline *RHI_VK_FUNC_IMPL(RHIDevice, CreateGraphicsPipeline)(const RHIGraphicsPipelineDesc &desc)
+    RHIGraphicsPipeline*RHI_VK_FUNC_IMPL(RHIDevice, CreateGraphicsPipeline)(const RHIGraphicsPipelineDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIGraphicsPipeline> pipeline(new RHIGraphicsPipeline(this, m_Device, desc));
         if (!pipeline || !pipeline->IsValid())
@@ -505,17 +514,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *pipelinePtr = pipeline.get();
+        auto* pipelinePtr = pipeline.get();
         RegisterGraphicsPipeline(std::move(pipeline));
         return pipelinePtr;
     }
 
-    RHIComputePipeline *RHI_VK_FUNC_IMPL(RHIDevice, CreateComputePipeline)(const RHIComputePipelineDesc &desc)
+    RHIComputePipeline*RHI_VK_FUNC_IMPL(RHIDevice, CreateComputePipeline)(const RHIComputePipelineDesc& desc)
     {
-        if (!m_Device)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device);
 
         std::unique_ptr<RHIComputePipeline> pipeline(new RHIComputePipeline(this, m_Device, desc));
         if (!pipeline || !pipeline->IsValid())
@@ -523,18 +529,15 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *pipelinePtr = pipeline.get();
+        auto* pipelinePtr = pipeline.get();
         RegisterComputePipeline(std::move(pipeline));
         return pipelinePtr;
     }
 
-    RHISwapchain *RHI_VK_FUNC_IMPL(RHIDevice, CreateSwapchain)(const RHISwapchainDesc &desc)
+    RHISwapchain*RHI_VK_FUNC_IMPL(RHIDevice, CreateSwapchain)(const RHISwapchainDesc& desc)
     {
-        auto *presentQueue = GetQueue(RHIQueueType::Present);
-        if (!presentQueue || !desc.surface)
-        {
-            return nullptr;
-        }
+        auto* presentQueue = GetQueue(RHIQueueType::Present);
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!presentQueue || !desc.surface);
 
         std::unique_ptr<RHISwapchain> swapchain(new RHISwapchain(m_PhysicalDevice,
                                                                  this,
@@ -545,17 +548,14 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *swapchainPtr = swapchain.get();
+        auto* swapchainPtr = swapchain.get();
         RegisterSwapchain(std::move(swapchain));
         return swapchainPtr;
     }
 
-    RHIImageView *RHI_VK_FUNC_IMPL(RHIDevice, CreateImageView)(RHIImage *image, const RHIImageViewDesc &desc)
+    RHIImageView*RHI_VK_FUNC_IMPL(RHIDevice, CreateImageView)(RHIImage* image, const RHIImageViewDesc& desc)
     {
-        if (!m_Device || !image)
-        {
-            return nullptr;
-        }
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!m_Device || !image);
 
         std::unique_ptr<RHIImageView> imageView(new RHIImageView(this, image, desc));
         if (!imageView || !imageView->IsValid())
@@ -563,7 +563,7 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *imageViewPtr = imageView.get();
+        auto* imageViewPtr = imageView.get();
         imageView.release();
         return imageViewPtr;
     }
@@ -575,7 +575,7 @@ namespace Hazel
             return;
         }
 
-        auto *instanceOwner = m_InstanceOwner;
+        auto* instanceOwner = m_InstanceOwner;
         ReleaseFromOwner();
         if (instanceOwner)
         {
@@ -590,107 +590,107 @@ namespace Hazel
             return;
         }
 
-        for (const auto &swapchain: m_Swapchains)
+        for (const auto& swapchain : m_Swapchains)
         {
             if (swapchain)
             {
                 swapchain->ReleaseWithoutUnregister();
             }
         }
-        m_Swapchains.clear();
+        m_Swapchains.Clear();
 
-        for (const auto &commandPool: m_CommandPools)
+        for (const auto& commandPool : m_CommandPools)
         {
             if (commandPool)
             {
                 commandPool->ReleaseWithoutUnregister();
             }
         }
-        m_CommandPools.clear();
+        m_CommandPools.Clear();
 
-        for (const auto &image: m_Images)
+        for (const auto& image : m_Images)
         {
             if (image)
             {
                 image->ReleaseWithoutUnregister();
             }
         }
-        m_Images.clear();
+        m_Images.Clear();
 
-        for (const auto &computePipeline: m_ComputePipelines)
+        for (const auto& computePipeline : m_ComputePipelines)
         {
             if (computePipeline)
             {
                 computePipeline->ReleaseWithoutUnregister();
             }
         }
-        m_ComputePipelines.clear();
+        m_ComputePipelines.Clear();
 
-        for (const auto &graphicsPipeline: m_GraphicsPipelines)
+        for (const auto& graphicsPipeline : m_GraphicsPipelines)
         {
             if (graphicsPipeline)
             {
                 graphicsPipeline->ReleaseWithoutUnregister();
             }
         }
-        m_GraphicsPipelines.clear();
+        m_GraphicsPipelines.Clear();
 
-        for (const auto &buffer: m_Buffers)
+        for (const auto& buffer : m_Buffers)
         {
             if (buffer)
             {
                 buffer->ReleaseWithoutUnregister();
             }
         }
-        m_Buffers.clear();
+        m_Buffers.Clear();
 
-        for (const auto &resourceHeap: m_ResourceHeaps)
+        for (const auto& resourceHeap : m_ResourceHeaps)
         {
             if (resourceHeap)
             {
                 resourceHeap->ReleaseWithoutUnregister();
             }
         }
-        m_ResourceHeaps.clear();
+        m_ResourceHeaps.Clear();
 
-        for (const auto &resourceLayout: m_ResourceLayouts)
+        for (const auto& resourceLayout : m_ResourceLayouts)
         {
             if (resourceLayout)
             {
                 resourceLayout->ReleaseWithoutUnregister();
             }
         }
-        m_ResourceLayouts.clear();
+        m_ResourceLayouts.Clear();
 
-        for (const auto &resourceSignature: m_ResourceSignatures)
+        for (const auto& resourceSignature : m_ResourceSignatures)
         {
             if (resourceSignature)
             {
                 resourceSignature->ReleaseWithoutUnregister();
             }
         }
-        m_ResourceSignatures.clear();
+        m_ResourceSignatures.Clear();
 
-        for (const auto &sampler: m_Samplers)
+        for (const auto& sampler : m_Samplers)
         {
             if (sampler)
             {
                 sampler->ReleaseWithoutUnregister();
             }
         }
-        m_Samplers.clear();
+        m_Samplers.Clear();
 
-        for (const auto &shader: m_Shaders)
+        for (const auto& shader : m_Shaders)
         {
             if (shader)
             {
                 shader->ReleaseWithoutUnregister();
             }
         }
-        m_Shaders.clear();
+        m_Shaders.Clear();
 
         m_QueueLookup = {};
-        m_Queues.clear();
+        m_Queues.Clear();
 
         auto pendingOperations = ExtractDeletionQueue();
         const auto allocatorHandle = m_Allocator ? m_Allocator->Detach() : VK_NULL_HANDLE;
@@ -707,7 +707,7 @@ namespace Hazel
                         return;
                     }
 
-                    (void) device.waitIdle();
+                    (void)device.waitIdle();
                     DeletionQueue::Execute(std::move(pendingOperations));
                     VulkanMemoryAllocator::Destroy(allocatorHandle);
                     device.destroy();
@@ -715,7 +715,7 @@ namespace Hazel
         }
         else if (device)
         {
-            (void) device.waitIdle();
+            (void)device.waitIdle();
             DeletionQueue::Execute(std::move(pendingOperations));
             VulkanMemoryAllocator::Destroy(allocatorHandle);
             device.destroy();
@@ -728,126 +728,152 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterSwapchain)(std::unique_ptr<RHISwapchain> swapchain)
     {
-        RegisterOwnedObject(m_Swapchains, std::move(swapchain));
+        m_Swapchains.Register(std::move(swapchain));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterSwapchain)(RHISwapchain *swapchain)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterSwapchain)(RHISwapchain* swapchain)
     {
-        UnregisterOwnedObject(m_Swapchains, swapchain);
+        m_Swapchains.Unregister(swapchain);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterCommandPool)(std::unique_ptr<RHICommandPool> commandPool)
     {
-        RegisterOwnedObject(m_CommandPools, std::move(commandPool));
+        m_CommandPools.Register(std::move(commandPool));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterCommandPool)(RHICommandPool *commandPool)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterCommandPool)(RHICommandPool* commandPool)
     {
-        UnregisterOwnedObject(m_CommandPools, commandPool);
+        m_CommandPools.Unregister(commandPool);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterBuffer)(std::unique_ptr<RHIBuffer> buffer)
     {
-        RegisterOwnedObject(m_Buffers, std::move(buffer));
+        m_Buffers.Register(std::move(buffer));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterBuffer)(RHIBuffer *buffer)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterBuffer)(RHIBuffer* buffer)
     {
-        UnregisterOwnedObject(m_Buffers, buffer);
+        m_Buffers.Unregister(buffer);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterImage)(std::unique_ptr<RHIImage> image)
     {
-        RegisterOwnedObject(m_Images, std::move(image));
+        m_Images.Register(std::move(image));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterImage)(RHIImage *image)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterImage)(RHIImage* image)
     {
-        UnregisterOwnedObject(m_Images, image);
+        m_Images.Unregister(image);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterComputePipeline)(std::unique_ptr<RHIComputePipeline> pipeline)
     {
-        RegisterOwnedObject(m_ComputePipelines, std::move(pipeline));
+        m_ComputePipelines.Register(std::move(pipeline));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterComputePipeline)(RHIComputePipeline *pipeline)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterComputePipeline)(RHIComputePipeline* pipeline)
     {
-        UnregisterOwnedObject(m_ComputePipelines, pipeline);
+        m_ComputePipelines.Unregister(pipeline);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterGraphicsPipeline)(std::unique_ptr<RHIGraphicsPipeline> pipeline)
     {
-        RegisterOwnedObject(m_GraphicsPipelines, std::move(pipeline));
+        m_GraphicsPipelines.Register(std::move(pipeline));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterGraphicsPipeline)(RHIGraphicsPipeline *pipeline)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterGraphicsPipeline)(RHIGraphicsPipeline* pipeline)
     {
-        UnregisterOwnedObject(m_GraphicsPipelines, pipeline);
+        m_GraphicsPipelines.Unregister(pipeline);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterResourceHeap)(std::unique_ptr<RHIResourceHeap> heap)
     {
-        RegisterOwnedObject(m_ResourceHeaps, std::move(heap));
+        m_ResourceHeaps.Register(std::move(heap));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceHeap)(RHIResourceHeap *heap)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceHeap)(RHIResourceHeap* heap)
     {
-        UnregisterOwnedObject(m_ResourceHeaps, heap);
+        m_ResourceHeaps.Unregister(heap);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterResourceLayout)(std::unique_ptr<RHIResourceLayout> layout)
     {
-        RegisterOwnedObject(m_ResourceLayouts, std::move(layout));
+        m_ResourceLayouts.Register(std::move(layout));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceLayout)(RHIResourceLayout *layout)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceLayout)(RHIResourceLayout* layout)
     {
-        UnregisterOwnedObject(m_ResourceLayouts, layout);
+        m_ResourceLayouts.Unregister(layout);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterResourceSignature)(std::unique_ptr<RHIResourceSignature> signature)
     {
-        RegisterOwnedObject(m_ResourceSignatures, std::move(signature));
+        m_ResourceSignatures.Register(std::move(signature));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceSignature)(RHIResourceSignature *signature)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterResourceSignature)(RHIResourceSignature* signature)
     {
-        UnregisterOwnedObject(m_ResourceSignatures, signature);
+        m_ResourceSignatures.Unregister(signature);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterSampler)(std::unique_ptr<RHISampler> sampler)
     {
-        RegisterOwnedObject(m_Samplers, std::move(sampler));
+        m_Samplers.Register(std::move(sampler));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterSampler)(RHISampler *sampler)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterSampler)(RHISampler* sampler)
     {
-        UnregisterOwnedObject(m_Samplers, sampler);
+        m_Samplers.Unregister(sampler);
     }
 
     void RHI_VK_FUNC_IMPL(RHIDevice, RegisterShader)(std::unique_ptr<RHIShader> shader)
     {
-        RegisterOwnedObject(m_Shaders, std::move(shader));
+        m_Shaders.Register(std::move(shader));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterShader)(RHIShader *shader)
+    void RHI_VK_FUNC_IMPL(RHIDevice, UnregisterShader)(RHIShader* shader)
     {
-        UnregisterOwnedObject(m_Shaders, shader);
+        m_Shaders.Unregister(shader);
+    }
+
+    RHI_VK_FUNC_IMPL(RHIDevice, RHIDeviceImpl)(RHIDevice&& device) noexcept
+    {
+        m_InstanceOwner = device.m_InstanceOwner;
+        m_Adapter = device.m_Adapter;
+        m_Capabilities = device.m_Capabilities;
+        m_DeletionQueue = std::move(device.m_DeletionQueue);
+        m_Instance = device.m_Instance;
+        m_PhysicalDevice = device.m_PhysicalDevice;
+        m_Device = device.m_Device;
+        m_QueueLookup = device.m_QueueLookup;
+        m_Queues = std::move(device.m_Queues);
+        m_Allocator = std::move(device.m_Allocator);
+        m_CommandPools = std::move(device.m_CommandPools);
+        m_Buffers = std::move(device.m_Buffers);
+        m_ComputePipelines = std::move(device.m_ComputePipelines);
+        m_GraphicsPipelines = std::move(device.m_GraphicsPipelines);
+        m_Images = std::move(device.m_Images);
+        m_ResourceHeaps = std::move(device.m_ResourceHeaps);
+        m_ResourceLayouts = std::move(device.m_ResourceLayouts);
+        m_ResourceSignatures = std::move(device.m_ResourceSignatures);
+        m_Samplers = std::move(device.m_Samplers);
+        m_Shaders = std::move(device.m_Shaders);
+        m_Swapchains = std::move(device.m_Swapchains);
+        m_IsValid = device.m_IsValid;
     }
 
     size_t RHI_VK_FUNC_IMPL(RHIDevice, GetQueueSlot)(RHIQueueType type)
     {
         switch (type)
         {
-            case RHIQueueType::Graphics:
-                return 0;
-            case RHIQueueType::Compute:
-                return 1;
-            case RHIQueueType::Transfer:
-                return 2;
-            case RHIQueueType::Present:
-                return 3;
+        case RHIQueueType::Graphics:
+            return 0;
+        case RHIQueueType::Compute:
+            return 1;
+        case RHIQueueType::Transfer:
+            return 2;
+        case RHIQueueType::Present:
+            return 3;
         }
 
         return 0;

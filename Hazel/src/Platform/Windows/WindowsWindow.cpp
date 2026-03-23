@@ -1,15 +1,10 @@
 #include "hzpch.h"
 #include "Platform/Windows/WindowsWindow.h"
-
-#include "Hazel/Core/Input.h"
-
 #include "Hazel/Events/ApplicationEvent.h"
 #include "Hazel/Events/MouseEvent.h"
 #include "Hazel/Events/KeyEvent.h"
-
 #include "Hazel/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLContext.h"
 
 namespace Hazel {
 	
@@ -24,14 +19,14 @@ namespace Hazel {
 	{
 		HZ_PROFILE_FUNCTION();
 
-		Init(props);
+        WindowsWindow::Init(props);
 	}
 
 	WindowsWindow::~WindowsWindow()
 	{
 		HZ_PROFILE_FUNCTION();
 
-		Shutdown();
+        WindowsWindow::Shutdown();
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
@@ -52,18 +47,14 @@ namespace Hazel {
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
 
+		if (Renderer::GetAPI() == RendererAPI::API::Vulkan)
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 		{
 			HZ_PROFILE_SCOPE("glfwCreateWindow");
-		#if defined(HZ_DEBUG)
-			if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
-				glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-		#endif
 			m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
 			++s_GLFWWindowCount;
 		}
-
-		m_Context = GraphicsContext::Create(m_Window);
-		m_Context->Init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
@@ -177,7 +168,6 @@ namespace Hazel {
 		HZ_PROFILE_FUNCTION();
 
 		glfwPollEvents();
-		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVSync(bool enabled)

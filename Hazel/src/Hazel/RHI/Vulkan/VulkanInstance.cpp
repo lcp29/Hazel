@@ -69,38 +69,52 @@ namespace Hazel
         m_DebugCallbackContext.callback = desc.debugMessageCallback;
         m_DebugCallbackContext.userData = nullptr;
 
-        auto instance = builder.set_app_name(desc.appName.c_str())
+        auto instanceBuilder = builder.set_app_name(desc.appName.c_str())
                 .require_api_version(1, 3, 0)
                 .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
                 .set_engine_name(desc.engineName.c_str())
                 .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
                 .enable_validation_layers(desc.useValidation)
                 .add_debug_messenger_severity(VulkanConvertDebugMessageSeverity(desc.debugMessageSeverity))
-                .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType))
-                .set_debug_callback_user_data_pointer(&m_DebugCallbackContext)
-                .set_debug_callback(
-                    [](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-                       VkDebugUtilsMessageTypeFlagsEXT type,
-                       const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
-                       void *callbackContext) -> VkBool32
-                    {
-                        if (!callbackContext)
-                        {
-                            return VK_FALSE;
-                        }
+                .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType));
 
-                        auto *context = static_cast<VulkanDebugMessageContext *>(callbackContext);
-                        DebugMessage message{};
-                        message.backend = RHIBackend::Vulkan;
-                        message.severity = severity;
-                        message.type = type;
-                        message.messageIdNumber = callbackData->messageIdNumber;
-                        message.messageIdName = callbackData->pMessageIdName;
-                        message.message = callbackData->pMessage;
-                        context->callback(message, context->userData);
-                        return VK_FALSE;
-                    })
-                .build();
+        if (desc.useValidation)
+        {
+            instanceBuilder.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
+                    .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
+        }
+
+        if (desc.useCustomDebugMessenger)
+        {
+            instanceBuilder.set_debug_callback_user_data_pointer(&m_DebugCallbackContext)
+                    .set_debug_callback(
+                        [](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                           VkDebugUtilsMessageTypeFlagsEXT type,
+                           const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+                           void *callbackContext) -> VkBool32
+                        {
+                            if (!callbackContext)
+                            {
+                                return VK_FALSE;
+                            }
+
+                            auto *context = static_cast<VulkanDebugMessageContext *>(callbackContext);
+                            DebugMessage message{};
+                            message.backend = RHIBackend::Vulkan;
+                            message.severity = severity;
+                            message.type = type;
+                            message.messageIdNumber = callbackData->messageIdNumber;
+                            message.messageIdName = callbackData->pMessageIdName;
+                            message.message = callbackData->pMessage;
+                            context->callback(message, context->userData);
+                            return VK_FALSE;
+                        });
+        } else
+        {
+            instanceBuilder.use_default_debug_messenger();
+        }
+
+        auto instance = instanceBuilder.build();
 
         if (!instance.has_value())
         {
@@ -115,6 +129,19 @@ namespace Hazel
         }
 
         m_IsValid = true;
+    }
+
+    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(RHIInstance &&instance) noexcept
+    {
+        m_Instance = instance.m_Instance;
+        m_InstanceDesc = instance.m_InstanceDesc;
+        m_DebugCallbackContext = instance.m_DebugCallbackContext;
+        m_DebugMessenger = instance.m_DebugMessenger;
+        m_DynamicLoader = instance.m_DynamicLoader;
+        m_Devices = std::move(instance.m_Devices);
+        m_Surfaces = std::move(instance.m_Surfaces);
+        m_DeletionQueue = std::move(instance.m_DeletionQueue);
+        m_IsValid = instance.m_IsValid;
     }
 
     RHI_VK_FUNC_IMPL(RHIInstance, ~RHIInstanceImpl)()
@@ -136,7 +163,7 @@ namespace Hazel
                 device->ReleaseFromOwner();
             }
         }
-        m_Devices.clear();
+        m_Devices.Clear();
 
         for (const auto &surface: m_Surfaces)
         {
@@ -145,7 +172,7 @@ namespace Hazel
                 surface->ReleaseWithoutUnregister();
             }
         }
-        m_Surfaces.clear();
+        m_Surfaces.Clear();
 
         FlushDeletionQueue();
 
@@ -166,21 +193,21 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIInstance, RegisterDevice)(std::unique_ptr<RHIDevice> device)
     {
-        RegisterOwnedObject(m_Devices, std::move(device));
+        m_Devices.Register(std::move(device));
     }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice *device)
     {
-        UnregisterOwnedObject(m_Devices, device);
+        m_Devices.Unregister(device);
     }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, RegisterSurface)(std::unique_ptr<RHISurface> surface)
     {
-        RegisterOwnedObject(m_Surfaces, std::move(surface));
+        m_Surfaces.Register(std::move(surface));
     }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface *surface)
     {
-        UnregisterOwnedObject(m_Surfaces, surface);
+        m_Surfaces.Unregister(surface);
     }
 } // namespace Hazel

@@ -9,6 +9,49 @@
 #include "Flags.h"
 #include "RHIBase.h"
 
+#if defined(HZ_DEBUG)
+    #define HZ_RHI_DEBUG_FAIL_IF(condition) \
+        do                                  \
+        {                                   \
+            if (condition)                  \
+            {                               \
+                return false;               \
+            }                               \
+        } while (0)
+
+    #define HZ_RHI_DEBUG_RETURN_NULL_IF(condition) \
+        do                                         \
+        {                                          \
+            if (condition)                         \
+            {                                      \
+                return nullptr;                    \
+            }                                      \
+        } while (0)
+
+    #define HZ_RHI_DEBUG_RETURN_IF(condition) \
+        do                                    \
+        {                                     \
+            if (condition)                    \
+            {                                 \
+                return;                       \
+            }                                 \
+        } while (0)
+
+    #define HZ_RHI_DEBUG_RETURN_VALUE_IF(condition, value) \
+        do                                                 \
+        {                                                  \
+            if (condition)                                 \
+            {                                              \
+                return value;                              \
+            }                                              \
+        } while (0)
+#else
+    #define HZ_RHI_DEBUG_FAIL_IF(condition) do { } while (0)
+    #define HZ_RHI_DEBUG_RETURN_NULL_IF(condition) do { } while (0)
+    #define HZ_RHI_DEBUG_RETURN_IF(condition) do { } while (0)
+    #define HZ_RHI_DEBUG_RETURN_VALUE_IF(condition, value) do { } while (0)
+#endif
+
 namespace Hazel
 {
     struct Version

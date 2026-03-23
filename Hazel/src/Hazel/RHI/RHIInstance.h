@@ -17,6 +17,7 @@ namespace Hazel
         Version engineVersion = {1, 0, 0};
 
         bool useValidation = false;
+        bool useCustomDebugMessenger = false;
         DebugMessageType debugMessageType = DebugMessageTypeFlagBits::General;
         DebugMessageSeverity debugMessageSeverity = DebugMessageSeverityFlagBits::Warning;
 

@@ -54,7 +54,9 @@ namespace Hazel
               m_RequiredVulkanFeatures.supportGpuAddress &&
               m_RequiredVulkanFeatures.supportDescriptorPartiallyBound &&
               m_RequiredVulkanFeatures.supportTimelineSemaphore &&
-              m_RequiredVulkanFeatures.supportSynchronization2))
+              m_RequiredVulkanFeatures.supportSynchronization2 &&
+              m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics &&
+              m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics))
         {
             return false;
         }
@@ -141,5 +143,8 @@ namespace Hazel
                 supportsVulkan12 && vulkan12Features.timelineSemaphore;
         m_RequiredVulkanFeatures.supportSynchronization2 =
                 supportsVulkan13 && vulkan13Features.synchronization2;
+        m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics = features2.features.fragmentStoresAndAtomics;
+        m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics = features2.features.
+                vertexPipelineStoresAndAtomics;
     }
 } // Hazel

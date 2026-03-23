@@ -99,23 +99,23 @@ namespace Hazel
                 commandBuffer->ReleaseWithoutUnregister();
             }
         }
-        m_CommandBuffers.clear();
+        m_CommandBuffers.Clear();
 
         const auto device = m_Device;
         const auto commandPool = m_CommandPool;
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, commandPool, pendingOperations = std::move(pendingOperations)]() mutable
-            {
-                if (device && commandPool)
+            m_DeviceOwner->EnqueueDeletion(
+                [device, commandPool, pendingOperations = std::move(pendingOperations)]() mutable
                 {
-                    DeletionQueue::Execute(std::move(pendingOperations));
-                    device.destroyCommandPool(commandPool);
-                }
-            });
-        }
-        else if (device && commandPool)
+                    if (device && commandPool)
+                    {
+                        DeletionQueue::Execute(std::move(pendingOperations));
+                        device.destroyCommandPool(commandPool);
+                    }
+                });
+        } else if (device && commandPool)
         {
             DeletionQueue::Execute(std::move(pendingOperations));
             device.destroyCommandPool(commandPool);
@@ -142,7 +142,7 @@ namespace Hazel
                 commandBuffer->ReleaseImmediateWithoutUnregister();
             }
         }
-        m_CommandBuffers.clear();
+        m_CommandBuffers.Clear();
 
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         DeletionQueue::Execute(std::move(pendingOperations));
@@ -166,11 +166,11 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, RegisterCommandBuffer)(std::unique_ptr<RHICommandBuffer> commandBuffer)
     {
-        RegisterOwnedObject(m_CommandBuffers, std::move(commandBuffer));
+        m_CommandBuffers.Register(std::move(commandBuffer));
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, UnregisterCommandBuffer)(RHICommandBuffer *commandBuffer)
     {
-        UnregisterOwnedObject(m_CommandBuffers, commandBuffer);
+        m_CommandBuffers.Unregister(commandBuffer);
     }
 } // namespace Hazel

@@ -11,6 +11,7 @@ namespace Hazel
     enum class RHIFormat
     {
         Undefined,
+        R32SInt,
         R32SFloat,
         RG32SFloat,
         RGB32SFloat,
@@ -62,6 +63,8 @@ namespace Hazel
         ShaderRead,
         ShaderWrite,
         ColorAttachment,
+        DepthAttachment,
+        StencilAttachment,
         DepthStencilAttachment,
         Present
     };

@@ -20,10 +20,18 @@ namespace Hazel {
 	class Project
 	{
 	public:
+		static bool HasActive() { return static_cast<bool>(s_ActiveProject); }
+
 		static const std::filesystem::path& GetProjectDirectory()
 		{
 			HZ_CORE_ASSERT(s_ActiveProject);
 			return s_ActiveProject->m_ProjectDirectory;
+		}
+
+		static const std::filesystem::path& GetProjectFilePath()
+		{
+			HZ_CORE_ASSERT(s_ActiveProject);
+			return s_ActiveProject->m_ProjectFilePath;
 		}
 
 		static std::filesystem::path GetAssetDirectory()
@@ -46,9 +54,11 @@ namespace Hazel {
 		static Ref<Project> New();
 		static Ref<Project> Load(const std::filesystem::path& path);
 		static bool SaveActive(const std::filesystem::path& path);
+		static void CloseActive() { s_ActiveProject.reset(); }
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;
+		std::filesystem::path m_ProjectFilePath;
 
 		inline static Ref<Project> s_ActiveProject;
 	};

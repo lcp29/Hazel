@@ -1,185 +1,325 @@
 #pragma once
 
-#include "SceneCamera.h"
 #include "Hazel/Core/UUID.h"
-#include "Hazel/Renderer/Texture.h"
-#include "Hazel/Renderer/Font.h"
+#include "Hazel/Scripting/ScriptEngine.h"
+#include "Hazel/Renderer/Camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-namespace Hazel {
+#include <yaml-cpp/yaml.h>
 
-	struct IDComponent
-	{
-		UUID ID;
 
-		IDComponent() = default;
-		IDComponent(const IDComponent&) = default;
-		IDComponent(const UUID& id): ID(id) {}
-	};
+namespace YAML
+{
+    template <>
+    struct convert<glm::vec2>
+    {
+        static Node encode(const glm::vec2& rhs)
+        {
+            Node node;
+            node.push_back(rhs.x);
+            node.push_back(rhs.y);
+            node.SetStyle(EmitterStyle::Flow);
+            return node;
+        }
 
-	struct TagComponent
-	{
-		std::string Tag;
+        static bool decode(const Node& node, glm::vec2& rhs)
+        {
+            if (!node.IsSequence() || node.size() != 2)
+                return false;
 
-		TagComponent() = default;
-		TagComponent(const TagComponent&) = default;
-		TagComponent(const std::string& tag)
-			: Tag(tag) {}
-	};
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            return true;
+        }
+    };
 
-	struct TransformComponent
-	{
-		glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
-		glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
-		glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
+    template <>
+    struct convert<glm::vec3>
+    {
+        static Node encode(const glm::vec3& rhs)
+        {
+            Node node;
+            node.push_back(rhs.x);
+            node.push_back(rhs.y);
+            node.push_back(rhs.z);
+            node.SetStyle(EmitterStyle::Flow);
+            return node;
+        }
 
-		TransformComponent() = default;
-		TransformComponent(const TransformComponent&) = default;
-		TransformComponent(const glm::vec3& translation)
-			: Translation(translation) {}
+        static bool decode(const Node& node, glm::vec3& rhs)
+        {
+            if (!node.IsSequence() || node.size() != 3)
+                return false;
 
-		glm::mat4 GetTransform() const
-		{
-			glm::mat4 rotation = glm::toMat4(glm::quat(Rotation));
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            rhs.z = node[2].as<float>();
+            return true;
+        }
+    };
 
-			return glm::translate(glm::mat4(1.0f), Translation)
-				* rotation
-				* glm::scale(glm::mat4(1.0f), Scale);
-		}
-	};
+    template <>
+    struct convert<glm::vec4>
+    {
+        static Node encode(const glm::vec4& rhs)
+        {
+            Node node;
+            node.push_back(rhs.x);
+            node.push_back(rhs.y);
+            node.push_back(rhs.z);
+            node.push_back(rhs.w);
+            node.SetStyle(EmitterStyle::Flow);
+            return node;
+        }
 
-	struct SpriteRendererComponent
-	{
-		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
-		Ref<Texture2D> Texture;
-		float TilingFactor = 1.0f;
+        static bool decode(const Node& node, glm::vec4& rhs)
+        {
+            if (!node.IsSequence() || node.size() != 4)
+                return false;
 
-		SpriteRendererComponent() = default;
-		SpriteRendererComponent(const SpriteRendererComponent&) = default;
-		SpriteRendererComponent(const glm::vec4& color)
-			: Color(color) {}
-	};
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            rhs.z = node[2].as<float>();
+            rhs.w = node[3].as<float>();
+            return true;
+        }
+    };
 
-	struct CircleRendererComponent
-	{
-		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
-		float Thickness = 1.0f;
-		float Fade = 0.005f;
+    template <>
+    struct convert<Hazel::UUID>
+    {
+        static Node encode(const Hazel::UUID& uuid)
+        {
+            Node node;
+            node.push_back((uint64_t)uuid);
+            return node;
+        }
 
-		CircleRendererComponent() = default;
-		CircleRendererComponent(const CircleRendererComponent&) = default;
-	};
+        static bool decode(const Node& node, Hazel::UUID& uuid)
+        {
+            uuid = node.as<uint64_t>();
+            return true;
+        }
+    };
+}
 
-	struct CameraComponent
-	{
-		SceneCamera Camera;
-		bool Primary = true; // TODO: think about moving to Scene
-		bool FixedAspectRatio = false;
+namespace Hazel
+{
+    struct IDComponent
+    {
+        UUID ID;
 
-		CameraComponent() = default;
-		CameraComponent(const CameraComponent&) = default;
-	};
+        IDComponent() = default;
+        IDComponent(const IDComponent&) = default;
+        IDComponent(const UUID& id) : ID(id) {}
 
-	struct ScriptComponent
-	{
-		std::string ClassName;
+        YAML::Node Serialize() const
+        {
+            YAML::Node node;
+            node["ID"] = ID;
+            return node;
+        }
 
-		ScriptComponent() = default;
-		ScriptComponent(const ScriptComponent&) = default;
-	};
+        static IDComponent Deserialize(const YAML::Node& node)
+        {
+            IDComponent component;
+            component.ID = node["ID"].as<UUID>();
+            return component;
+        }
+    };
 
-	// Forward declaration
-	class ScriptableEntity;
+    struct TagComponent
+    {
+        std::string tag;
 
-	struct NativeScriptComponent
-	{
-		ScriptableEntity* Instance = nullptr;
+        TagComponent() = default;
+        TagComponent(const TagComponent&) = default;
 
-		ScriptableEntity*(*InstantiateScript)();
-		void (*DestroyScript)(NativeScriptComponent*);
+        TagComponent(const std::string& tag)
+            : tag(tag) {}
 
-		template<typename T>
-		void Bind()
-		{
-			InstantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
-			DestroyScript = [](NativeScriptComponent* nsc) { delete nsc->Instance; nsc->Instance = nullptr; };
-		}
-	};
+        YAML::Node Serialize() const
+        {
+            YAML::Node node;
+            node["Tag"] = tag;
+            return node;
+        }
 
-	// Physics
+        static TagComponent Deserialize(const YAML::Node& node)
+        {
+            TagComponent component;
+            component.tag = node["Tag"].as<std::string>();
+            return component;
+        }
+    };
 
-	struct Rigidbody2DComponent
-	{
-		enum class BodyType { Static = 0, Dynamic, Kinematic };
-		BodyType Type = BodyType::Static;
-		bool FixedRotation = false;
+    struct TransformComponent
+    {
+        glm::vec3 translation = {0.0f, 0.0f, 0.0f};
+        glm::vec3 rotation = {0.0f, 0.0f, 0.0f};
+        glm::vec3 scale = {1.0f, 1.0f, 1.0f};
 
-		// Storage for runtime
-		void* RuntimeBody = nullptr;
+        TransformComponent() = default;
+        TransformComponent(const TransformComponent&) = default;
 
-		Rigidbody2DComponent() = default;
-		Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
-	};
+        TransformComponent(const glm::vec3& translation)
+            : translation(translation) {}
 
-	struct BoxCollider2DComponent
-	{
-		glm::vec2 Offset = { 0.0f, 0.0f };
-		glm::vec2 Size = { 0.5f, 0.5f };
+        TransformComponent(const glm::mat4& transform)
+        {
+            SetTransform(transform);
+        }
 
-		// TODO(Yan): move into physics material in the future maybe
-		float Density = 1.0f;
-		float Friction = 0.5f;
-		float Restitution = 0.0f;
-		float RestitutionThreshold = 0.5f;
+        glm::mat4 GetTransform() const
+        {
+            glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotationMatrix));
 
-		// Storage for runtime
-		void* RuntimeFixture = nullptr;
+            return glm::translate(glm::mat4(1.0f), translation)
+                * rotationMatrix
+                * glm::scale(glm::mat4(1.0f), scale);
+        }
 
-		BoxCollider2DComponent() = default;
-		BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
-	};
+        void SetTransform(const glm::mat4& transform)
+        {
+            glm::quat orientation;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            glm::decompose(transform, scale, orientation, translation, skew, perspective);
+            rotation = glm::eulerAngles(orientation);
+        }
 
-	struct CircleCollider2DComponent
-	{
-		glm::vec2 Offset = { 0.0f, 0.0f };
-		float Radius = 0.5f;
+        YAML::Node Serialize() const
+        {
+            YAML::Node node;
+            node["Translation"] = translation;
+            node["Rotation"] = rotation;
+            node["Scale"] = scale;
+            return node;
+        }
 
-		// TODO(Yan): move into physics material in the future maybe
-		float Density = 1.0f;
-		float Friction = 0.5f;
-		float Restitution = 0.0f;
-		float RestitutionThreshold = 0.5f;
+        static TransformComponent Deserialize(const YAML::Node& node)
+        {
+            TransformComponent component;
+            component.translation = node["Translation"].as<glm::vec3>();
+            component.rotation = node["Rotation"].as<glm::vec3>();
+            component.scale = node["Scale"].as<glm::vec3>();
+            return component;
+        }
+    };
 
-		// Storage for runtime
-		void* RuntimeFixture = nullptr;
+    struct EntityRelationshipComponent
+    {
+        entt::entity parent = entt::null;
+        entt::entity firstChild = entt::null;
+        entt::entity nextSibling = entt::null;
+        entt::entity prevSibling = entt::null;
+        uint32_t childCount = 0;
 
-		CircleCollider2DComponent() = default;
-		CircleCollider2DComponent(const CircleCollider2DComponent&) = default;
-	};
+        YAML::Node Serialize(entt::registry& registry) const
+        {
+            YAML::Node node;
+            node["Parent"] = registry.get<UUID>(parent);
+            node["FirstChild"] = registry.get<UUID>(firstChild);
+            node["NextSibling"] = registry.get<UUID>(nextSibling);
+            node["PrevSibling"] = registry.get<UUID>(prevSibling);
+            node["ChildCount"] = childCount;
+            return node;
+        }
 
-	struct TextComponent
-	{
-		std::string TextString;
-		Ref<Font> FontAsset = Font::GetDefault();
-		glm::vec4 Color{ 1.0f };
-		float Kerning = 0.0f;
-		float LineSpacing = 0.0f;
-	};
+        // Warning: the UUID map should already be established
+        static EntityRelationshipComponent Deserialize(const YAML::Node& node,
+                                                       std::unordered_map<UUID, entt::entity>& uuidToEntityMap)
+        {
+            EntityRelationshipComponent component;
+            component.parent = uuidToEntityMap[node["Parent"].as<UUID>()];
+            component.firstChild = uuidToEntityMap[node["FirstChild"].as<UUID>()];
+            component.nextSibling = uuidToEntityMap[node["NextSibling"].as<UUID>()];
+            component.prevSibling = uuidToEntityMap[node["PrevSibling"].as<UUID>()];
+            component.childCount = node["ChildCount"].as<uint32_t>();
+            return component;
+        }
+    };
 
-	template<typename... Component>
-	struct ComponentGroup
-	{
-	};
+    struct CameraComponent
+    {
+        Camera camera;
+        bool isViewportCamera = false;
+        bool isPrimary = false;
+        int priority = 0; // the lower, rendered earlier
 
-	using AllComponents = 
-		ComponentGroup<TransformComponent, SpriteRendererComponent,
-			CircleRendererComponent, CameraComponent, ScriptComponent,
-			NativeScriptComponent, Rigidbody2DComponent, BoxCollider2DComponent,
-			CircleCollider2DComponent, TextComponent>;
+        CameraComponent() = default;
+        CameraComponent(const CameraComponent&) = default;
 
+        YAML::Node Serialize() const
+        {
+            YAML::Node node;
+            node["Camera"] = camera.Serialize();
+            node["IsPrimary"] = isPrimary;
+            node["IsViewportCamera"] = isViewportCamera;
+            node["Priority"] = priority;
+            return node;
+        }
+
+        static CameraComponent Deserialize(const YAML::Node& node)
+        {
+            CameraComponent component;
+            component.camera = Camera::Deserialize(node["Camera"]);
+            component.isPrimary = node["IsPrimary"].as<bool>();
+            component.isViewportCamera = node["IsViewportCamera"].as<bool>();
+            component.priority = node["Priority"].as<int>();
+            return component;
+        }
+    };
+
+    struct MeshRendererComponent
+    {
+        int dummyInt;
+        YAML::Node Serialize() const { return YAML::Node(); }
+        static MeshRendererComponent Deserialize(const YAML::Node& node) { return MeshRendererComponent(); }
+    };
+
+    struct ScriptComponent
+    {
+        std::string className;
+
+        ScriptComponent() = default;
+        ScriptComponent(const ScriptComponent&) = default;
+
+        YAML::Node Serialize(Entity& entity) const;
+        static ScriptComponent Deserialize(const YAML::Node& node, Entity& entity);
+    };
+
+    // Forward declaration
+    class ScriptableEntity;
+
+    struct NativeScriptComponent
+    {
+        ScriptableEntity* instance = nullptr;
+
+        ScriptableEntity*(*instantiateScript)();
+        void (*destroyScript)(NativeScriptComponent*);
+
+        template <typename T>
+        void Bind()
+        {
+            instantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
+            destroyScript = [](NativeScriptComponent* nsc)
+            {
+                delete nsc->instance;
+                nsc->instance = nullptr;
+            };
+        }
+    };
+
+    template <typename... Component>
+    struct ComponentGroup {};
+
+    using AllComponents =
+    ComponentGroup<TransformComponent, MeshRendererComponent, CameraComponent, ScriptComponent, NativeScriptComponent>;
 }

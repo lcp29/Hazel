@@ -25,8 +25,9 @@ namespace Hazel
         void Release();
 
         explicit RHIInstanceImpl(const RHIInstanceDesc &desc);
-        RHIInstanceImpl(const RHIInstanceImpl &) = delete;
-        RHIInstanceImpl &operator=(const RHIInstanceImpl &) = delete;
+        RHIInstanceImpl(const RHIInstance &) = delete;
+        RHIInstanceImpl &operator=(const RHIInstance &) = delete;
+        RHIInstanceImpl(RHIInstance &&) noexcept;
         ~RHIInstanceImpl();
         vk::Instance GetHandle() const { return m_Instance; }
 

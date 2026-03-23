@@ -1,0 +1,9 @@
+Scene: Untitled Scene
+Entities:
+  []
+ViewportCamera:
+  ProjectionType: Perspective
+  FovX: 45
+  AspectRatio: 1.778
+  NearClip: 0.01
+  FarClip: 1000

@@ -6,6 +6,7 @@
 
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
+#include "VulkanImage.h"
 #include "VulkanImageView.h"
 #include "VulkanQueue.h"
 #include "VulkanSurface.h"
@@ -20,11 +21,22 @@ namespace Hazel
         vk::SurfaceFormatKHR ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &formats, RHIFormat format)
         {
             const auto requestedFormat = VulkanConvertFormat(format);
-            for (const auto &surfaceFormat: formats)
+            static const std::vector preferredSurfaceFormats = {
+                requestedFormat,
+                vk::Format::eB8G8R8A8Unorm,
+                vk::Format::eB8G8R8A8Srgb,
+                vk::Format::eR8G8B8A8Unorm,
+                vk::Format::eR8G8B8A8Srgb
+            };
+
+            for (const auto &preferredFormat: preferredSurfaceFormats)
             {
-                if (surfaceFormat.format == requestedFormat)
+                for (const auto &surfaceFormat: formats)
                 {
-                    return surfaceFormat;
+                    if (surfaceFormat.format == preferredFormat)
+                    {
+                        return surfaceFormat;
+                    }
                 }
             }
 
@@ -72,6 +84,8 @@ namespace Hazel
 
         const auto surfaceFormat = ChooseSurfaceFormat(surfaceFormats, desc.format);
         const auto presentMode = ChoosePresentMode(presentModes, desc.mode);
+        m_Desc.format = VulkanConvertFormat(surfaceFormat.format);
+        m_Desc.mode = VulkanConvertSwapchainMode(presentMode);
 
         uint32_t minImageCount = desc.imageCount > 0 ? desc.imageCount : surfaceCapabilities.minImageCount;
         minImageCount = std::max(minImageCount, surfaceCapabilities.minImageCount);
@@ -125,14 +139,16 @@ namespace Hazel
             return;
         }
 
-        m_Images = m_Device.getSwapchainImagesKHR(m_Swapchain);
+        std::vector<vk::Image> swapchainImages = m_Device.getSwapchainImagesKHR(m_Swapchain);
         m_Format = VulkanConvertFormat(surfaceFormat.format);
-        m_ImageCount = static_cast<uint32_t>(m_Images.size());
-        if (m_Images.empty())
+        m_ImageCount = static_cast<uint32_t>(swapchainImages.size());
+        if (swapchainImages.empty())
         {
             return;
         }
 
+        m_Images.reserve(m_ImageCount);
+        m_ImageViews.reserve(m_ImageCount);
         m_ImageAvailableSemaphores.reserve(m_ImageCount);
         m_PresentSemaphores.reserve(m_ImageCount);
         for (uint32_t i = 0; i < m_ImageCount; i++)
@@ -155,26 +171,41 @@ namespace Hazel
             m_ImageAvailableSemaphores.push_back(imageAvailableSemaphore);
             m_PresentSemaphores.push_back(presentSemaphore);
 
-            m_ImageViews.push_back(std::make_unique<RHIImageView>());
-            auto imageView = m_ImageViews.back().get();
-            imageView->m_DeviceOwner = m_DeviceOwner;
-            imageView->m_SwapchainOwner = this;
-            imageView->m_ImageOwner = nullptr;
-            imageView->m_Desc.viewType = RHIImageViewType::Image2D;
-            imageView->m_Desc.format = m_Format;
-            imageView->m_Desc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
-            imageView->m_Desc.subresourceRange.levelCount = 1;
-            imageView->m_Desc.subresourceRange.layerCount = 1;
-            imageView->m_Desc.componentMapping.r = RHIImageViewComponent::Identity;
-            imageView->m_Desc.componentMapping.g = RHIImageViewComponent::Identity;
-            imageView->m_Desc.componentMapping.b = RHIImageViewComponent::Identity;
-            imageView->m_Desc.componentMapping.a = RHIImageViewComponent::Identity;
-            imageView->m_ImageView = CreateImageViewHandle(m_DeviceOwner, m_Images[i], imageView->m_Desc);
-            if (!imageView->m_ImageView)
+            RHIImageDesc imageDesc{};
+            imageDesc.width = extent.width;
+            imageDesc.height = extent.height;
+            imageDesc.depth = 1;
+            imageDesc.mipLevels = 1;
+            imageDesc.arrayLayers = 1;
+            imageDesc.format = m_Format;
+            imageDesc.usages = m_Desc.usages;
+            imageDesc.initialState = RHIImageResourceState::Undefined;
+
+            auto image = std::unique_ptr<RHIImage>(new RHIImage(m_DeviceOwner, imageDesc, swapchainImages[i], true));
+            if (!image || !image->IsValid())
             {
                 return;
             }
-            imageView->m_IsValid = true;
+
+            RHIImageViewDesc viewDesc{};
+            viewDesc.viewType = RHIImageViewType::Image2D;
+            viewDesc.format = m_Format;
+            viewDesc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
+            viewDesc.subresourceRange.levelCount = 1;
+            viewDesc.subresourceRange.layerCount = 1;
+            viewDesc.componentMapping.r = RHIImageViewComponent::Identity;
+            viewDesc.componentMapping.g = RHIImageViewComponent::Identity;
+            viewDesc.componentMapping.b = RHIImageViewComponent::Identity;
+            viewDesc.componentMapping.a = RHIImageViewComponent::Identity;
+
+            RHIImageView* imageView = image->CreateView(viewDesc);
+            if (!imageView)
+            {
+                return;
+            }
+
+            m_ImageViews.push_back(imageView);
+            m_Images.push_back(std::move(image));
         }
 
         m_IsValid = true;
@@ -223,13 +254,22 @@ namespace Hazel
         };
     }
 
-    const RHIImageView *RHI_VK_FUNC_IMPL(RHISwapchain, FetchImageView)(uint32_t frameNumber) const
+    RHIImage *RHI_VK_FUNC_IMPL(RHISwapchain, FetchImage)(uint32_t frameNumber) const
+    {
+        if (!m_IsValid || frameNumber >= m_Images.size())
+        {
+            return nullptr;
+        }
+        return m_Images[frameNumber].get();
+    }
+
+    RHIImageView *RHI_VK_FUNC_IMPL(RHISwapchain, FetchImageView)(uint32_t frameNumber) const
     {
         if (!m_IsValid || frameNumber >= m_ImageViews.size())
         {
             return nullptr;
         }
-        return m_ImageViews[frameNumber].get();
+        return m_ImageViews[frameNumber];
     }
 
     bool RHI_VK_FUNC_IMPL(RHISwapchain, SubmitFrame)(uint32_t frameNumber, const std::vector<RHISyncPoint> &waitSyncPoints)
@@ -269,17 +309,24 @@ namespace Hazel
             return;
         }
 
-        for (auto &imageView : m_ImageViews)
-        {
-            if (imageView)
-            {
-                imageView->ReleaseWithoutUnregister();
-            }
-        }
-        m_ImageViews.clear();
-
         auto *deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
+
+        if (deviceOwner)
+        {
+            deviceOwner->UnregisterSwapchain(this);
+        }
+    }
+
+    void RHISwapchainImpl<RHIBackend::Vulkan>::ReleaseImmediate()
+    {
+        if (!m_IsValid && !m_Swapchain)
+        {
+            return;
+        }
+
+        auto *deviceOwner = m_DeviceOwner;
+        ReleaseImmediateWithoutUnregister();
 
         if (deviceOwner)
         {
@@ -298,14 +345,14 @@ namespace Hazel
         const auto swapchain = m_Swapchain;
         auto imageAvailableSemaphores = std::move(m_ImageAvailableSemaphores);
         auto presentSemaphores = std::move(m_PresentSemaphores);
-
-        for (const auto &imageView: m_ImageViews)
+        for (auto &image: m_Images)
         {
-            if (imageView)
+            if (image)
             {
-                imageView->ReleaseWithoutUnregister();
+                image->ReleaseWithoutUnregister();
             }
         }
+        m_Images.clear();
         m_ImageViews.clear();
 
         if (m_DeviceOwner)
@@ -360,7 +407,6 @@ namespace Hazel
             }
         }
 
-        m_Images.clear();
         m_Swapchain = VK_NULL_HANDLE;
         m_IsValid = false;
         m_DeviceOwner = nullptr;
@@ -370,11 +416,80 @@ namespace Hazel
         m_NextAcquireSemaphoreIndex = 0;
     }
 
-    void RHI_VK_FUNC_IMPL(RHISwapchain, UnregisterImageView)(RHIImageView *view)
+    void RHI_VK_FUNC_IMPL(RHISwapchain, ReleaseImmediateWithoutUnregister)()
     {
-        std::erase_if(m_ImageViews, [view](const std::unique_ptr<RHIImageView> &imageView)
+        if (!m_IsValid && !m_Swapchain)
         {
-            return imageView.get() == view;
-        });
+            return;
+        }
+
+        const auto device = m_Device;
+        const auto swapchain = m_Swapchain;
+        auto imageAvailableSemaphores = std::move(m_ImageAvailableSemaphores);
+        auto presentSemaphores = std::move(m_PresentSemaphores);
+        for (auto &image: m_Images)
+        {
+            if (image)
+            {
+                image->ReleaseImmediateWithoutUnregister();
+            }
+        }
+        m_Images.clear();
+        m_ImageViews.clear();
+
+        if (m_DeviceOwner)
+        {
+            if (device)
+            {
+                for (const auto semaphore: imageAvailableSemaphores)
+                {
+                    if (semaphore)
+                    {
+                        device.destroySemaphore(semaphore);
+                    }
+                }
+                for (const auto semaphore: presentSemaphores)
+                {
+                    if (semaphore)
+                    {
+                        device.destroySemaphore(semaphore);
+                    }
+                }
+                if (swapchain)
+                {
+                    device.destroySwapchainKHR(swapchain);
+                }
+            }
+        }
+        else if (device)
+        {
+            for (const auto semaphore: imageAvailableSemaphores)
+            {
+                if (semaphore)
+                {
+                    device.destroySemaphore(semaphore);
+                }
+            }
+            for (const auto semaphore: presentSemaphores)
+            {
+                if (semaphore)
+                {
+                    device.destroySemaphore(semaphore);
+                }
+            }
+            if (swapchain)
+            {
+                device.destroySwapchainKHR(swapchain);
+            }
+        }
+
+        m_Swapchain = VK_NULL_HANDLE;
+        m_IsValid = false;
+        m_DeviceOwner = nullptr;
+        m_ImageCount = 0;
+        m_Format = RHIFormat::Undefined;
+        m_Device = VK_NULL_HANDLE;
+        m_NextAcquireSemaphoreIndex = 0;
     }
+
 } // namespace Hazel

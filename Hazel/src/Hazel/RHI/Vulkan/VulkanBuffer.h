@@ -37,9 +37,22 @@ namespace Hazel
         VmaAllocation GetAllocation() const { return m_Allocation; }
         ~RHIBufferImpl();
 
+        class Factory
+        {
+        public:
+            static RHIBuffer *CreateFromRawData(RHIDevice *device,
+                                                RHICommandBuffer *cmd,
+                                                const RHIBufferDesc &desc,
+                                                const void *data,
+                                                size_t dataSize,
+                                                RHIQueue *queue = nullptr,
+                                                bool staged = false);
+        };
+
     private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIBufferViewImpl<RHIBackend::Vulkan>;
+        friend class Factory;
 
         RHIBufferImpl(RHIDevice *deviceOwner, VulkanMemoryAllocator *allocatorOwner, const RHIBufferDesc &desc);
 
