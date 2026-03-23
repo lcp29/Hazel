@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Hazel/Renderer/RendererAPI.h"
-#include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/Camera.h"
+#include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/Renderer/RendererAPI.h"
 
 namespace Hazel
 {
@@ -32,7 +32,11 @@ namespace Hazel
         void EndSwapchainTargetRendering();
         // void Render(RenderScene* renderScene, Camera& camera);
         void Render(Camera& camera);
-        static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
+
+        static RendererAPI::API GetAPI()
+        {
+            return RendererAPI::GetAPI();
+        }
 
         void OnResize();
         void OnViewportResize(uint32_t width, uint32_t height);
@@ -40,22 +44,68 @@ namespace Hazel
         void BeginFrame();
         void EndFrame();
 
-        GraphicsContext* GetGraphicsContext() const { return m_GraphicsContext; }
-        RHIAdapter GetAdapter() const { return m_GraphicsContext->GetAdapter(); }
-        RHIDevice* GetDevice() const { return m_Device; }
-        RHIInstance* GetInstance() const { return m_Instance; }
-        RHISwapchain* GetSwapchain() const { return m_Swapchain; }
-        FrameData& GetFrameData(uint64_t frameIndex) { return m_Frames[frameIndex % m_MaxFramesInFlight]; }
-        uint64_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
-        uint64_t GetCurrentFrameInFlightIndex() const { return m_CurrentFrame % m_MaxFramesInFlight; }
-        FrameData& GetCurrentFrameData() { return m_Frames[GetCurrentFrameInFlightIndex()]; }
-        int GetMaxFramesInFlight() const { return m_MaxFramesInFlight; }
-        RenderTexture* GetDefaultRenderTexture() const { return m_DefaultRenderTexture.get(); }
+        GraphicsContext* GetGraphicsContext() const
+        {
+            return m_GraphicsContext;
+        }
+
+        RHIAdapter GetAdapter() const
+        {
+            return m_GraphicsContext->GetAdapter();
+        }
+
+        RHIDevice* GetDevice() const
+        {
+            return m_Device;
+        }
+
+        RHIInstance* GetInstance() const
+        {
+            return m_Instance;
+        }
+
+        RHISwapchain* GetSwapchain() const
+        {
+            return m_Swapchain;
+        }
+
+        FrameData& GetFrameData(uint64_t frameIndex)
+        {
+            return m_Frames[frameIndex % m_MaxFramesInFlight];
+        }
+
+        uint64_t GetCurrentFrameIndex() const
+        {
+            return m_CurrentFrame;
+        }
+
+        uint64_t GetCurrentFrameInFlightIndex() const
+        {
+            return m_CurrentFrame % m_MaxFramesInFlight;
+        }
+
+        FrameData& GetCurrentFrameData()
+        {
+            return m_Frames[GetCurrentFrameInFlightIndex()];
+        }
+
+        int GetMaxFramesInFlight() const
+        {
+            return m_MaxFramesInFlight;
+        }
+
+        RenderTexture* GetDefaultRenderTexture() const
+        {
+            return m_DefaultRenderTexture.get();
+        }
 
         RenderTexture* AddRenderTexture(const RenderTextureDesc& desc);
         void RemoveRenderTexture(RenderTexture* renderTexture);
 
-        void Step() { m_CurrentFrame++; }
+        void Step()
+        {
+            m_CurrentFrame++;
+        }
 
     private:
         void CreatePerFrameData();
@@ -83,4 +133,4 @@ namespace Hazel
         std::unique_ptr<RenderTexture> m_DefaultRenderTexture;
         RHIOwnerSet<RenderTexture> m_OffscreenRenderTextures;
     };
-}
+} // namespace Hazel

@@ -10,13 +10,15 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIBufferView, RHIBufferViewImpl)(RHIDevice *device,
-                                                       RHIBuffer *buffer,
-                                                       const RHIBufferViewDesc &desc)
+    RHI_VK_FUNC_IMPL(RHIBufferView, RHIBufferViewImpl)(RHIDevice* device,
+                                                       RHIBuffer* buffer,
+                                                       const RHIBufferViewDesc& desc,
+                                                       bool isDetached)
     {
         m_DeviceOwner = device;
         m_BufferOwner = buffer;
         m_Desc = desc;
+        m_IsDetached = isDetached;
 
         if (!m_DeviceOwner || !m_BufferOwner || desc.format == RHIFormat::Undefined)
         {
@@ -40,8 +42,11 @@ namespace Hazel
             return;
         }
 
-        std::unique_ptr<RHIBufferView> self(this);
-        m_BufferOwner->RegisterView(std::move(self));
+        if (!m_IsDetached)
+        {
+            std::unique_ptr<RHIBufferView> self(this);
+            m_BufferOwner->RegisterView(std::move(self));
+        }
         m_IsValid = true;
     }
 
@@ -57,9 +62,9 @@ namespace Hazel
             return;
         }
 
-        auto *bufferOwner = m_BufferOwner;
+        auto* bufferOwner = m_BufferOwner;
         ReleaseWithoutUnregister();
-        if (bufferOwner)
+        if (bufferOwner && !m_IsDetached)
         {
             bufferOwner->UnregisterView(this);
         }
@@ -72,9 +77,9 @@ namespace Hazel
             return;
         }
 
-        auto *bufferOwner = m_BufferOwner;
+        auto* bufferOwner = m_BufferOwner;
         ReleaseImmediateWithoutUnregister();
-        if (bufferOwner)
+        if (bufferOwner && !m_IsDetached)
         {
             bufferOwner->UnregisterView(this);
         }
@@ -84,8 +89,7 @@ namespace Hazel
     {
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device = m_DeviceOwner->GetHandle(), bufferView = m_BufferView]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device = m_DeviceOwner->GetHandle(), bufferView = m_BufferView]() {
                 device.destroyBufferView(bufferView);
             });
         }
@@ -94,6 +98,7 @@ namespace Hazel
         m_BufferOwner = nullptr;
         m_BufferView = VK_NULL_HANDLE;
         m_IsValid = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIBufferView, ReleaseImmediateWithoutUnregister)()
@@ -107,5 +112,6 @@ namespace Hazel
         m_BufferOwner = nullptr;
         m_BufferView = VK_NULL_HANDLE;
         m_IsValid = false;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

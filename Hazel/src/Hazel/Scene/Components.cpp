@@ -2,13 +2,14 @@
 // Created by helmholtz on 2026/3/20.
 //
 
+#include "Components.h"
 #include "Hazel/Scene/Entity.h"
 
 namespace Hazel
 {
-#define WRITE_SCRIPT_FIELD(fieldType, type) \
-    case ScriptFieldType::fieldType: \
-        fieldNode["Data"] = scriptField.GetValue<type>(); \
+#define WRITE_SCRIPT_FIELD(fieldType, type)                                                                            \
+    case ScriptFieldType::fieldType:                                                                                   \
+        fieldNode["Data"] = scriptField.GetValue<type>();                                                              \
         break;
 
     YAML::Node ScriptComponent::Serialize(Entity& entity) const
@@ -60,15 +61,16 @@ namespace Hazel
 
         return node;
     }
+
 #undef WRITE_SCRIPT_FIELD
 
-#define READ_SCRIPT_FIELD(FieldType, Type)           \
-    case ScriptFieldType::FieldType:                \
-    {                                               \
-        Type data = scriptField["Data"].as<Type>(); \
-        fieldInstance.SetValue(data);               \
-        break;                                      \
-    }
+#define READ_SCRIPT_FIELD(FieldType, Type)                                                                             \
+    case ScriptFieldType::FieldType:                                                                                   \
+        {                                                                                                              \
+            Type data = scriptField["Data"].as<Type>();                                                                \
+            fieldInstance.SetValue(data);                                                                              \
+            break;                                                                                                     \
+        }
 
     ScriptComponent ScriptComponent::Deserialize(const YAML::Node& node, Entity& entity)
     {
@@ -122,5 +124,6 @@ namespace Hazel
 
         return sc;
     }
+
 #undef READ_SCRIPT_FIELD
-}
+} // namespace Hazel

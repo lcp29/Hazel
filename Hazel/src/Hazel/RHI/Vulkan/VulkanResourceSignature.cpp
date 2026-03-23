@@ -11,9 +11,9 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIResourceSignature, RHIResourceSignatureImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHIResourceSignature, RHIResourceSignatureImpl)(RHIDevice* deviceOwner,
                                                                      vk::Device device,
-                                                                     const RHIResourceSignatureDesc &desc)
+                                                                     const RHIResourceSignatureDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
@@ -54,9 +54,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceSignature(this);
         }
@@ -69,9 +69,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceSignature(this);
         }
@@ -83,8 +83,7 @@ namespace Hazel
         const auto pipelineLayout = m_PipelineLayout;
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, pipelineLayout]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device, pipelineLayout]() {
                 if (device && pipelineLayout)
                 {
                     device.destroyPipelineLayout(pipelineLayout);
@@ -100,6 +99,7 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceSignature, ReleaseImmediateWithoutUnregister)()
@@ -113,5 +113,6 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

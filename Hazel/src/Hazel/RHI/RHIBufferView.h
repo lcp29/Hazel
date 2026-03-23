@@ -16,4 +16,4 @@ namespace Hazel
         uint64_t offset = 0;
         uint64_t range = 0;
     };
-} // Hazel
+} // namespace Hazel

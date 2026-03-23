@@ -7,7 +7,8 @@ namespace Hazel
     class SceneSerializer
     {
     public:
-        SceneSerializer(const Ref<Scene>& scene) : m_Scene(scene) {}
+        SceneSerializer(const Ref<Scene>& scene)
+            : m_Scene(scene) {}
 
         void Serialize(const std::string& filepath) const;
         bool Deserialize(const std::string& filepath);
@@ -15,4 +16,4 @@ namespace Hazel
     private:
         Ref<Scene> m_Scene;
     };
-}
+} // namespace Hazel

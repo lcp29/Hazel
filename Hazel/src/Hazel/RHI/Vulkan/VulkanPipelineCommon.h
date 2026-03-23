@@ -17,9 +17,12 @@ namespace Hazel
     {
         switch (topology)
         {
-            #define X(rhi, vul) case RHIPrimitiveTopology::rhi: return vk::PrimitiveTopology::vul;
-            #include "TypeMappings/PrimitiveTopologies.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIPrimitiveTopology::rhi:                                                                                    \
+        return vk::PrimitiveTopology::vul;
+#include "TypeMappings/PrimitiveTopologies.inl"
+
+#undef X
             default:
                 return vk::PrimitiveTopology::eTriangleList;
         }
@@ -29,9 +32,12 @@ namespace Hazel
     {
         switch (mode)
         {
-            #define X(rhi, vul) case RHIPolygonMode::rhi: return vk::PolygonMode::vul;
-            #include "TypeMappings/PolygonModes.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIPolygonMode::rhi:                                                                                          \
+        return vk::PolygonMode::vul;
+#include "TypeMappings/PolygonModes.inl"
+
+#undef X
             default:
                 return vk::PolygonMode::eFill;
         }
@@ -41,9 +47,12 @@ namespace Hazel
     {
         switch (mode)
         {
-            #define X(rhi, vul) case RHICullMode::rhi: return vk::CullModeFlagBits::vul;
-            #include "TypeMappings/CullModes.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHICullMode::rhi:                                                                                             \
+        return vk::CullModeFlagBits::vul;
+#include "TypeMappings/CullModes.inl"
+
+#undef X
             default:
                 return vk::CullModeFlagBits::eBack;
         }
@@ -53,9 +62,12 @@ namespace Hazel
     {
         switch (face)
         {
-            #define X(rhi, vul) case RHIFrontFace::rhi: return vk::FrontFace::vul;
-            #include "TypeMappings/FrontFaces.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIFrontFace::rhi:                                                                                            \
+        return vk::FrontFace::vul;
+#include "TypeMappings/FrontFaces.inl"
+
+#undef X
             default:
                 return vk::FrontFace::eCounterClockwise;
         }
@@ -65,9 +77,12 @@ namespace Hazel
     {
         switch (op)
         {
-            #define X(rhi, vul) case RHICompareOp::rhi: return vk::CompareOp::vul;
-            #include "TypeMappings/CompareOps.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHICompareOp::rhi:                                                                                            \
+        return vk::CompareOp::vul;
+#include "TypeMappings/CompareOps.inl"
+
+#undef X
             default:
                 return vk::CompareOp::eLessOrEqual;
         }
@@ -77,9 +92,12 @@ namespace Hazel
     {
         switch (factor)
         {
-            #define X(rhi, vul) case RHIBlendFactor::rhi: return vk::BlendFactor::vul;
-            #include "TypeMappings/BlendFactors.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIBlendFactor::rhi:                                                                                          \
+        return vk::BlendFactor::vul;
+#include "TypeMappings/BlendFactors.inl"
+
+#undef X
             default:
                 return vk::BlendFactor::eOne;
         }
@@ -89,9 +107,12 @@ namespace Hazel
     {
         switch (op)
         {
-            #define X(rhi, vul) case RHIBlendOp::rhi: return vk::BlendOp::vul;
-            #include "TypeMappings/BlendOps.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIBlendOp::rhi:                                                                                              \
+        return vk::BlendOp::vul;
+#include "TypeMappings/BlendOps.inl"
+
+#undef X
             default:
                 return vk::BlendOp::eAdd;
         }
@@ -100,8 +121,14 @@ namespace Hazel
     inline vk::ColorComponentFlags VulkanConvertColorComponentFlags(RHIColorComponentFlags flags)
     {
         vk::ColorComponentFlags result;
-#define X(rhi, vul) if (flags & RHIColorComponentFlagBits::rhi) { result |= vk::ColorComponentFlagBits::vul; }
+
+#define X(rhi, vul)                                                                                                    \
+    if (flags & RHIColorComponentFlagBits::rhi)                                                                        \
+    {                                                                                                                  \
+        result |= vk::ColorComponentFlagBits::vul;                                                                     \
+    }
 #include "TypeMappings/ColorComponentFlags.inl"
+
 #undef X
         return result;
     }
@@ -110,9 +137,12 @@ namespace Hazel
     {
         switch (rate)
         {
-            #define X(rhi, vul) case RHIVertexInputRate::rhi: return vk::VertexInputRate::vul;
-            #include "TypeMappings/VertexInputRates.inl"
-            #undef X
+#define X(rhi, vul)                                                                                                    \
+    case RHIVertexInputRate::rhi:                                                                                      \
+        return vk::VertexInputRate::vul;
+#include "TypeMappings/VertexInputRates.inl"
+
+#undef X
             default:
                 return vk::VertexInputRate::eVertex;
         }
@@ -141,18 +171,18 @@ namespace Hazel
         }
     }
 
-    inline bool VulkanBuildPipelineLayoutCreateInfo(const RHIResourceSignatureDesc &desc,
-                                                    std::vector<vk::DescriptorSetLayout> &descriptorSetLayouts,
-                                                    std::vector<vk::PushConstantRange> &pushConstantRanges,
-                                                    vk::PipelineLayoutCreateInfo &createInfo)
+    inline bool VulkanBuildPipelineLayoutCreateInfo(const RHIResourceSignatureDesc& desc,
+                                                    std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts,
+                                                    std::vector<vk::PushConstantRange>& pushConstantRanges,
+                                                    vk::PipelineLayoutCreateInfo& createInfo)
     {
         descriptorSetLayouts.clear();
         pushConstantRanges.clear();
         descriptorSetLayouts.reserve(desc.resourceLayouts.size());
 
-        for (auto *layout: desc.resourceLayouts)
+        for (auto* layout : desc.resourceLayouts)
         {
-            auto *vkLayout = layout;
+            auto* vkLayout = layout;
             if (!vkLayout || !vkLayout->IsValid())
             {
                 return false;
@@ -161,22 +191,17 @@ namespace Hazel
             descriptorSetLayouts.push_back(vkLayout->GetDescriptorSetLayout());
         }
 
-        for (const auto &range: desc.pushConstantRanges)
+        for (const auto& range : desc.pushConstantRanges)
         {
-            const vk::PushConstantRange vkRange(
-                VulkanConvertShaderStages(range.stages),
-                range.offset,
-                range.size);
+            const vk::PushConstantRange vkRange(VulkanConvertShaderStages(range.stages), range.offset, range.size);
 
-            const auto duplicate = std::find_if(
-                pushConstantRanges.begin(),
-                pushConstantRanges.end(),
-                [&vkRange](const vk::PushConstantRange &existingRange)
-                {
-                    return existingRange.stageFlags == vkRange.stageFlags
-                           && existingRange.offset == vkRange.offset
-                           && existingRange.size == vkRange.size;
-                });
+            const auto duplicate = std::find_if(pushConstantRanges.begin(),
+                                                pushConstantRanges.end(),
+                                                [&vkRange](const vk::PushConstantRange& existingRange) {
+                                                    return existingRange.stageFlags == vkRange.stageFlags
+                                                           && existingRange.offset == vkRange.offset
+                                                           && existingRange.size == vkRange.size;
+                                                });
             if (duplicate == pushConstantRanges.end())
             {
                 pushConstantRanges.push_back(vkRange);
@@ -189,4 +214,4 @@ namespace Hazel
         createInfo.pPushConstantRanges = pushConstantRanges.data();
         return true;
     }
-} // Hazel
+} // namespace Hazel

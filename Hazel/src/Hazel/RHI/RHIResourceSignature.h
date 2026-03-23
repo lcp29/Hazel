@@ -13,7 +13,7 @@ namespace Hazel
 {
     struct RHIResourceSignatureDesc
     {
-        std::vector<RHIResourceLayout *> resourceLayouts;
+        std::vector<RHIResourceLayout*> resourceLayouts;
         std::vector<RHIPushConstantRangeDesc> pushConstantRanges;
     };
-} // Hazel
+} // namespace Hazel

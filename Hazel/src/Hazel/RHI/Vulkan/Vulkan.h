@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include "VulkanBase.h"
-
 #include "VulkanAdapter.h"
+#include "VulkanBase.h"
 #include "VulkanBuffer.h"
 #include "VulkanBufferView.h"
 #include "VulkanCommandBuffer.h"

@@ -21,6 +21,6 @@ namespace Hazel
         std::string debugName;
     };
 
-    std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc &desc);
-    RHIShader *CreateShaderFromGLSLFile(RHIDevice &device, const RHIShaderFileDesc &desc);
-} // Hazel
+    std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc& desc);
+    RHIShader* CreateShaderFromGLSLFile(RHIDevice& device, const RHIShaderFileDesc& desc);
+} // namespace Hazel

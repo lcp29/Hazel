@@ -2,20 +2,24 @@
 // Created by helmholtz on 2026/3/14.
 //
 
-#include <vulkan/vulkan.hpp>
+#include "VulkanCommandPool.h"
 
 #include "../RHICommandPool.h"
 #include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
-#include "VulkanCommandPool.h"
+
+#include <vulkan/vulkan.hpp>
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHICommandPool, RHICommandPoolImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHICommandPool, RHICommandPoolImpl)(RHIDevice* deviceOwner,
                                                          vk::Device device,
-                                                         const RHICommandPoolDesc &desc,
+                                                         const RHICommandPoolDesc& desc,
                                                          uint32_t queueFamilyIndex)
-        : m_DeviceOwner(deviceOwner), m_Desc(desc), m_Device(device), m_QueueFamilyIndex(queueFamilyIndex)
+        : m_DeviceOwner(deviceOwner)
+          , m_Desc(desc)
+          , m_Device(device)
+          , m_QueueFamilyIndex(queueFamilyIndex)
     {
         vk::CommandPoolCreateInfo createInfo;
         createInfo.queueFamilyIndex = queueFamilyIndex;
@@ -37,7 +41,8 @@ namespace Hazel
         Release();
     }
 
-    RHICommandBuffer *RHI_VK_FUNC_IMPL(RHICommandPool, CreateCommandBuffer)(const RHICommandBufferDesc &desc)
+    RHICommandBuffer*RHI_VK_FUNC_IMPL(RHICommandPool, CreateCommandBuffer)(const RHICommandBufferDesc& desc,
+                                                                           bool isDetached)
     {
         if (!m_IsValid)
         {
@@ -50,8 +55,12 @@ namespace Hazel
             return nullptr;
         }
 
-        RHICommandBuffer *commandBufferPtr = commandBuffer.get();
-        RegisterCommandBuffer(std::move(commandBuffer));
+        commandBuffer->m_IsDetached = isDetached;
+        RHICommandBuffer* commandBufferPtr = commandBuffer.get();
+        if (!isDetached)
+            RegisterCommandBuffer(std::move(commandBuffer));
+        else
+            commandBuffer.release();
         return commandBufferPtr;
     }
 
@@ -62,9 +71,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterCommandPool(this);
         }
@@ -77,9 +86,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterCommandPool(this);
         }
@@ -92,7 +101,7 @@ namespace Hazel
             return;
         }
 
-        for (const auto &commandBuffer: m_CommandBuffers)
+        for (const auto& commandBuffer : m_CommandBuffers)
         {
             if (commandBuffer)
             {
@@ -107,15 +116,15 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion(
-                [device, commandPool, pendingOperations = std::move(pendingOperations)]() mutable
-                {
+                [device, commandPool, pendingOperations = std::move(pendingOperations)]() mutable {
                     if (device && commandPool)
                     {
                         DeletionQueue::Execute(std::move(pendingOperations));
                         device.destroyCommandPool(commandPool);
                     }
                 });
-        } else if (device && commandPool)
+        }
+        else if (device && commandPool)
         {
             DeletionQueue::Execute(std::move(pendingOperations));
             device.destroyCommandPool(commandPool);
@@ -126,6 +135,7 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
         m_QueueFamilyIndex = 0;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, ReleaseImmediateWithoutUnregister)()
@@ -135,7 +145,7 @@ namespace Hazel
             return;
         }
 
-        for (const auto &commandBuffer: m_CommandBuffers)
+        for (const auto& commandBuffer : m_CommandBuffers)
         {
             if (commandBuffer)
             {
@@ -157,6 +167,7 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
         m_QueueFamilyIndex = 0;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, EnqueueDeletion)(DeletionQueue::Operation operation)
@@ -169,7 +180,7 @@ namespace Hazel
         m_CommandBuffers.Register(std::move(commandBuffer));
     }
 
-    void RHI_VK_FUNC_IMPL(RHICommandPool, UnregisterCommandBuffer)(RHICommandBuffer *commandBuffer)
+    void RHI_VK_FUNC_IMPL(RHICommandPool, UnregisterCommandBuffer)(RHICommandBuffer* commandBuffer)
     {
         m_CommandBuffers.Unregister(commandBuffer);
     }

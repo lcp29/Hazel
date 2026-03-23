@@ -2,7 +2,8 @@
 // Created by helmholtz on 2026/3/20.
 //
 
-#include "Entity.h"
+#include "Hazel/Scene/Entity.h"
+#include "Hazel/Scene/Components.h"
 
 namespace Hazel
 {
@@ -55,7 +56,8 @@ namespace Hazel
                     if (sibling.GetComponent<EntityRelationshipComponent>().nextSibling != entt::null)
                     {
                         Entity{sibling.GetComponent<EntityRelationshipComponent>().nextSibling, m_Scene}
-                            .GetComponent<EntityRelationshipComponent>().prevSibling = sibling.m_EntityHandle;
+                            .GetComponent<EntityRelationshipComponent>()
+                            .prevSibling = sibling.m_EntityHandle;
                     }
                     break;
                 }
@@ -157,8 +159,8 @@ namespace Hazel
 
     void Entity::BuildRelationship(const YAML::Node& node)
     {
-        EntityRelationshipComponent relationshipComponent = EntityRelationshipComponent::Deserialize(
-            node["Relationship"], m_Scene->GetMapUUIDToEntity());
+        EntityRelationshipComponent relationshipComponent =
+            EntityRelationshipComponent::Deserialize(node, m_Scene->GetMapUUIDToEntity());
         AddOrReplaceComponent<EntityRelationshipComponent>(relationshipComponent);
     }
-}
+} // namespace Hazel

@@ -18,20 +18,18 @@ namespace Hazel
 {
     namespace
     {
-        vk::SurfaceFormatKHR ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &formats, RHIFormat format)
+        vk::SurfaceFormatKHR ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats, RHIFormat format)
         {
             const auto requestedFormat = VulkanConvertFormat(format);
-            static const std::vector preferredSurfaceFormats = {
-                requestedFormat,
-                vk::Format::eB8G8R8A8Unorm,
-                vk::Format::eB8G8R8A8Srgb,
-                vk::Format::eR8G8B8A8Unorm,
-                vk::Format::eR8G8B8A8Srgb
-            };
+            static const std::vector preferredSurfaceFormats = {requestedFormat,
+                                                                vk::Format::eB8G8R8A8Unorm,
+                                                                vk::Format::eB8G8R8A8Srgb,
+                                                                vk::Format::eR8G8B8A8Unorm,
+                                                                vk::Format::eR8G8B8A8Srgb};
 
-            for (const auto &preferredFormat: preferredSurfaceFormats)
+            for (const auto& preferredFormat : preferredSurfaceFormats)
             {
-                for (const auto &surfaceFormat: formats)
+                for (const auto& surfaceFormat : formats)
                 {
                     if (surfaceFormat.format == preferredFormat)
                     {
@@ -40,15 +38,15 @@ namespace Hazel
                 }
             }
 
-            return formats.empty() ? vk::SurfaceFormatKHR(vk::Format::eUndefined, vk::ColorSpaceKHR::eSrgbNonlinear)
-                                   : formats.front();
+            return formats.empty()
+                       ? vk::SurfaceFormatKHR(vk::Format::eUndefined, vk::ColorSpaceKHR::eSrgbNonlinear)
+                       : formats.front();
         }
 
-        vk::PresentModeKHR ChoosePresentMode(const std::vector<vk::PresentModeKHR> &presentModes,
-                                             RHISwapchainMode mode)
+        vk::PresentModeKHR ChoosePresentMode(const std::vector<vk::PresentModeKHR>& presentModes, RHISwapchainMode mode)
         {
             const auto requestedMode = VulkanConvertSwapchainMode(mode);
-            for (const auto &presentMode: presentModes)
+            for (const auto& presentMode : presentModes)
             {
                 if (presentMode == requestedMode)
                 {
@@ -61,12 +59,14 @@ namespace Hazel
     } // namespace
 
     RHI_VK_FUNC_IMPL(RHISwapchain, RHISwapchainImpl)(vk::PhysicalDevice physicalDevice,
-                                                     RHIDevice *deviceOwner,
-                                                     const RHISwapchainDesc &desc,
+                                                     RHIDevice* deviceOwner,
+                                                     const RHISwapchainDesc& desc,
                                                      uint32_t presentQueueFamilyIndex)
-        : m_Desc(desc), m_Device(deviceOwner->GetHandle()), m_DeviceOwner(deviceOwner)
+        : m_DeviceOwner(deviceOwner),
+          m_Desc(desc),
+          m_Device(deviceOwner->GetHandle())
     {
-        auto *surface = desc.surface;
+        auto* surface = desc.surface;
         if (!surface || !surface->IsValid())
         {
             return;
@@ -101,12 +101,14 @@ namespace Hazel
         }
         else
         {
-            extent.width = std::clamp(extent.width,
-                                      surfaceCapabilities.minImageExtent.width,
-                                      surfaceCapabilities.maxImageExtent.width);
-            extent.height = std::clamp(extent.height,
-                                       surfaceCapabilities.minImageExtent.height,
-                                       surfaceCapabilities.maxImageExtent.height);
+            extent.width = std::clamp(
+                extent.width,
+                surfaceCapabilities.minImageExtent.width,
+                surfaceCapabilities.maxImageExtent.width);
+            extent.height = std::clamp(
+                extent.height,
+                surfaceCapabilities.minImageExtent.height,
+                surfaceCapabilities.maxImageExtent.height);
         }
 
         auto imageUsage = VulkanConvertImageUsages(desc.usages);
@@ -223,7 +225,7 @@ namespace Hazel
             return {};
         }
 
-        auto *presentQueue = m_DeviceOwner->GetQueue(RHIQueueType::Present);
+        auto* presentQueue = m_DeviceOwner->GetQueue(RHIQueueType::Present);
         if (!presentQueue || !presentQueue->IsValid())
         {
             return {};
@@ -231,10 +233,11 @@ namespace Hazel
 
         const uint32_t acquireSemaphoreIndex = m_NextAcquireSemaphoreIndex;
         const auto acquireSemaphore = m_ImageAvailableSemaphores[acquireSemaphoreIndex];
-        auto acquireResult = m_Device.acquireNextImageKHR(m_Swapchain,
-                                                          std::numeric_limits<uint64_t>::max(),
-                                                          acquireSemaphore,
-                                                          VK_NULL_HANDLE);
+        auto acquireResult = m_Device.acquireNextImageKHR(
+            m_Swapchain,
+            std::numeric_limits<uint64_t>::max(),
+            acquireSemaphore,
+            VK_NULL_HANDLE);
         if (acquireResult.result != vk::Result::eSuccess && acquireResult.result != vk::Result::eSuboptimalKHR)
         {
             return {};
@@ -248,13 +251,10 @@ namespace Hazel
         }
 
         m_NextAcquireSemaphoreIndex = (acquireSemaphoreIndex + 1) % m_ImageCount;
-        return RHISwapchainAcquireResult{
-            frameNumber,
-            availableSyncPoint
-        };
+        return RHISwapchainAcquireResult{frameNumber, availableSyncPoint};
     }
 
-    RHIImage *RHI_VK_FUNC_IMPL(RHISwapchain, FetchImage)(uint32_t frameNumber) const
+    RHIImage* RHI_VK_FUNC_IMPL(RHISwapchain, FetchImage)(uint32_t frameNumber) const
     {
         if (!m_IsValid || frameNumber >= m_Images.size())
         {
@@ -263,7 +263,7 @@ namespace Hazel
         return m_Images[frameNumber].get();
     }
 
-    RHIImageView *RHI_VK_FUNC_IMPL(RHISwapchain, FetchImageView)(uint32_t frameNumber) const
+    RHIImageView* RHI_VK_FUNC_IMPL(RHISwapchain, FetchImageView)(uint32_t frameNumber) const
     {
         if (!m_IsValid || frameNumber >= m_ImageViews.size())
         {
@@ -272,14 +272,15 @@ namespace Hazel
         return m_ImageViews[frameNumber];
     }
 
-    bool RHI_VK_FUNC_IMPL(RHISwapchain, SubmitFrame)(uint32_t frameNumber, const std::vector<RHISyncPoint> &waitSyncPoints)
+    bool RHI_VK_FUNC_IMPL(RHISwapchain, SubmitFrame)(uint32_t frameNumber,
+                                                     const std::vector<RHISyncPoint>& waitSyncPoints)
     {
         if (!m_IsValid || !m_DeviceOwner || !m_Swapchain || frameNumber >= m_PresentSemaphores.size())
         {
             return false;
         }
 
-        auto *presentQueue = m_DeviceOwner->GetQueue(RHIQueueType::Present);
+        auto* presentQueue = m_DeviceOwner->GetQueue(RHIQueueType::Present);
         if (!presentQueue || !presentQueue->IsValid())
         {
             return false;
@@ -309,10 +310,10 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
 
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterSwapchain(this);
         }
@@ -325,10 +326,10 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
 
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterSwapchain(this);
         }
@@ -345,7 +346,7 @@ namespace Hazel
         const auto swapchain = m_Swapchain;
         auto imageAvailableSemaphores = std::move(m_ImageAvailableSemaphores);
         auto presentSemaphores = std::move(m_PresentSemaphores);
-        for (auto &image: m_Images)
+        for (auto& image : m_Images)
         {
             if (image)
             {
@@ -358,43 +359,42 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion([device,
-                                            swapchain,
-                                            imageAvailableSemaphores = std::move(imageAvailableSemaphores),
-                                            presentSemaphores = std::move(presentSemaphores)]()
-            {
-                if (device)
-                {
-                    for (const auto semaphore: imageAvailableSemaphores)
+                    swapchain,
+                    imageAvailableSemaphores = std::move(imageAvailableSemaphores),
+                    presentSemaphores = std::move(presentSemaphores)]() {
+                    if (device)
                     {
-                        if (semaphore)
+                        for (const auto semaphore : imageAvailableSemaphores)
                         {
-                            device.destroySemaphore(semaphore);
+                            if (semaphore)
+                            {
+                                device.destroySemaphore(semaphore);
+                            }
+                        }
+                        for (const auto semaphore : presentSemaphores)
+                        {
+                            if (semaphore)
+                            {
+                                device.destroySemaphore(semaphore);
+                            }
+                        }
+                        if (swapchain)
+                        {
+                            device.destroySwapchainKHR(swapchain);
                         }
                     }
-                    for (const auto semaphore: presentSemaphores)
-                    {
-                        if (semaphore)
-                        {
-                            device.destroySemaphore(semaphore);
-                        }
-                    }
-                    if (swapchain)
-                    {
-                        device.destroySwapchainKHR(swapchain);
-                    }
-                }
-            });
+                });
         }
         else if (device)
         {
-            for (const auto semaphore: imageAvailableSemaphores)
+            for (const auto semaphore : imageAvailableSemaphores)
             {
                 if (semaphore)
                 {
                     device.destroySemaphore(semaphore);
                 }
             }
-            for (const auto semaphore: presentSemaphores)
+            for (const auto semaphore : presentSemaphores)
             {
                 if (semaphore)
                 {
@@ -414,6 +414,7 @@ namespace Hazel
         m_Format = RHIFormat::Undefined;
         m_Device = VK_NULL_HANDLE;
         m_NextAcquireSemaphoreIndex = 0;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHISwapchain, ReleaseImmediateWithoutUnregister)()
@@ -427,7 +428,7 @@ namespace Hazel
         const auto swapchain = m_Swapchain;
         auto imageAvailableSemaphores = std::move(m_ImageAvailableSemaphores);
         auto presentSemaphores = std::move(m_PresentSemaphores);
-        for (auto &image: m_Images)
+        for (auto& image : m_Images)
         {
             if (image)
             {
@@ -441,14 +442,14 @@ namespace Hazel
         {
             if (device)
             {
-                for (const auto semaphore: imageAvailableSemaphores)
+                for (const auto semaphore : imageAvailableSemaphores)
                 {
                     if (semaphore)
                     {
                         device.destroySemaphore(semaphore);
                     }
                 }
-                for (const auto semaphore: presentSemaphores)
+                for (const auto semaphore : presentSemaphores)
                 {
                     if (semaphore)
                     {
@@ -463,14 +464,14 @@ namespace Hazel
         }
         else if (device)
         {
-            for (const auto semaphore: imageAvailableSemaphores)
+            for (const auto semaphore : imageAvailableSemaphores)
             {
                 if (semaphore)
                 {
                     device.destroySemaphore(semaphore);
                 }
             }
-            for (const auto semaphore: presentSemaphores)
+            for (const auto semaphore : presentSemaphores)
             {
                 if (semaphore)
                 {
@@ -490,6 +491,6 @@ namespace Hazel
         m_Format = RHIFormat::Undefined;
         m_Device = VK_NULL_HANDLE;
         m_NextAcquireSemaphoreIndex = 0;
+        m_IsDetached = false;
     }
-
 } // namespace Hazel

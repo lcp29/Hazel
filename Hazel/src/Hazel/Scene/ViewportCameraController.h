@@ -12,13 +12,18 @@ namespace Hazel
     {
     public:
         ViewportCameraController() = default;
-        ViewportCameraController(Camera* camera) : m_ViewportCamera(camera) {}
+
+        ViewportCameraController(Camera* camera)
+            : m_ViewportCamera(camera) {}
 
         void OnUpdate(Timestep ts);
 
-        const Camera* GetCamera() const { return m_ViewportCamera; }
+        const Camera* GetCamera() const
+        {
+            return m_ViewportCamera;
+        }
 
     private:
         Camera* m_ViewportCamera;
     };
-} // Hazel
+} // namespace Hazel

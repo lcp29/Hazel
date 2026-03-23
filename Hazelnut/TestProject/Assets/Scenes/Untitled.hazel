@@ -1,9 +1,27 @@
 Scene: Untitled Scene
 Entities:
-  []
+  - ID:
+      ID:
+        - 14419692488978861654
+    Tag:
+      Tag: Empty Entity
+    Transform:
+      Translation: [1, 1, 2]
+      Rotation: [0, 0.017453292, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent:
+        - 18446744073709551615
+      FirstChild:
+        - 18446744073709551615
+      NextSibling:
+        - 18446744073709551615
+      PrevSibling:
+        - 18446744073709551615
+      ChildCount: 0
 ViewportCamera:
   ProjectionType: Perspective
-  FovX: 45
-  AspectRatio: 1.778
+  FovX: 1.0796657
+  AspectRatio: 1.9097939
   NearClip: 0.01
   FarClip: 1000

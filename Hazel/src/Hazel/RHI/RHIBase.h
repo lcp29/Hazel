@@ -24,7 +24,10 @@ namespace Hazel
             size_t i;
             RHIOwnerSet* owner;
 
-            std::unique_ptr<T>& operator*() { return owner->m_Objects[i]; }
+            std::unique_ptr<T>& operator*()
+            {
+                return owner->m_Objects[i];
+            }
 
             void skip_front()
             {
@@ -62,11 +65,10 @@ namespace Hazel
 
         void Unregister(T* object)
         {
-            auto it = std::find_if(m_Objects.begin(), m_Objects.end(),
-                                   [object](const std::unique_ptr<T>& ownedObject)
-                                   {
-                                       return ownedObject.get() == object;
-                                   });
+            auto it = std::find_if(m_Objects.begin(), m_Objects.end(), [object](const std::unique_ptr<T>& ownedObject)
+            {
+                return ownedObject.get() == object;
+            });
             if (it != m_Objects.end())
             {
                 it->reset();
@@ -132,14 +134,12 @@ namespace Hazel
 #define RHI_BACKEND_API Vulkan
 #endif
 
-#define RHI_REGISTER_BASE_CLASS(className) \
-    template<Hazel::RHIBackend> \
-    class className##Impl {}; \
+#define RHI_REGISTER_BASE_CLASS(className)                                                                             \
+    template <Hazel::RHIBackend> class className##Impl                                                                 \
+    {};                                                                                                                \
     using className = className##Impl<Hazel::RHIBackend::RHI_BACKEND_API>;
 
-#define RHI_FORWARD_DECL_CLASS(className) \
-    template<> \
-    class className##Impl<Hazel::RHIBackend::RHI_BACKEND_API>;
+#define RHI_FORWARD_DECL_CLASS(className) template <> class className##Impl<Hazel::RHIBackend::RHI_BACKEND_API>;
 
 namespace Hazel
 {
@@ -169,4 +169,4 @@ namespace Hazel
 
     RHI_REGISTER_BASE_CLASS(RHIBuffer)
     RHI_REGISTER_BASE_CLASS(RHIBufferView)
-}
+} // namespace Hazel

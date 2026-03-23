@@ -10,7 +10,7 @@ namespace Hazel
     VulkanMemoryAllocator::VulkanMemoryAllocator(vk::Instance instance,
                                                  vk::PhysicalDevice physicalDevice,
                                                  vk::Device device,
-                                                 const RHIDeviceCapabilities &capabilities)
+                                                 const RHIDeviceCapabilities& capabilities)
     {
         VmaVulkanFunctions vulkanFunctions{};
         vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
@@ -27,11 +27,11 @@ namespace Hazel
         m_IsValid = vmaCreateAllocator(&createInfo, &m_Allocator) == VK_SUCCESS;
     }
 
-    bool VulkanMemoryAllocator::CreateImage(const VkImageCreateInfo &imageCreateInfo,
-                                            const VmaAllocationCreateInfo &allocationCreateInfo,
-                                            VkImage *image,
-                                            VmaAllocation *allocation,
-                                            VmaAllocationInfo *allocationInfo) const
+    bool VulkanMemoryAllocator::CreateImage(const VkImageCreateInfo& imageCreateInfo,
+                                            const VmaAllocationCreateInfo& allocationCreateInfo,
+                                            VkImage* image,
+                                            VmaAllocation* allocation,
+                                            VmaAllocationInfo* allocationInfo) const
     {
         return m_Allocator
                && vmaCreateImage(
@@ -40,14 +40,15 @@ namespace Hazel
                    &allocationCreateInfo,
                    image,
                    allocation,
-                   allocationInfo) == VK_SUCCESS;
+                   allocationInfo)
+               == VK_SUCCESS;
     }
 
-    bool VulkanMemoryAllocator::CreateBuffer(const VkBufferCreateInfo &bufferCreateInfo,
-                                             const VmaAllocationCreateInfo &allocationCreateInfo,
-                                             VkBuffer *buffer,
-                                             VmaAllocation *allocation,
-                                             VmaAllocationInfo *allocationInfo) const
+    bool VulkanMemoryAllocator::CreateBuffer(const VkBufferCreateInfo& bufferCreateInfo,
+                                             const VmaAllocationCreateInfo& allocationCreateInfo,
+                                             VkBuffer* buffer,
+                                             VmaAllocation* allocation,
+                                             VmaAllocationInfo* allocationInfo) const
     {
         return m_Allocator
                && vmaCreateBuffer(
@@ -56,13 +57,17 @@ namespace Hazel
                    &allocationCreateInfo,
                    buffer,
                    allocation,
-                   allocationInfo) == VK_SUCCESS;
+                   allocationInfo)
+               == VK_SUCCESS;
     }
 
-    void *VulkanMemoryAllocator::MapMemory(VmaAllocation allocation) const
+    void* VulkanMemoryAllocator::MapMemory(VmaAllocation allocation) const
     {
-        void *mappedData = nullptr;
-        if (m_Allocator && allocation && vmaMapMemory(m_Allocator, allocation, &mappedData) == VK_SUCCESS)
+        void* mappedData = nullptr;
+        if (m_Allocator && allocation
+            && vmaMapMemory(m_Allocator, allocation, &mappedData)
+
+            == VK_SUCCESS)
         {
             return mappedData;
         }
@@ -117,4 +122,4 @@ namespace Hazel
             vmaDestroyImage(allocator, image, allocation);
         }
     }
-} // Hazel
+} // namespace Hazel

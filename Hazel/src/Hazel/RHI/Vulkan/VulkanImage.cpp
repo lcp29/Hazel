@@ -2,22 +2,20 @@
 // Created by helmholtz on 2026/3/14.
 //
 
-#include <vma/vk_mem_alloc.h>
-#include <vulkan/vulkan.hpp>
+#include "VulkanImage.h"
 
 #include "../RHIImage.h"
-#include "VulkanImage.h"
-#include "VulkanCommon.h"
-#include "VulkanDevice.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
+#include "VulkanCommon.h"
+#include "VulkanDevice.h"
 #include "VulkanMemoryAllocator.h"
 
 #include <stb_image.h>
-
-#include <cstring>
 #include <utility>
 #include <vector>
+#include <vma/vk_mem_alloc.h>
+#include <vulkan/vulkan.hpp>
 
 namespace Hazel
 {
@@ -25,24 +23,22 @@ namespace Hazel
     {
         bool IsRGBA8LikeFormat(RHIFormat format)
         {
-            return format == RHIFormat::RGBA8UNorm
-                || format == RHIFormat::RGBA8SRGB
-                || format == RHIFormat::BGRA8UNorm
-                || format == RHIFormat::BGRA8SRGB;
+            return format == RHIFormat::RGBA8UNorm || format == RHIFormat::RGBA8SRGB || format == RHIFormat::BGRA8UNorm
+                   || format == RHIFormat::BGRA8SRGB;
         }
 
         RHIImagePlanes GetDefaultTransitionPlanes(RHIFormat format)
         {
             switch (format)
             {
-            case RHIFormat::D32SFloat:
-                return RHIImagePlaneFlagBits::Depth;
-            case RHIFormat::D32SFloatS8Uint:
-                return RHIImagePlaneFlagBits::Depth | RHIImagePlaneFlagBits::Stencil;
-            case RHIFormat::S8Uint:
-                return RHIImagePlaneFlagBits::Stencil;
-            default:
-                return RHIImagePlaneFlagBits::Color;
+                case RHIFormat::D32SFloat:
+                    return RHIImagePlaneFlagBits::Depth;
+                case RHIFormat::D32SFloatS8Uint:
+                    return RHIImagePlaneFlagBits::Depth | RHIImagePlaneFlagBits::Stencil;
+                case RHIFormat::S8Uint:
+                    return RHIImagePlaneFlagBits::Stencil;
+                default:
+                    return RHIImagePlaneFlagBits::Color;
             }
         }
 
@@ -50,27 +46,25 @@ namespace Hazel
         {
             switch (state)
             {
-            case RHIImageResourceState::Undefined:
-                return RHIPipelineStageFlagBits::Top;
-            case RHIImageResourceState::Common:
-                return RHIPipelineStageFlagBits::AllCommands;
-            case RHIImageResourceState::TransferSource:
-            case RHIImageResourceState::TransferDestination:
-                return RHIPipelineStageFlagBits::Transfer;
-            case RHIImageResourceState::ShaderRead:
-            case RHIImageResourceState::ShaderWrite:
-                return RHIPipelineStageFlagBits::VertexShader
-                    | RHIPipelineStageFlagBits::FragmentShader
-                    | RHIPipelineStageFlagBits::ComputeShader;
-            case RHIImageResourceState::ColorAttachment:
-                return RHIPipelineStageFlagBits::ColorAttachmentOutput;
-            case RHIImageResourceState::DepthStencilAttachment:
-            case RHIImageResourceState::DepthAttachment:
-            case RHIImageResourceState::StencilAttachment:
-                return RHIPipelineStageFlagBits::EarlyDepthStencil
-                    | RHIPipelineStageFlagBits::LateDepthStencil;
-            case RHIImageResourceState::Present:
-                return RHIPipelineStageFlagBits::Bottom;
+                case RHIImageResourceState::Undefined:
+                    return RHIPipelineStageFlagBits::Top;
+                case RHIImageResourceState::Common:
+                    return RHIPipelineStageFlagBits::AllCommands;
+                case RHIImageResourceState::TransferSource:
+                case RHIImageResourceState::TransferDestination:
+                    return RHIPipelineStageFlagBits::Transfer;
+                case RHIImageResourceState::ShaderRead:
+                case RHIImageResourceState::ShaderWrite:
+                    return RHIPipelineStageFlagBits::VertexShader | RHIPipelineStageFlagBits::FragmentShader
+                           | RHIPipelineStageFlagBits::ComputeShader;
+                case RHIImageResourceState::ColorAttachment:
+                    return RHIPipelineStageFlagBits::ColorAttachmentOutput;
+                case RHIImageResourceState::DepthStencilAttachment:
+                case RHIImageResourceState::DepthAttachment:
+                case RHIImageResourceState::StencilAttachment:
+                    return RHIPipelineStageFlagBits::EarlyDepthStencil | RHIPipelineStageFlagBits::LateDepthStencil;
+                case RHIImageResourceState::Present:
+                    return RHIPipelineStageFlagBits::Bottom;
             }
 
             return RHIPipelineStageFlagBits::AllCommands;
@@ -80,27 +74,27 @@ namespace Hazel
         {
             switch (state)
             {
-            case RHIImageResourceState::Undefined:
-            case RHIImageResourceState::Present:
-                return {};
-            case RHIImageResourceState::Common:
-                return RHIPipelineAccessFlagBits::MemoryRead | RHIPipelineAccessFlagBits::MemoryWrite;
-            case RHIImageResourceState::TransferSource:
-                return RHIPipelineAccessFlagBits::TransferRead;
-            case RHIImageResourceState::TransferDestination:
-                return RHIPipelineAccessFlagBits::TransferWrite;
-            case RHIImageResourceState::ShaderRead:
-                return RHIPipelineAccessFlagBits::ShaderRead;
-            case RHIImageResourceState::ShaderWrite:
-                return RHIPipelineAccessFlagBits::ShaderWrite;
-            case RHIImageResourceState::ColorAttachment:
-                return RHIPipelineAccessFlagBits::ColorAttachmentRead
-                    | RHIPipelineAccessFlagBits::ColorAttachmentWrite;
-            case RHIImageResourceState::DepthStencilAttachment:
-            case RHIImageResourceState::DepthAttachment:
-            case RHIImageResourceState::StencilAttachment:
-                return RHIPipelineAccessFlagBits::DepthStencilAttachmentRead
-                    | RHIPipelineAccessFlagBits::DepthStencilAttachmentWrite;
+                case RHIImageResourceState::Undefined:
+                case RHIImageResourceState::Present:
+                    return {};
+                case RHIImageResourceState::Common:
+                    return RHIPipelineAccessFlagBits::MemoryRead | RHIPipelineAccessFlagBits::MemoryWrite;
+                case RHIImageResourceState::TransferSource:
+                    return RHIPipelineAccessFlagBits::TransferRead;
+                case RHIImageResourceState::TransferDestination:
+                    return RHIPipelineAccessFlagBits::TransferWrite;
+                case RHIImageResourceState::ShaderRead:
+                    return RHIPipelineAccessFlagBits::ShaderRead;
+                case RHIImageResourceState::ShaderWrite:
+                    return RHIPipelineAccessFlagBits::ShaderWrite;
+                case RHIImageResourceState::ColorAttachment:
+                    return RHIPipelineAccessFlagBits::ColorAttachmentRead
+                           | RHIPipelineAccessFlagBits::ColorAttachmentWrite;
+                case RHIImageResourceState::DepthStencilAttachment:
+                case RHIImageResourceState::DepthAttachment:
+                case RHIImageResourceState::StencilAttachment:
+                    return RHIPipelineAccessFlagBits::DepthStencilAttachmentRead
+                           | RHIPipelineAccessFlagBits::DepthStencilAttachmentWrite;
             }
 
             return {};
@@ -147,11 +141,7 @@ namespace Hazel
 
         VkImage image = VK_NULL_HANDLE;
         VkImageCreateInfo vkImageCreateInfo = imageCreateInfo;
-        if (!m_AllocatorOwner->CreateImage(
-            vkImageCreateInfo,
-            allocationCreateInfo,
-            &image,
-            &m_Allocation))
+        if (!m_AllocatorOwner->CreateImage(vkImageCreateInfo, allocationCreateInfo, &image, &m_Allocation))
         {
             m_Allocation = VK_NULL_HANDLE;
             return;
@@ -165,13 +155,14 @@ namespace Hazel
     RHI_VK_FUNC_IMPL(RHIImage, RHIImageImpl)(RHIDevice* deviceOwner,
                                              const RHIImageDesc& desc,
                                              vk::Image image,
-                                             bool isSwapchainImage)
+                                             bool isDetached)
     {
         m_DeviceOwner = deviceOwner;
         m_Desc = desc;
         m_Image = image;
         m_CurrentState = desc.initialState;
-        m_IsSwapchainImage = isSwapchainImage;
+        m_IsSwapchainImage = true;
+        m_IsDetached = isDetached;
 
         if (!m_DeviceOwner || !m_Image || desc.format == RHIFormat::Undefined)
         {
@@ -191,7 +182,8 @@ namespace Hazel
                                                                     const RHIImageDesc& desc,
                                                                     const void* data,
                                                                     size_t dataSize,
-                                                                    RHIQueue* queue)
+                                                                    RHIQueue* queue,
+                                                                    bool detached)
     {
         (void)queue;
 
@@ -204,7 +196,7 @@ namespace Hazel
         imageDesc.initialState = RHIImageResourceState::Undefined;
         imageDesc.usages = imageDesc.usages | RHIImageUsageFlagBits::TransferDestination;
 
-        auto* targetImage = device->CreateImage(imageDesc);
+        auto* targetImage = device->CreateImage(imageDesc, detached);
         if (!targetImage || !targetImage->IsValid())
         {
             return nullptr;
@@ -216,7 +208,7 @@ namespace Hazel
         stagingBufferDesc.cpuAccess = RHIBufferCpuAccess::Write;
         stagingBufferDesc.mapOnCreate = true;
 
-        auto* stagingBuffer = device->CreateBuffer(stagingBufferDesc);
+        auto* stagingBuffer = device->CreateBuffer(stagingBufferDesc, true);
         if (!stagingBuffer || !stagingBuffer->IsValid())
         {
             if (stagingBuffer)
@@ -245,20 +237,18 @@ namespace Hazel
             return nullptr;
         }
 
-        if (!cmd->CopyBufferToImage(
-            stagingBuffer,
-            0,
-            {imageDesc.width, imageDesc.height},
-            targetImage,
-            {0, 0, 0},
-            {imageDesc.width, imageDesc.height, 1},
-            {0, 0, 1, GetDefaultTransitionPlanes(imageDesc.format)}))
+        if (!cmd->CopyBufferToImage(stagingBuffer,
+                                    0,
+                                    {imageDesc.width, imageDesc.height},
+                                    targetImage,
+                                    {0, 0, 0},
+                                    {imageDesc.width, imageDesc.height, 1},
+                                    {0, 0, 1, GetDefaultTransitionPlanes(imageDesc.format)}))
         {
             stagingBuffer->ReleaseImmediate();
             targetImage->ReleaseImmediate();
             return nullptr;
         }
-
 
         if (finalState != RHIImageResourceState::TransferDestination)
         {
@@ -278,7 +268,8 @@ namespace Hazel
                                                                  RHICommandBuffer* cmd,
                                                                  const RHIImageDesc& desc,
                                                                  const std::filesystem::path& path,
-                                                                 RHIQueue* queue)
+                                                                 RHIQueue* queue,
+                                                                 bool detached)
     {
         if (!IsRGBA8LikeFormat(desc.format))
         {
@@ -318,7 +309,7 @@ namespace Hazel
         fileDesc.width = static_cast<uint32_t>(width);
         fileDesc.height = static_cast<uint32_t>(height);
 
-        return CreateFromRawData(device, cmd, fileDesc, pixelData.data(), pixelData.size(), queue);
+        return CreateFromRawData(device, cmd, fileDesc, pixelData.data(), pixelData.size(), queue, detached);
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, Release)()
@@ -330,7 +321,7 @@ namespace Hazel
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterImage(this);
         }
@@ -345,7 +336,7 @@ namespace Hazel
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterImage(this);
         }
@@ -370,8 +361,7 @@ namespace Hazel
 
             if (m_DeviceOwner)
             {
-                m_DeviceOwner->EnqueueDeletion([allocator, image, allocation]()
-                {
+                m_DeviceOwner->EnqueueDeletion([allocator, image, allocation]() {
                     VulkanMemoryAllocator::DestroyImage(allocator, image, allocation);
                 });
             }
@@ -387,6 +377,7 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_AllocatorOwner = nullptr;
         m_IsSwapchainImage = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, ReleaseImmediateWithoutUnregister)()
@@ -414,18 +405,21 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_AllocatorOwner = nullptr;
         m_IsSwapchainImage = false;
+        m_IsDetached = false;
     }
 
-    RHIImageView*RHI_VK_FUNC_IMPL(RHIImage, CreateView)(const RHIImageViewDesc& desc)
+    RHIImageView*RHI_VK_FUNC_IMPL(RHIImage, CreateView)(const RHIImageViewDesc& desc,
+                                                        bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !m_DeviceOwner);
 
-        return m_DeviceOwner->CreateImageView(this, desc);
+        return m_DeviceOwner->CreateImageView(this, desc, isDetached);
     }
 
     bool RHI_VK_FUNC_IMPL(RHIImage, Transition)(RHICommandBuffer* commandBuffer,
                                                 RHIImageResourceState oldState,
-                                                RHIImageResourceState newState)
+                                                RHIImageResourceState newState
+    )
     {
         RHIImageSubresourceRange fullRange;
         fullRange.levelCount = m_Desc.mipLevels;
@@ -444,18 +438,16 @@ namespace Hazel
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !commandBuffer || !commandBuffer->IsValid());
 
         RHIPipelineBarrierDesc barrierDesc;
-        barrierDesc.imageBarriers.push_back({
-            this,
-            GetPipelineStagesForState(oldState),
-            GetPipelineStagesForState(newState),
-            GetAccessFlagsForState(oldState),
-            GetAccessFlagsForState(newState),
-            oldState,
-            newState,
-            srcQueue,
-            dstQueue,
-            subresourceRange
-        });
+        barrierDesc.imageBarriers.push_back({this,
+                                             GetPipelineStagesForState(oldState),
+                                             GetPipelineStagesForState(newState),
+                                             GetAccessFlagsForState(oldState),
+                                             GetAccessFlagsForState(newState),
+                                             oldState,
+                                             newState,
+                                             srcQueue,
+                                             dstQueue,
+                                             subresourceRange});
 
         m_CurrentState = newState;
         return commandBuffer->PipelineBarriers(barrierDesc);
@@ -470,4 +462,4 @@ namespace Hazel
     {
         m_Views.Unregister(view);
     }
-} // Hazel
+} // namespace Hazel

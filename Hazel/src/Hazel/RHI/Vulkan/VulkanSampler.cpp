@@ -55,7 +55,7 @@ namespace Hazel
         }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHISampler, RHISamplerImpl)(RHIDevice *deviceOwner, vk::Device device, const RHISamplerDesc &desc)
+    RHI_VK_FUNC_IMPL(RHISampler, RHISamplerImpl)(RHIDevice* deviceOwner, vk::Device device, const RHISamplerDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
@@ -105,9 +105,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterSampler(this);
         }
@@ -120,9 +120,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterSampler(this);
         }
@@ -135,8 +135,7 @@ namespace Hazel
 
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, sampler]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device, sampler]() {
                 if (device && sampler)
                 {
                     device.destroySampler(sampler);
@@ -152,6 +151,7 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHISampler, ReleaseImmediateWithoutUnregister)()
@@ -165,5 +165,6 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

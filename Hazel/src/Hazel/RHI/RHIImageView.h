@@ -46,4 +46,4 @@ namespace Hazel
         RHIImageViewComponentMapping componentMapping;
         RHIImageSubresourceRange subresourceRange;
     };
-} // Hazel
+} // namespace Hazel

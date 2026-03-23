@@ -7,10 +7,10 @@
 #include "RHIBase.h"
 #include "RHIImage.h"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <vector>
-#include <array>
 
 namespace Hazel
 {
@@ -118,6 +118,7 @@ namespace Hazel
             Int,
             UInt
         } type = Type::Float;
+
         union
         {
             std::array<float, 4> float32 = {0.0f, 0.0f, 0.0f, 1.0f};

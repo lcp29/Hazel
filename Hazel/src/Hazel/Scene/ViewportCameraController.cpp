@@ -4,6 +4,7 @@
 
 #include "ViewportCameraController.h"
 
-namespace Hazel {
+namespace Hazel
+{
     void ViewportCameraController::OnUpdate(Timestep ts) {}
-} // Hazel
+} // namespace Hazel

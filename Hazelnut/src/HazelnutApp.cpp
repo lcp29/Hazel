@@ -3,25 +3,24 @@
 
 #include "EditorLayer.h"
 
-namespace Hazel {
+namespace Hazel
+{
+    class Hazelnut : public Application
+    {
+    public:
+        Hazelnut(const ApplicationSpecification& spec)
+            : Application(spec)
+        {
+            PushLayer(new EditorLayer(m_Renderer.get()));
+        }
+    };
 
-	class Hazelnut : public Application
-	{
-	public:
-		Hazelnut(const ApplicationSpecification& spec)
-			: Application(spec)
-		{
-			PushLayer(new EditorLayer(m_Renderer.get()));
-		}
-	};
+    Application* CreateApplication(ApplicationCommandLineArgs args)
+    {
+        ApplicationSpecification spec;
+        spec.Name = "Hazelnut";
+        spec.CommandLineArgs = args;
 
-	Application* CreateApplication(ApplicationCommandLineArgs args)
-	{
-		ApplicationSpecification spec;
-		spec.Name = "Hazelnut";
-		spec.CommandLineArgs = args;
-
-		return new Hazelnut(spec);
-	}
-
+        return new Hazelnut(spec);
+    }
 }

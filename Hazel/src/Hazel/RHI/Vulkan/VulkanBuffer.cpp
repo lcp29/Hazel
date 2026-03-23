@@ -4,8 +4,8 @@
 
 #include "VulkanBuffer.h"
 
-#include "VulkanCommandBuffer.h"
 #include "VulkanBufferView.h"
+#include "VulkanCommandBuffer.h"
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
 #include "VulkanMemoryAllocator.h"
@@ -14,7 +14,7 @@ namespace Hazel
 {
     namespace
     {
-        VmaAllocationCreateInfo VulkanConvertAllocationCreateInfo(const RHIBufferDesc &desc)
+        VmaAllocationCreateInfo VulkanConvertAllocationCreateInfo(const RHIBufferDesc& desc)
         {
             VmaAllocationCreateInfo allocationCreateInfo{};
             allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -44,9 +44,10 @@ namespace Hazel
         }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHIBuffer, RHIBufferImpl)(RHIDevice *deviceOwner,
-                                               VulkanMemoryAllocator *allocatorOwner,
-                                               const RHIBufferDesc &desc)
+    RHI_VK_FUNC_IMPL(RHIBuffer, RHIBufferImpl)(RHIDevice* deviceOwner,
+                                               VulkanMemoryAllocator* allocatorOwner,
+                                               const RHIBufferDesc& desc
+    )
     {
         m_DeviceOwner = deviceOwner;
         m_AllocatorOwner = allocatorOwner;
@@ -107,9 +108,13 @@ namespace Hazel
         Release();
     }
 
-    RHIBuffer * RHI_VK_FUNC_IMPL(RHIBuffer, Factory)::CreateFromRawData(RHIDevice *device, RHICommandBuffer *cmd,
-                                                                        const RHIBufferDesc &desc, const void *data,
-                                                                        size_t dataSize, RHIQueue *queue, bool staged)
+    RHIBuffer*RHI_VK_FUNC_IMPL(RHIBuffer, Factory)::CreateFromRawData(RHIDevice* device,
+                                                                      RHICommandBuffer* cmd,
+                                                                      const RHIBufferDesc& desc,
+                                                                      const void* data,
+                                                                      size_t dataSize,
+                                                                      RHIQueue* queue,
+                                                                      bool staged)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !data);
 
@@ -119,19 +124,20 @@ namespace Hazel
             stageAndTargetDesc.cpuAccess = RHIBufferCpuAccess::Write;
             stageAndTargetDesc.mapOnCreate = true;
             stageAndTargetDesc.usages = stageAndTargetDesc.usages | RHIBufferUsageFlagBits::TransferSource;
-        } else
+        }
+        else
         {
             stageAndTargetDesc.cpuAccess = RHIBufferCpuAccess::ReadWrite;
             stageAndTargetDesc.mapOnCreate = true;
         }
 
-        auto *stagingBuffer = device->CreateBuffer(stageAndTargetDesc);
+        auto* stagingBuffer = device->CreateBuffer(stageAndTargetDesc);
         if (!stagingBuffer || !stagingBuffer->IsValid())
         {
             return nullptr;
         }
 
-        void *mappedData = stagingBuffer->Map();
+        void* mappedData = stagingBuffer->Map();
         if (!mappedData)
         {
             stagingBuffer->ReleaseImmediate();
@@ -150,7 +156,7 @@ namespace Hazel
         stageAndTargetDesc.mapOnCreate = desc.mapOnCreate;
         stageAndTargetDesc.usages = stageAndTargetDesc.usages | RHIBufferUsageFlagBits::TransferDestination;
 
-        auto *targetBuffer = device->CreateBuffer(stageAndTargetDesc);
+        auto* targetBuffer = device->CreateBuffer(stageAndTargetDesc);
         if (!targetBuffer || !targetBuffer->IsValid())
         {
             stagingBuffer->ReleaseImmediate();
@@ -173,7 +179,7 @@ namespace Hazel
         return targetBuffer;
     }
 
-    void *RHI_VK_FUNC_IMPL(RHIBuffer, Map)()
+    void*RHI_VK_FUNC_IMPL(RHIBuffer, Map)()
     {
         if (!m_IsValid)
         {
@@ -212,7 +218,7 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
         if (deviceOwner)
         {
@@ -227,7 +233,7 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
         if (deviceOwner)
         {
@@ -237,7 +243,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, ReleaseWithoutUnregister)()
     {
-        for (const auto &view: m_Views)
+        for (const auto& view : m_Views)
         {
             if (view)
             {
@@ -257,11 +263,11 @@ namespace Hazel
 
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([allocator, buffer, allocation]()
-            {
+            m_DeviceOwner->EnqueueDeletion([allocator, buffer, allocation]() {
                 VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
             });
-        } else
+        }
+        else
         {
             VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
         }
@@ -278,7 +284,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, ReleaseImmediateWithoutUnregister)()
     {
-        for (const auto &view: m_Views)
+        for (const auto& view : m_Views)
         {
             if (view)
             {
@@ -308,11 +314,11 @@ namespace Hazel
         m_AllocatorOwner = nullptr;
     }
 
-    RHIBufferView *RHI_VK_FUNC_IMPL(RHIBuffer, CreateView)(const RHIBufferViewDesc &desc)
+    RHIBufferView*RHI_VK_FUNC_IMPL(RHIBuffer, CreateView)(const RHIBufferViewDesc& desc, bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !m_DeviceOwner);
 
-        return m_DeviceOwner->CreateBufferView(this, desc);
+        return m_DeviceOwner->CreateBufferView(this, desc, isDetached);
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, RegisterView)(std::unique_ptr<RHIBufferView> view)
@@ -320,8 +326,8 @@ namespace Hazel
         m_Views.Register(std::move(view));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView *view)
+    void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView* view)
     {
         m_Views.Unregister(view);
     }
-} // Hazel
+} // namespace Hazel

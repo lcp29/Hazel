@@ -2,34 +2,33 @@
 
 #include <imgui.h>
 
-namespace Hazel::UI {
+namespace Hazel::UI
+{
+    struct ScopedStyleColor
+    {
+        ScopedStyleColor() = default;
 
-	struct ScopedStyleColor
-	{
-		ScopedStyleColor() = default;
+        ScopedStyleColor(ImGuiCol idx, ImVec4 color, bool predicate = true)
+            : m_Set(predicate)
+        {
+            if (predicate)
+                ImGui::PushStyleColor(idx, color);
+        }
 
-		ScopedStyleColor(ImGuiCol idx, ImVec4 color, bool predicate = true)
-			: m_Set(predicate)
-		{
-			if (predicate)
-				ImGui::PushStyleColor(idx, color);
-		}
+        ScopedStyleColor(ImGuiCol idx, ImU32 color, bool predicate = true)
+            : m_Set(predicate)
+        {
+            if (predicate)
+                ImGui::PushStyleColor(idx, color);
+        }
 
-		ScopedStyleColor(ImGuiCol idx, ImU32 color, bool predicate = true)
-			: m_Set(predicate)
-		{
-			if (predicate)
-				ImGui::PushStyleColor(idx, color);
-		}
+        ~ScopedStyleColor()
+        {
+            if (m_Set)
+                ImGui::PopStyleColor();
+        }
 
-		~ScopedStyleColor()
-		{
-			if (m_Set)
-				ImGui::PopStyleColor();
-		}
-	private:
-		bool m_Set = false;
-	};
-
-
-}
+    private:
+        bool m_Set = false;
+    };
+} // namespace Hazel::UI

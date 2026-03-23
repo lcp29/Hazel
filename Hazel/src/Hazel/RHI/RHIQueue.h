@@ -4,18 +4,18 @@
 
 #pragma once
 
-#include <vector>
-
 #include "Flags.h"
 #include "RHIBase.h"
 #include "RHICommandBuffer.h"
 #include "RHISyncPoint.h"
 
+#include <vector>
+
 namespace Hazel
 {
     struct RHIQueueSubmitDesc
     {
-        std::vector<RHICommandBuffer *> commandBuffers;
+        std::vector<RHICommandBuffer*> commandBuffers;
         std::vector<RHISyncPoint> waitSyncPoints;
     };
 
@@ -29,8 +29,8 @@ namespace Hazel
 
     using RHIQueueType = RHIQueueTypeFlagBits;
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIQueueTypeFlagBits> : std::true_type {};
 
     using RHIQueueTypes = Flags<RHIQueueTypeFlagBits>;
-} // Hazel
+} // namespace Hazel

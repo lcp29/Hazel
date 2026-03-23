@@ -1,0 +1,111 @@
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  cppcoreguidelines-*,
+  clang-analyzer-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -cppcoreguidelines-avoid-magic-numbers
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: none
+
+CheckOptions:
+  # ========= 命名规则 =========
+
+  # namespace: PascalCase
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
+
+  # class / struct / enum / union: PascalCase
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+
+  # enum 成员: PascalCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+
+  # 普通函数 / 成员函数: PascalCase
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.MethodCase
+    value: CamelCase
+
+  # 变量 / 参数: camelCase
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+
+  # 成员变量: m_ + camelCase
+  - key: readability-identifier-naming.MemberCase
+    value: camelBack
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+
+  # 静态成员变量: s_ + camelCase
+  - key: readability-identifier-naming.ClassMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ClassMemberPrefix
+    value: s_
+
+  # 常量：kName 风格
+  - key: readability-identifier-naming.ConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: k
+
+  # constexpr 变量也按常量处理
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: k
+
+  # 私有成员函数仍然 PascalCase
+  - key: readability-identifier-naming.PrivateMethodCase
+    value: CamelCase
+
+  # 宏：全大写
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
+  # 模板参数：PascalCase
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+
+  # typedef / using 别名：PascalCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+
+  # ========= 一些更温和的行为参数 =========
+
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+
+  - key: readability-qualified-auto.IgnoreAliasedTypes
+    value: '0'
+  - key: readability-qualified-auto.AllowDeclarationsOfUnknownType
+    value: '0'
+
+  - key: performance-for-range-copy.WarnOnAllAutoCopies
+    value: '0'

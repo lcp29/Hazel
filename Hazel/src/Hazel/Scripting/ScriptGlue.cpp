@@ -1,157 +1,157 @@
-#include "hzpch.h"
 #include "ScriptGlue.h"
-#include "ScriptEngine.h"
 
-#include "Hazel/Core/UUID.h"
-#include "Hazel/Core/KeyCodes.h"
 #include "Hazel/Core/Input.h"
-
-#include "Hazel/Scene/Scene.h"
+#include "Hazel/Core/KeyCodes.h"
+#include "Hazel/Core/UUID.h"
 #include "Hazel/Scene/Entity.h"
-
+#include "Hazel/Scene/Scene.h"
+#include "Hazel/Scene/Components.h"
+#include "Hazel/Scripting/ScriptEngine.h"
+#include "hzpch.h"
 #include "mono/metadata/object.h"
 #include "mono/metadata/reflection.h"
 
-namespace Hazel {
+namespace Hazel
+{
+    namespace Utils
+    {
+        std::string MonoStringToString(MonoString* string)
+        {
+            char* cStr = mono_string_to_utf8(string);
+            std::string str(cStr);
+            mono_free(cStr);
+            return str;
+        }
+    } // namespace Utils
 
-	namespace Utils {
-
-		std::string MonoStringToString(MonoString* string)
-		{
-			char* cStr = mono_string_to_utf8(string);
-			std::string str(cStr);
-			mono_free(cStr);
-			return str;
-		}
-
-	}
-
-	static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
+    static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 
 #define HZ_ADD_INTERNAL_CALL(Name) mono_add_internal_call("Hazel.InternalCalls::" #Name, Name)
 
-	static void NativeLog(MonoString* string, int parameter)
-	{
-		std::string str = Utils::MonoStringToString(string);
-		std::cout << str << ", " << parameter << std::endl;
-	}
+    static void NativeLog(MonoString* string, int parameter)
+    {
+        std::string str = Utils::MonoStringToString(string);
+        std::cout << str << ", " << parameter << std::endl;
+    }
 
-	static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
-	{
-		HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
-		*outResult = glm::normalize(*parameter);
-	}
+    static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
+    {
+        HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
+        *outResult = glm::normalize(*parameter);
+    }
 
-	static float NativeLog_VectorDot(glm::vec3* parameter)
-	{
-		HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
-		return glm::dot(*parameter, *parameter);
-	}
+    static float NativeLog_VectorDot(glm::vec3* parameter)
+    {
+        HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
+        return glm::dot(*parameter, *parameter);
+    }
 
-	static MonoObject* GetScriptInstance(UUID entityID)
-	{
-		return ScriptEngine::GetManagedInstance(entityID);
-	}
+    static MonoObject* GetScriptInstance(UUID entityID)
+    {
+        return ScriptEngine::GetManagedInstance(entityID);
+    }
 
-	static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		HZ_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		HZ_CORE_ASSERT(entity);
+    static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
+    {
+        Scene* scene = ScriptEngine::GetSceneContext();
+        HZ_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        HZ_CORE_ASSERT(entity);
 
-		MonoType* managedType = mono_reflection_type_get_type(componentType);
-		HZ_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
-		return s_EntityHasComponentFuncs.at(managedType)(entity);
-	}
+        MonoType* managedType = mono_reflection_type_get_type(componentType);
+        HZ_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
+        return s_EntityHasComponentFuncs.at(managedType)(entity);
+    }
 
-	static uint64_t Entity_FindEntityByName(MonoString* name)
-	{
-		char* nameCStr = mono_string_to_utf8(name);
+    static uint64_t Entity_FindEntityByName(MonoString* name)
+    {
+        char* nameCStr = mono_string_to_utf8(name);
 
-		Scene* scene = ScriptEngine::GetSceneContext();
-		HZ_CORE_ASSERT(scene);
-		Entity entity = scene->FindEntityByName(nameCStr);
-		mono_free(nameCStr);
+        Scene* scene = ScriptEngine::GetSceneContext();
+        HZ_CORE_ASSERT(scene);
+        Entity entity = scene->FindEntityByName(nameCStr);
+        mono_free(nameCStr);
 
-		if (!entity)
-			return 0;
-		
-		return entity.GetUUID();
-	}
+        if (!entity)
+            return 0;
 
-	static void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		HZ_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		HZ_CORE_ASSERT(entity);
+        return entity.GetUUID();
+    }
 
-		*outTranslation = entity.GetComponent<TransformComponent>().translation;
-	}
+    static void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
+    {
+        Scene* scene = ScriptEngine::GetSceneContext();
+        HZ_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        HZ_CORE_ASSERT(entity);
 
-	static void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		HZ_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		HZ_CORE_ASSERT(entity);
+        *outTranslation = entity.GetComponent<TransformComponent>().translation;
+    }
 
-		entity.GetComponent<TransformComponent>().translation = *translation;
-	}
+    static void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
+    {
+        Scene* scene = ScriptEngine::GetSceneContext();
+        HZ_CORE_ASSERT(scene);
+        Entity entity = scene->GetEntityByUUID(entityID);
+        HZ_CORE_ASSERT(entity);
 
-	static bool Input_IsKeyDown(KeyCode keycode)
-	{
-		return Input::IsKeyPressed(keycode);
-	}
+        entity.GetComponent<TransformComponent>().translation = *translation;
+    }
 
-	template<typename... Component>
-	static void RegisterComponent()
-	{
-		([]()
-		{
-			std::string_view typeName = typeid(Component).name();
-			size_t pos = typeName.find_last_of(':');
-			std::string_view structName = typeName.substr(pos + 1);
-			std::string managedTypename = fmt::format("Hazel.{}", structName);
+    static bool Input_IsKeyDown(KeyCode keycode)
+    {
+        return Input::IsKeyPressed(keycode);
+    }
 
-			MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
-			if (!managedType)
-			{
-				HZ_CORE_ERROR("Could not find component type {}", managedTypename);
-				return;
-			}
-			s_EntityHasComponentFuncs[managedType] = [](Entity entity) { return entity.HasComponent<Component>(); };
-		}(), ...);
-	}
+    template <typename... Component>
+    static void RegisterComponent()
+    {
+        (
+            []()
+            {
+                std::string_view typeName = typeid(Component).name();
+                size_t pos = typeName.find_last_of(':');
+                std::string_view structName = typeName.substr(pos + 1);
+                std::string managedTypename = fmt::format("Hazel.{}", structName);
 
-	template<typename... Component>
-	static void RegisterComponent(ComponentGroup<Component...>)
-	{
-		RegisterComponent<Component...>();
-	}
+                MonoType* managedType =
+                    mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
+                if (!managedType)
+                {
+                    HZ_CORE_ERROR("Could not find component type {}", managedTypename);
+                    return;
+                }
+                s_EntityHasComponentFuncs[managedType] = [](Entity entity) { return entity.HasComponent<Component>(); };
+            }(),
+            ...);
+    }
 
-	void ScriptGlue::RegisterComponents()
-	{
-		s_EntityHasComponentFuncs.clear();
-		RegisterComponent(AllComponents{});
-	}
+    template <typename... Component>
+    static void RegisterComponent(ComponentGroup<Component...>)
+    {
+        RegisterComponent<Component...>();
+    }
 
-	void ScriptGlue::RegisterFunctions()
-	{
-		HZ_ADD_INTERNAL_CALL(NativeLog);
-		HZ_ADD_INTERNAL_CALL(NativeLog_Vector);
-		HZ_ADD_INTERNAL_CALL(NativeLog_VectorDot);
+    void ScriptGlue::RegisterComponents()
+    {
+        s_EntityHasComponentFuncs.clear();
+        RegisterComponent(AllComponents{});
+    }
 
-		HZ_ADD_INTERNAL_CALL(GetScriptInstance);
+    void ScriptGlue::RegisterFunctions()
+    {
+        HZ_ADD_INTERNAL_CALL(NativeLog);
+        HZ_ADD_INTERNAL_CALL(NativeLog_Vector);
+        HZ_ADD_INTERNAL_CALL(NativeLog_VectorDot);
 
-		HZ_ADD_INTERNAL_CALL(Entity_HasComponent);
-		HZ_ADD_INTERNAL_CALL(Entity_FindEntityByName);
+        HZ_ADD_INTERNAL_CALL(GetScriptInstance);
 
-		HZ_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
-		HZ_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
+        HZ_ADD_INTERNAL_CALL(Entity_HasComponent);
+        HZ_ADD_INTERNAL_CALL(Entity_FindEntityByName);
 
-		HZ_ADD_INTERNAL_CALL(Input_IsKeyDown);
-	}
+        HZ_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
+        HZ_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
 
-}
+        HZ_ADD_INTERNAL_CALL(Input_IsKeyDown);
+    }
+} // namespace Hazel

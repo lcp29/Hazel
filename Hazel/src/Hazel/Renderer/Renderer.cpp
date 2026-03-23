@@ -1,19 +1,20 @@
 #include "Hazel/Renderer/Renderer.h"
+
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/Renderer/RenderTexture.h"
 
 namespace Hazel
 {
-    Renderer::Renderer(GraphicsContext* graphicsContext, Window* window) : m_GraphicsContext(graphicsContext),
-                                                                           m_Instance(graphicsContext->GetInstance()),
-                                                                           m_Device(graphicsContext->GetDevice()),
-                                                                           m_Window(window)
+    Renderer::Renderer(GraphicsContext* graphicsContext, Window* window)
+        : m_GraphicsContext(graphicsContext)
+          , m_Instance(graphicsContext->GetInstance())
+          , m_Device(graphicsContext->GetDevice())
+          , m_Window(window)
     {
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
-        glfwCreateWindowSurface(m_Instance->GetHandle(),
-                                static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
-                                nullptr, &surface);
+        glfwCreateWindowSurface(
+            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
 #endif
         m_WindowSurface = m_GraphicsContext->GetSurface();
 
@@ -70,9 +71,6 @@ namespace Hazel
     void Renderer::Render(Camera& camera)
     {
         (void)camera;
-
-        BeginSwapchainTargetRendering();
-        EndSwapchainTargetRendering();
     }
 
     void Renderer::BeginSwapchainTargetRendering()
@@ -82,8 +80,8 @@ namespace Hazel
         auto* swapchainImage = m_Swapchain->FetchImage(frameData.frameNumber);
         auto* swapchainImageView = m_Swapchain->FetchImageView(frameData.frameNumber);
 
-        swapchainImage->Transition(frameData.commandBuffer, swapchainImage->GetCurrentState(),
-                                   RHIImageResourceState::ColorAttachment);
+        swapchainImage->Transition(
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::ColorAttachment);
 
         RHIRenderingAttachmentDesc colorAttachmentDesc{};
         colorAttachmentDesc.imageView = swapchainImageView;
@@ -106,8 +104,8 @@ namespace Hazel
         frameData.commandBuffer->EndRendering();
 
         auto* swapchainImage = m_Swapchain->FetchImage(frameData.frameNumber);
-        swapchainImage->Transition(frameData.commandBuffer, swapchainImage->GetCurrentState(),
-                                   RHIImageResourceState::Present);
+        swapchainImage->Transition(
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::Present);
     }
 
     void Renderer::OnResize()
@@ -135,7 +133,11 @@ namespace Hazel
         renderTextureDesc.perFrame = true;
         renderTextureDesc.useMipmap = false;
 
-        if (m_DefaultRenderTexture && m_DefaultRenderTexture->IsValid())
+        if (m_DefaultRenderTexture&& m_DefaultRenderTexture
+        
+        ->
+        IsValid()
+        )
         {
             m_DefaultRenderTexture->ReleaseImmediate();
             m_DefaultRenderTexture.reset();
@@ -195,4 +197,4 @@ namespace Hazel
             m_Swapchain = nullptr;
         }
     }
-}
+} // namespace Hazel

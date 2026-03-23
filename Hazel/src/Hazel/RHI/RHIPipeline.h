@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "RHIBase.h"
 #include "Flags.h"
+#include "RHIBase.h"
 #include "RHICommon.h"
 #include "RHIImage.h"
 #include "RHIShader.h"
@@ -87,7 +87,7 @@ namespace Hazel
         A = 1 << 3
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIColorComponentFlagBits> : std::true_type {};
 
     using RHIColorComponentFlags = Flags<RHIColorComponentFlagBits>;
@@ -110,7 +110,7 @@ namespace Hazel
         Bottom = 1 << 13
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIPipelineStageFlagBits> : std::true_type {};
 
     using RHIPipelineStages = Flags<RHIPipelineStageFlagBits>;
@@ -141,7 +141,7 @@ namespace Hazel
         ShaderStorageWrite = 1 << 20
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIPipelineAccessFlagBits> : std::true_type {};
 
     using RHIPipelineAccessFlags = Flags<RHIPipelineAccessFlagBits>;
@@ -176,17 +176,15 @@ namespace Hazel
         RHIBlendFactor srcAlphaBlendFactor = RHIBlendFactor::One;
         RHIBlendFactor dstAlphaBlendFactor = RHIBlendFactor::Zero;
         RHIBlendOp alphaBlendOp = RHIBlendOp::Add;
-        RHIColorComponentFlags colorWriteMask = RHIColorComponentFlagBits::R
-                                                | RHIColorComponentFlagBits::G
-                                                | RHIColorComponentFlagBits::B
-                                                | RHIColorComponentFlagBits::A;
+        RHIColorComponentFlags colorWriteMask = RHIColorComponentFlagBits::R | RHIColorComponentFlagBits::G
+            | RHIColorComponentFlagBits::B | RHIColorComponentFlagBits::A;
     };
 
     struct RHIGraphicsPipelineDesc
     {
-        RHIResourceSignature *resourceSignature = nullptr;
-        RHIShader *vertexShader = nullptr;
-        RHIShader *fragmentShader = nullptr;
+        RHIResourceSignature* resourceSignature = nullptr;
+        RHIShader* vertexShader = nullptr;
+        RHIShader* fragmentShader = nullptr;
         std::vector<RHIVertexBindingDesc> vertexBindings;
         std::vector<RHIVertexAttributeDesc> vertexAttributes;
         RHIPrimitiveTopology topology = RHIPrimitiveTopology::TriangleList;
@@ -208,8 +206,8 @@ namespace Hazel
 
     struct RHIComputePipelineDesc
     {
-        RHIResourceSignature *resourceSignature = nullptr;
-        RHIShader *computeShader = nullptr;
+        RHIResourceSignature* resourceSignature = nullptr;
+        RHIShader* computeShader = nullptr;
         std::string debugName;
     };
 
@@ -223,35 +221,35 @@ namespace Hazel
 
     struct RHIImageMemoryBarrier
     {
-        RHIImage *image;
+        RHIImage* image;
         RHIPipelineStages srcStages;
         RHIPipelineStages dstStages;
         RHIPipelineAccessFlags srcAccess;
         RHIPipelineAccessFlags dstAccess;
         RHIImageResourceState oldState;
         RHIImageResourceState newState;
-        RHIQueue *srcQueue;
-        RHIQueue *dstQueue;
+        RHIQueue* srcQueue;
+        RHIQueue* dstQueue;
         RHIImageSubresourceRange subresourceRange;
     };
 
     struct RHIBufferMemoryBarrier
     {
-        RHIBuffer *buffer;
+        RHIBuffer* buffer;
         RHIPipelineStages srcStages;
         RHIPipelineStages dstStages;
         RHIPipelineAccessFlags srcAccess;
         RHIPipelineAccessFlags dstAccess;
         uint64_t offset;
         uint64_t size;
-        RHIQueue *srcQueue;
-        RHIQueue *dstQueue;
+        RHIQueue* srcQueue;
+        RHIQueue* dstQueue;
     };
 
     struct RHIPipelineBarrierDesc
     {
-        std::vector<RHIMemoryBarrier> memoryBarriers {};
-        std::vector<RHIImageMemoryBarrier> imageBarriers {};
-        std::vector<RHIBufferMemoryBarrier> bufferBarriers {};
+        std::vector<RHIMemoryBarrier> memoryBarriers{};
+        std::vector<RHIImageMemoryBarrier> imageBarriers{};
+        std::vector<RHIBufferMemoryBarrier> bufferBarriers{};
     };
-} // Hazel
+} // namespace Hazel

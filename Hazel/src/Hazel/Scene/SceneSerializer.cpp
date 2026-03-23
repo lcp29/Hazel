@@ -1,9 +1,9 @@
-#include "hzpch.h"
 #include "SceneSerializer.h"
 
 #include "Entity.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Project/Project.h"
+#include "Hazel/Scene/Components.h"
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -63,7 +63,7 @@ namespace Hazel
 
             for (auto entityNode : entities)
             {
-                UUID uuid = entityNode["ID"]["ID"].as<UUID>();
+                UUID uuid = entityNode["ID"]["ID"][0].as<UUID>();
                 Entity entity = m_Scene->GetEntityByUUID(uuid);
                 entity.BuildRelationship(entityNode["Relationship"]);
             }
@@ -71,4 +71,4 @@ namespace Hazel
 
         return true;
     }
-}
+} // namespace Hazel

@@ -2,20 +2,20 @@
 
 #include <filesystem>
 
-namespace Hazel {
+namespace Hazel
+{
+    class ContentBrowserPanel
+    {
+    public:
+        ContentBrowserPanel(void* directoryIcon, void* fileIcon);
 
-	class ContentBrowserPanel
-	{
-	public:
-		ContentBrowserPanel(void* directoryIcon, void* fileIcon);
+        void OnImGuiRender();
 
-		void OnImGuiRender();
-	private:
-		std::filesystem::path m_BaseDirectory;
-		std::filesystem::path m_CurrentDirectory;
+    private:
+        std::filesystem::path m_BaseDirectory;
+        std::filesystem::path m_CurrentDirectory;
 
-		void* m_DirectoryIcon = nullptr;
-		void* m_FileIcon = nullptr;
-	};
-
+        void* m_DirectoryIcon = nullptr;
+        void* m_FileIcon = nullptr;
+    };
 }

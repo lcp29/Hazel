@@ -2,16 +2,17 @@
 // Created by helmholtz on 2026/3/13.
 //
 
-#include <VkBootstrap.h>
-#include <vulkan/vulkan.hpp>
+#include "VulkanInstance.h"
 
 #include "../RHIBase.h"
 #include "../RHIInstance.h"
 #include "VulkanAdapter.h"
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
-#include "VulkanInstance.h"
 #include "VulkanSurface.h"
+
+#include <VkBootstrap.h>
+#include <vulkan/vulkan.hpp>
 
 namespace Hazel
 {
@@ -22,7 +23,7 @@ namespace Hazel
         std::vector<RHIAdapter> adapters;
         adapters.reserve(physicalDevices.size());
 
-        for (const auto &physicalDevice: physicalDevices)
+        for (const auto& physicalDevice : physicalDevices)
         {
             adapters.emplace_back(physicalDevice);
         }
@@ -30,7 +31,7 @@ namespace Hazel
         return adapters;
     }
 
-    RHISurface *RHI_VK_FUNC_IMPL(RHIInstance, CreateSurface)(const RHISurfaceDesc &desc)
+    RHISurface* RHI_VK_FUNC_IMPL(RHIInstance, CreateSurface)(const RHISurfaceDesc& desc)
     {
         std::unique_ptr<RHISurface> surface(new RHISurface(this, m_Instance, desc));
         if (!surface || !surface->IsValid())
@@ -38,14 +39,14 @@ namespace Hazel
             return nullptr;
         }
 
-        RHISurface *surfacePtr = surface.get();
+        RHISurface* surfacePtr = surface.get();
         RegisterSurface(std::move(surface));
         return surfacePtr;
     }
 
-    RHIDevice *RHI_VK_FUNC_IMPL(RHIInstance, CreateDevice)(const RHIAdapter *adapter,
-                                                           const RHIDeviceCapabilities &caps,
-                                                           const RHISurface *surface)
+    RHIDevice* RHI_VK_FUNC_IMPL(RHIInstance, CreateDevice)(const RHIAdapter* adapter,
+                                                           const RHIDeviceCapabilities& caps,
+                                                           const RHISurface* surface)
     {
         if (!adapter || !adapter->CanCreateDevice(caps))
         {
@@ -58,58 +59,59 @@ namespace Hazel
             return nullptr;
         }
 
-        RHIDevice *devicePtr = device.get();
+        RHIDevice* devicePtr = device.get();
         RegisterDevice(std::move(device));
         return devicePtr;
     }
 
-    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(const RHIInstanceDesc &desc) : m_InstanceDesc(desc)
+    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(const RHIInstanceDesc& desc)
+        : m_InstanceDesc(desc)
     {
         vkb::InstanceBuilder builder;
         m_DebugCallbackContext.callback = desc.debugMessageCallback;
         m_DebugCallbackContext.userData = nullptr;
 
-        auto instanceBuilder = builder.set_app_name(desc.appName.c_str())
-                .require_api_version(1, 3, 0)
-                .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
-                .set_engine_name(desc.engineName.c_str())
-                .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
-                .enable_validation_layers(desc.useValidation)
-                .add_debug_messenger_severity(VulkanConvertDebugMessageSeverity(desc.debugMessageSeverity))
-                .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType));
+        auto instanceBuilder =
+            builder.set_app_name(desc.appName.c_str())
+                   .require_api_version(1, 3, 0)
+                   .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
+                   .set_engine_name(desc.engineName.c_str())
+                   .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
+                   .enable_validation_layers(desc.useValidation)
+                   .add_debug_messenger_severity(VulkanConvertDebugMessageSeverity(desc.debugMessageSeverity))
+                   .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType));
 
         if (desc.useValidation)
         {
             instanceBuilder.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
-                    .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
+                           .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
         }
 
         if (desc.useCustomDebugMessenger)
         {
             instanceBuilder.set_debug_callback_user_data_pointer(&m_DebugCallbackContext)
-                    .set_debug_callback(
-                        [](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-                           VkDebugUtilsMessageTypeFlagsEXT type,
-                           const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
-                           void *callbackContext) -> VkBool32
-                        {
-                            if (!callbackContext)
-                            {
-                                return VK_FALSE;
-                            }
+                           .set_debug_callback([](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                                  VkDebugUtilsMessageTypeFlagsEXT type,
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                  void* callbackContext) -> VkBool32 {
+                               if (!callbackContext)
+                               {
+                                   return VK_FALSE;
+                               }
 
-                            auto *context = static_cast<VulkanDebugMessageContext *>(callbackContext);
-                            DebugMessage message{};
-                            message.backend = RHIBackend::Vulkan;
-                            message.severity = severity;
-                            message.type = type;
-                            message.messageIdNumber = callbackData->messageIdNumber;
-                            message.messageIdName = callbackData->pMessageIdName;
-                            message.message = callbackData->pMessage;
-                            context->callback(message, context->userData);
-                            return VK_FALSE;
-                        });
-        } else
+                               auto* context = static_cast<VulkanDebugMessageContext*>(callbackContext);
+                               DebugMessage message{};
+                               message.backend = RHIBackend::Vulkan;
+                               message.severity = severity;
+                               message.type = type;
+                               message.messageIdNumber = callbackData->messageIdNumber;
+                               message.messageIdName = callbackData->pMessageIdName;
+                               message.message = callbackData->pMessage;
+                               context->callback(message, context->userData);
+                               return VK_FALSE;
+                           });
+        }
+        else
         {
             instanceBuilder.use_default_debug_messenger();
         }
@@ -131,7 +133,7 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(RHIInstance &&instance) noexcept
+    RHI_VK_FUNC_IMPL(RHIInstance, RHIInstanceImpl)(RHIInstance&& instance) noexcept
     {
         m_Instance = instance.m_Instance;
         m_InstanceDesc = instance.m_InstanceDesc;
@@ -156,16 +158,16 @@ namespace Hazel
             return;
         }
 
-        for (const auto &device: m_Devices)
+        for (const auto& device : m_Devices)
         {
             if (device)
             {
-                device->ReleaseFromOwner();
+                device->ReleaseWithoutUnregister();
             }
         }
         m_Devices.Clear();
 
-        for (const auto &surface: m_Surfaces)
+        for (const auto& surface : m_Surfaces)
         {
             if (surface)
             {
@@ -196,7 +198,7 @@ namespace Hazel
         m_Devices.Register(std::move(device));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice *device)
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice* device)
     {
         m_Devices.Unregister(device);
     }
@@ -206,7 +208,7 @@ namespace Hazel
         m_Surfaces.Register(std::move(surface));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface *surface)
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface* surface)
     {
         m_Surfaces.Unregister(surface);
     }

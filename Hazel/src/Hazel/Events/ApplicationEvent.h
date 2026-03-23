@@ -8,10 +8,18 @@ namespace Hazel
     {
     public:
         WindowResizeEvent(unsigned int width, unsigned int height)
-            : m_Width(width), m_Height(height) {}
+            : m_Width(width)
+              , m_Height(height) {}
 
-        unsigned int GetWidth() const { return m_Width; }
-        unsigned int GetHeight() const { return m_Height; }
+        unsigned int GetWidth() const
+        {
+            return m_Width;
+        }
+
+        unsigned int GetHeight() const
+        {
+            return m_Height;
+        }
 
         std::string ToString() const override
         {
@@ -20,8 +28,8 @@ namespace Hazel
             return ss.str();
         }
 
-        EVENT_CLASS_TYPE(WindowResize)
-        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+        EVENT_CLASS_TYPE (WindowResize)
+        EVENT_CLASS_CATEGORY (EventCategoryApplication)
 
     private:
         unsigned int m_Width, m_Height;
@@ -32,8 +40,8 @@ namespace Hazel
     public:
         WindowCloseEvent() = default;
 
-        EVENT_CLASS_TYPE(WindowClose)
-        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+        EVENT_CLASS_TYPE (WindowClose)
+        EVENT_CLASS_CATEGORY (EventCategoryApplication)
     };
 
     class AppTickEvent : public Event
@@ -41,8 +49,8 @@ namespace Hazel
     public:
         AppTickEvent() = default;
 
-        EVENT_CLASS_TYPE(AppTick)
-        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+        EVENT_CLASS_TYPE (AppTick)
+        EVENT_CLASS_CATEGORY (EventCategoryApplication)
     };
 
     class AppUpdateEvent : public Event
@@ -50,8 +58,8 @@ namespace Hazel
     public:
         AppUpdateEvent() = default;
 
-        EVENT_CLASS_TYPE(AppUpdate)
-        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+        EVENT_CLASS_TYPE (AppUpdate)
+        EVENT_CLASS_CATEGORY (EventCategoryApplication)
     };
 
     class AppRenderEvent : public Event
@@ -59,7 +67,7 @@ namespace Hazel
     public:
         AppRenderEvent() = default;
 
-        EVENT_CLASS_TYPE(AppRender)
-        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+        EVENT_CLASS_TYPE (AppRender)
+        EVENT_CLASS_CATEGORY (EventCategoryApplication)
     };
-}
+} // namespace Hazel

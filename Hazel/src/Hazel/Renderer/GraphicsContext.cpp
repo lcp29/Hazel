@@ -1,4 +1,5 @@
 #include "Hazel/Renderer/GraphicsContext.h"
+
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
@@ -26,11 +27,11 @@ namespace Hazel
         instanceDesc.engineVersion = {1, 0, 0};
         instanceDesc.useCustomDebugMessenger = false;
 #if defined(HZ_DEBUG)
-        instanceDesc.useValidation = false;
+        instanceDesc.useValidation = true;
         instanceDesc.debugMessageSeverity = DebugMessageSeverityFlagBits::Error | DebugMessageSeverityFlagBits::Warning
             | DebugMessageSeverityFlagBits::Info;
-        instanceDesc.debugMessageType = DebugMessageTypeFlagBits::General | DebugMessageTypeFlagBits::Validation |
-            DebugMessageTypeFlagBits::Performance;
+        instanceDesc.debugMessageType = DebugMessageTypeFlagBits::General | DebugMessageTypeFlagBits::Validation
+            | DebugMessageTypeFlagBits::Performance;
 #else
         instanceDesc.useValidation = false;
         instanceDesc.debugMessageSeverity = {};
@@ -41,8 +42,8 @@ namespace Hazel
 
 #if defined(RHI_USE_VULKAN)
         VkSurfaceKHR surface;
-        glfwCreateWindowSurface(m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
-                                nullptr, &surface);
+        glfwCreateWindowSurface(
+            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
         RHISurfaceDesc surfaceDesc{surface};
 #endif
 
@@ -50,8 +51,8 @@ namespace Hazel
 
         // enumerate physical devices and create device
         RHIDeviceCapabilities deviceCaps;
-        deviceCaps.queueTypes = RHIQueueTypeFlagBits::Graphics | RHIQueueTypeFlagBits::Compute |
-            RHIQueueTypeFlagBits::Transfer | RHIQueueTypeFlagBits::Present;
+        deviceCaps.queueTypes = RHIQueueTypeFlagBits::Graphics | RHIQueueTypeFlagBits::Compute
+            | RHIQueueTypeFlagBits::Transfer | RHIQueueTypeFlagBits::Present;
         deviceCaps.supportSubgroup = true;
         auto adapters = m_Instance->GetAdapters();
         for (auto& adapter : adapters)
@@ -67,8 +68,10 @@ namespace Hazel
         m_Initialized = true;
     }
 
-    GraphicsContext::GraphicsContext(const std::string& appName, Window* window) : m_AppName(appName), m_Window(window)
+    GraphicsContext::GraphicsContext(const std::string& appName, Window* window)
+        : m_AppName(appName)
+          , m_Window(window)
     {
         Init(window);
     }
-}
+} // namespace Hazel

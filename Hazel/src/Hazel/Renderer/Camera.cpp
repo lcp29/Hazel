@@ -192,4 +192,4 @@ namespace Hazel
             m_OrthoFarClip = (m_Projection[3][2] - 1) / m_Projection[2][2];
         }
     }
-}
+} // namespace Hazel

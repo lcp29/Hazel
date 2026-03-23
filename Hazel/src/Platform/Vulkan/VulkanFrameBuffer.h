@@ -7,4 +7,4 @@
 namespace Hazel
 {
     class VulkanFrameBuffer {};
-} // Hazel
+} // namespace Hazel

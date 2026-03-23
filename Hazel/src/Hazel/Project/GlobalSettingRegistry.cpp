@@ -38,4 +38,4 @@ namespace Hazel
             m_Registries[entry.first.as<std::string>()] = entry.second.as<std::string>();
         }
     }
-} // Hazel
+} // namespace Hazel

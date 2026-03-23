@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined (RHI_USE_VULKAN) && !defined(VK_VERSION_1_0)
+#if defined(RHI_USE_VULKAN) && !defined(VK_VERSION_1_0)
 #define VK_VERSION_1_0
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -22,10 +22,25 @@ namespace Hazel
 
         void Init(Window* window);
 
-        RHIInstance* GetInstance() const { return m_Instance.get(); }
-        RHIAdapter GetAdapter() const { return m_Adapter; }
-        RHIDevice* GetDevice() const { return m_Device; }
-        RHISurface* GetSurface() const { return m_Surface; }
+        RHIInstance* GetInstance() const
+        {
+            return m_Instance.get();
+        }
+
+        RHIAdapter GetAdapter() const
+        {
+            return m_Adapter;
+        }
+
+        RHIDevice* GetDevice() const
+        {
+            return m_Device;
+        }
+
+        RHISurface* GetSurface() const
+        {
+            return m_Surface;
+        }
 
         static Scope<GraphicsContext> Create(std::string appName, Window* window);
 
@@ -39,4 +54,4 @@ namespace Hazel
         RHIAdapter m_Adapter;
         RHIDevice* m_Device = nullptr;
     };
-}
+} // namespace Hazel

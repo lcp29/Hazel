@@ -39,4 +39,4 @@ namespace Hazel
         bool compareEnable = false;
         RHICompareOp compareOp = RHICompareOp::LessOrEqual;
     };
-} // Hazel
+} // namespace Hazel

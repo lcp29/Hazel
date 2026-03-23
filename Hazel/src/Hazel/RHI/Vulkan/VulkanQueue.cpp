@@ -3,6 +3,7 @@
 //
 
 #include "VulkanQueue.h"
+
 #include "VulkanDevice.h"
 
 namespace Hazel
@@ -12,12 +13,15 @@ namespace Hazel
         constexpr auto s_DefaultSubmitStageMask = vk::PipelineStageFlagBits2::eAllCommands;
     }
 
-    RHI_VK_FUNC_IMPL(RHIQueue, RHIQueueImpl)(RHIDevice *device,
+    RHI_VK_FUNC_IMPL(RHIQueue, RHIQueueImpl)(RHIDevice* device,
                                              RHIQueueType type,
                                              uint32_t familyIndex,
                                              vk::Queue queue,
                                              uint32_t queueIndex)
-        : m_Type(type), m_FamilyIndex(familyIndex), m_QueueIndex(queueIndex), m_Queue(queue)
+        : m_Type(type)
+          , m_FamilyIndex(familyIndex)
+          , m_QueueIndex(queueIndex)
+          , m_Queue(queue)
     {
         m_DeviceOwner = device;
 
@@ -44,7 +48,7 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHISyncPoint RHI_VK_FUNC_IMPL(RHIQueue, Submit)(const RHIQueueSubmitDesc &desc)
+    RHISyncPoint RHI_VK_FUNC_IMPL(RHIQueue, Submit)(const RHIQueueSubmitDesc& desc)
     {
         m_TimelineValue++;
 
@@ -52,7 +56,7 @@ namespace Hazel
         submitInfo.commandBufferInfoCount = desc.commandBuffers.size();
         std::vector<vk::CommandBufferSubmitInfo> commandBufferInfos;
         commandBufferInfos.reserve(submitInfo.commandBufferInfoCount);
-        for (const auto cb: desc.commandBuffers)
+        for (const auto cb : desc.commandBuffers)
         {
             commandBufferInfos.emplace_back(cb->GetHandle());
         }
@@ -63,7 +67,7 @@ namespace Hazel
         submitInfo.waitSemaphoreInfoCount = desc.waitSyncPoints.size();
         std::vector<vk::SemaphoreSubmitInfo> waitSemaphoreInfos;
         waitSemaphoreInfos.reserve(submitInfo.waitSemaphoreInfoCount);
-        for (auto &waitSyncPoint: desc.waitSyncPoints)
+        for (auto& waitSyncPoint : desc.waitSyncPoints)
         {
             waitSemaphoreInfos.emplace_back(waitSyncPoint.queue->GetSignalSemaphore(), waitSyncPoint.value);
         }
@@ -115,14 +119,10 @@ namespace Hazel
             return {};
         }
 
-        return {
-            m_TimelineValue,
-            this,
-            true
-        };
+        return {m_TimelineValue, this, true};
     }
 
-    bool RHI_VK_FUNC_IMPL(RHIQueue, WaitSyncPointsAndSignalBinary)(const std::vector<RHISyncPoint> &waitSyncPoints,
+    bool RHI_VK_FUNC_IMPL(RHIQueue, WaitSyncPointsAndSignalBinary)(const std::vector<RHISyncPoint>& waitSyncPoints,
                                                                    vk::Semaphore semaphore)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !semaphore);
@@ -135,13 +135,14 @@ namespace Hazel
         submitInfo.waitSemaphoreInfoCount = static_cast<uint32_t>(waitSyncPoints.size());
         std::vector<vk::SemaphoreSubmitInfo> waitSemaphoreInfos;
         waitSemaphoreInfos.reserve(submitInfo.waitSemaphoreInfoCount);
-        for (const auto &waitSyncPoint: waitSyncPoints)
+        for (const auto& waitSyncPoint : waitSyncPoints)
         {
             HZ_RHI_DEBUG_FAIL_IF(!waitSyncPoint.valid || !waitSyncPoint.queue);
 
-            waitSemaphoreInfos.emplace_back(waitSyncPoint.queue->GetSignalSemaphore(),
-                                            waitSyncPoint.value,
-                                            s_DefaultSubmitStageMask);
+            waitSemaphoreInfos.emplace_back(
+                waitSyncPoint.queue->GetSignalSemaphore(),
+                waitSyncPoint.value,
+                s_DefaultSubmitStageMask);
         }
 
         submitInfo.pWaitSemaphoreInfos = waitSemaphoreInfos.data();
@@ -168,4 +169,4 @@ namespace Hazel
         m_Queue = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
     }
-}
+} // namespace Hazel

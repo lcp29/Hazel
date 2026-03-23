@@ -7,15 +7,14 @@
 #include "VulkanComputePipeline.h"
 
 #include "VulkanDevice.h"
-#include "VulkanPipelineCommon.h"
 #include "VulkanResourceSignature.h"
 #include "VulkanShader.h"
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIComputePipeline, RHIComputePipelineImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHIComputePipeline, RHIComputePipelineImpl)(RHIDevice* deviceOwner,
                                                                  vk::Device device,
-                                                                 const RHIComputePipelineDesc &desc)
+                                                                 const RHIComputePipelineDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
@@ -26,18 +25,17 @@ namespace Hazel
             return;
         }
 
-        auto *computeShader = desc.computeShader;
+        auto* computeShader = desc.computeShader;
         HZ_RHI_DEBUG_RETURN_IF(!computeShader || !computeShader->IsValid());
 
-        auto *resourceSignature = desc.resourceSignature;
+        auto* resourceSignature = desc.resourceSignature;
         HZ_RHI_DEBUG_RETURN_IF(!resourceSignature || !resourceSignature->IsValid());
         m_ResourceSignature = resourceSignature;
 
-        vk::PipelineShaderStageCreateInfo shaderStage(
-            {},
-            vk::ShaderStageFlagBits::eCompute,
-            computeShader->GetHandle(),
-            desc.computeShader->GetEntryPoint().c_str());
+        vk::PipelineShaderStageCreateInfo shaderStage({},
+                                                      vk::ShaderStageFlagBits::eCompute,
+                                                      computeShader->GetHandle(),
+                                                      desc.computeShader->GetEntryPoint().c_str());
 
         vk::ComputePipelineCreateInfo createInfo;
         createInfo.stage = shaderStage;
@@ -65,9 +63,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterComputePipeline(this);
         }
@@ -80,9 +78,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterComputePipeline(this);
         }
@@ -94,8 +92,7 @@ namespace Hazel
         const auto pipeline = m_Pipeline;
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, pipeline]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device, pipeline]() {
                 if (device && pipeline)
                 {
                     device.destroyPipeline(pipeline);
@@ -112,6 +109,7 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIComputePipeline, ReleaseImmediateWithoutUnregister)()
@@ -126,5 +124,6 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

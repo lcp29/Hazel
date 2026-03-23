@@ -11,9 +11,9 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIResourceHeap, RHIResourceHeapImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHIResourceHeap, RHIResourceHeapImpl)(RHIDevice* deviceOwner,
                                                            vk::Device device,
-                                                           const RHIResourceHeapDesc &desc)
+                                                           const RHIResourceHeapDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
@@ -78,7 +78,7 @@ namespace Hazel
         Release();
     }
 
-    RHIResourceGroup *RHI_VK_FUNC_IMPL(RHIResourceHeap, CreateGroup)(RHIResourceLayout *layout)
+    RHIResourceGroup* RHI_VK_FUNC_IMPL(RHIResourceHeap, CreateGroup)(RHIResourceLayout* layout, bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !layout || !layout->IsValid());
 
@@ -88,8 +88,12 @@ namespace Hazel
             return nullptr;
         }
 
-        auto *groupPtr = group.get();
-        RegisterGroup(std::move(group));
+        group->m_IsDetached = isDetached;
+        auto* groupPtr = group.get();
+        if (!isDetached)
+            RegisterGroup(std::move(group));
+        else
+            group.release();
         return groupPtr;
     }
 
@@ -100,9 +104,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceHeap(this);
         }
@@ -115,9 +119,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceHeap(this);
         }
@@ -125,7 +129,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, ReleaseWithoutUnregister)()
     {
-        for (const auto &group: m_Groups)
+        for (const auto& group : m_Groups)
         {
             if (group)
             {
@@ -139,15 +143,14 @@ namespace Hazel
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, descriptorPool, pendingOperations = std::move(pendingOperations)]()
-            mutable
-            {
-                if (device && descriptorPool)
-                {
-                    DeletionQueue::Execute(std::move(pendingOperations));
-                    device.destroyDescriptorPool(descriptorPool);
-                }
-            });
+            m_DeviceOwner->EnqueueDeletion(
+                [device, descriptorPool, pendingOperations = std::move(pendingOperations)]() mutable {
+                    if (device && descriptorPool)
+                    {
+                        DeletionQueue::Execute(std::move(pendingOperations));
+                        device.destroyDescriptorPool(descriptorPool);
+                    }
+                });
         }
         else if (device && descriptorPool)
         {
@@ -159,11 +162,12 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, ReleaseImmediateWithoutUnregister)()
     {
-        for (const auto &group: m_Groups)
+        for (const auto& group : m_Groups)
         {
             if (group)
             {
@@ -184,6 +188,7 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, RegisterGroup)(std::unique_ptr<RHIResourceGroup> group)
@@ -191,8 +196,8 @@ namespace Hazel
         m_Groups.Register(std::move(group));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup *group)
+    void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup* group)
     {
         m_Groups.Unregister(group);
     }
-} // Hazel
+} // namespace Hazel

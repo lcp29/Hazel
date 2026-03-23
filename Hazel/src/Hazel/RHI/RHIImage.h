@@ -34,7 +34,7 @@ namespace Hazel
         Stencil = 1 << 2
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIImagePlaneFlagBits> : std::true_type {};
 
     using RHIImagePlanes = Flags<RHIImagePlaneFlagBits>;
@@ -49,7 +49,7 @@ namespace Hazel
         DepthStencilAttachment = 1 << 5
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIImageUsageFlagBits> : std::true_type {};
 
     using RHIImageUsages = Flags<RHIImageUsageFlagBits>;
@@ -89,4 +89,4 @@ namespace Hazel
         uint32_t layerCount = 1;
         RHIImagePlanes planes = RHIImagePlaneFlagBits::Color;
     };
-} // Hazel
+} // namespace Hazel

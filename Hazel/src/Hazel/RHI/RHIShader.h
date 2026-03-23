@@ -19,7 +19,7 @@ namespace Hazel
         Compute = 1 << 2
     };
 
-    template<>
+    template <>
     struct InRHIFlagScope<RHIShaderStageFlagBits> : std::true_type {};
 
     using RHIShaderStages = Flags<RHIShaderStageFlagBits>;
@@ -101,4 +101,4 @@ namespace Hazel
         std::string debugName;
         std::vector<uint32_t> binary;
     };
-} // Hazel
+} // namespace Hazel

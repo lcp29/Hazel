@@ -15,8 +15,15 @@ namespace Hazel
     RHI_VK_CLASS_IMPL(RHICommandBuffer)
     {
     public:
-        bool IsValid() const { return m_IsValid; }
-        bool IsRecording() const { return m_IsRecording; }
+        bool IsValid() const
+        {
+            return m_IsValid;
+        }
+
+        bool IsRecording() const
+        {
+            return m_IsRecording;
+        }
 
         bool Begin(bool oneTimeSubmit);
         bool End();
@@ -69,14 +76,8 @@ namespace Hazel
                          uint32_t firstIndex = 0,
                          int32_t vertexOffset = 0,
                          uint32_t firstInstance = 0);
-        bool DrawIndirect(RHIBuffer* buffer,
-                          uint64_t offset = 0,
-                          uint32_t drawCount = 1,
-                          uint32_t stride = 0);
-        bool DrawIndexedIndirect(RHIBuffer* buffer,
-                                 uint64_t offset = 0,
-                                 uint32_t drawCount = 1,
-                                 uint32_t stride = 0);
+        bool DrawIndirect(RHIBuffer* buffer, uint64_t offset = 0, uint32_t drawCount = 1, uint32_t stride = 0);
+        bool DrawIndexedIndirect(RHIBuffer* buffer, uint64_t offset = 0, uint32_t drawCount = 1, uint32_t stride = 0);
         bool Dispatch(uint32_t groupCountX, uint32_t groupCountY = 1, uint32_t groupCountZ = 1);
         bool DispatchIndirect(RHIBuffer* buffer, uint64_t offset = 0);
         bool SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f);
@@ -84,7 +85,7 @@ namespace Hazel
         bool SetBlendConstants(float red, float green, float blue, float alpha);
         bool SetStencilReference(uint32_t reference);
         bool PushConstants(RHIResourceSignature* signature,
-                           RHIShaderStages stages,
+                           const RHIShaderStages& stages,
                            uint32_t offset,
                            uint32_t size,
                            const void* data);
@@ -94,8 +95,20 @@ namespace Hazel
         void ReleaseImmediate();
         ~RHICommandBufferImpl();
 
-        const RHICommandBufferDesc& GetDesc() const { return m_Desc; }
-        vk::CommandBuffer GetHandle() const { return m_CommandBuffer; }
+        const RHICommandBufferDesc& GetDesc() const
+        {
+            return m_Desc;
+        }
+
+        vk::CommandBuffer GetHandle() const
+        {
+            return m_CommandBuffer;
+        }
+
+        bool IsDetached() const
+        {
+            return m_IsDetached;
+        }
 
     private:
         friend class RHICommandPoolImpl<RHIBackend::Vulkan>;
@@ -116,5 +129,6 @@ namespace Hazel
         vk::Device m_Device;
         vk::CommandPool m_CommandPool = VK_NULL_HANDLE;
         vk::CommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
+        bool m_IsDetached = false;
     };
 } // namespace Hazel

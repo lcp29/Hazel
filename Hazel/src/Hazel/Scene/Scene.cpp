@@ -1,13 +1,12 @@
-#include "hzpch.h"
 #include "Scene.h"
-#include "Entity.h"
 
 #include "Components.h"
-#include "ScriptableEntity.h"
+#include "Entity.h"
 #include "Hazel/Scripting/ScriptEngine.h"
+#include "ScriptableEntity.h"
+#include "hzpch.h"
 
 #include <glm/glm.hpp>
-
 
 namespace Hazel
 {
@@ -19,24 +18,28 @@ namespace Hazel
     Scene::~Scene() {}
 
     template <typename... Component>
-    static void CopyComponent(entt::registry& dst, entt::registry& src,
-                              const std::unordered_map<UUID, entt::entity>& enttMap)
+    static void
+    CopyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
     {
-        ([&]()
-        {
-            auto view = src.view<Component>();
-            for (auto srcEntity : view)
+        (
+            [&]()
             {
-                entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
+                auto view = src.view < Component > ();
+                for (auto srcEntity : view)
+                {
+                    entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
 
-                auto& srcComponent = src.get<Component>(srcEntity);
-                dst.emplace_or_replace<Component>(dstEntity, srcComponent);
-            }
-        }(), ...);
+                    auto& srcComponent = src.get<Component>(srcEntity);
+                    dst.emplace_or_replace<Component>(dstEntity, srcComponent);
+                }
+            }(),
+            ...);
     }
 
     template <typename... Component>
-    static void CopyComponent(ComponentGroup<Component...>, entt::registry& dst, entt::registry& src,
+    static void CopyComponent(ComponentGroup<Component...>,
+                              entt::registry& dst,
+                              entt::registry& src,
                               const std::unordered_map<UUID, entt::entity>& enttMap)
     {
         CopyComponent<Component...>(dst, src, enttMap);
@@ -45,11 +48,13 @@ namespace Hazel
     template <typename... Component>
     static void CopyComponentIfExists(Entity dst, Entity src)
     {
-        ([&]()
-        {
-            if (src.HasComponent<Component>())
-                dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
-        }(), ...);
+        (
+            [&]()
+            {
+                if (src.HasComponent<Component>())
+                    dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+            }(),
+            ...);
     }
 
     template <typename... Component>
@@ -60,7 +65,7 @@ namespace Hazel
 
     Ref<Scene> Scene::Copy(Ref<Scene> other)
     {
-        Ref<Scene> newScene = CreateRef<Scene>();
+        Ref < Scene > newScene = CreateRef<Scene>();
 
         newScene->m_ViewportWidth = other->m_ViewportWidth;
         newScene->m_ViewportHeight = other->m_ViewportHeight;
@@ -119,7 +124,7 @@ namespace Hazel
             ScriptEngine::OnRuntimeStart(this);
             // Instantiate all script entities
 
-            auto view = m_Registry.view<ScriptComponent>();
+            auto view = m_Registry.view < ScriptComponent > ();
             for (auto e : view)
             {
                 Entity entity = {e, this};
@@ -142,14 +147,14 @@ namespace Hazel
             // Update scripts
             {
                 // C# Entity OnUpdate
-                auto view = m_Registry.view<ScriptComponent>();
+                auto view = m_Registry.view < ScriptComponent > ();
                 for (auto e : view)
                 {
                     Entity entity = {e, this};
                     ScriptEngine::OnUpdateEntity(entity, ts);
                 }
 
-                auto scriptView = m_Registry.view<NativeScriptComponent>();
+                auto scriptView = m_Registry.view < NativeScriptComponent > ();
 
                 for (auto [entity, nsc] : scriptView.each())
                 {
@@ -203,7 +208,7 @@ namespace Hazel
 
     Entity Scene::FindEntityByName(std::string_view name)
     {
-        auto view = m_Registry.view<TagComponent>();
+        auto view = m_Registry.view < TagComponent > ();
         for (auto entity : view)
         {
             const TagComponent& tc = view.get<TagComponent>(entity);
@@ -251,4 +256,4 @@ namespace Hazel
 
     template <>
     void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component) {}
-}
+} // namespace Hazel

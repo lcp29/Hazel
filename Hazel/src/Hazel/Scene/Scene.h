@@ -3,9 +3,8 @@
 #include "Hazel/Core/Timestep.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
-
-#include "entt.hpp"
 #include "ViewportCameraController.h"
+#include "entt.hpp"
 
 class b2World;
 
@@ -37,20 +36,48 @@ namespace Hazel
 
         Entity FindEntityByName(std::string_view name);
         Entity GetEntityByUUID(UUID uuid);
-        auto& GetMapUUIDToEntity() { return m_EntityMap; }
 
-        const Camera& GetViewportCamera() const { return m_ViewportCamera; }
-        void SetViewportCamera(const Camera& camera) { m_ViewportCamera = camera; }
+        auto& GetMapUUIDToEntity()
+        {
+            return m_EntityMap;
+        }
 
-        bool IsRunning() const { return m_IsRunning; }
-        bool IsPaused() const { return m_IsPaused; }
+        const Camera& GetViewportCamera() const
+        {
+            return m_ViewportCamera;
+        }
 
-        void SetPaused(bool paused) { m_IsPaused = paused; }
+        void SetViewportCamera(const Camera& camera)
+        {
+            m_ViewportCamera = camera;
+        }
+
+        bool IsRunning() const
+        {
+            return m_IsRunning;
+        }
+
+        bool IsPaused() const
+        {
+            return m_IsPaused;
+        }
+
+        void SetPaused(bool paused)
+        {
+            m_IsPaused = paused;
+        }
 
         void Step(int frames = 1);
 
-        std::string GetName() const { return m_Name; }
-        void SetName(const std::string& name) { m_Name = name; }
+        std::string GetName() const
+        {
+            return m_Name;
+        }
+
+        void SetName(const std::string& name)
+        {
+            m_Name = name;
+        }
 
         template <typename... Components>
         auto GetAllEntitiesWith()
@@ -80,4 +107,4 @@ namespace Hazel
         friend class SceneSerializer;
         friend class SceneHierarchyPanel;
     };
-}
+} // namespace Hazel

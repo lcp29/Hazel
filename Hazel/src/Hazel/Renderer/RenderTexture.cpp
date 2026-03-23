@@ -3,6 +3,7 @@
 //
 
 #include "Hazel/Renderer/RenderTexture.h"
+
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
@@ -23,8 +24,10 @@ namespace Hazel
         }
     } // namespace
 
-    RenderTexture::RenderTexture(Renderer* renderer, const RenderTextureDesc& desc) :
-        m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()), m_Desc(desc), m_Renderer(renderer)
+    RenderTexture::RenderTexture(Renderer* renderer, const RenderTextureDesc& desc)
+        : m_MaxFramesInFlight(renderer->GetMaxFramesInFlight())
+          , m_Desc(desc)
+          , m_Renderer(renderer)
     {
         auto* device = renderer->GetDevice();
 
@@ -35,12 +38,11 @@ namespace Hazel
         colorImageDesc.mipLevels = m_Desc.useMipmap ? DeduceMipLevelCount(m_Desc.width, m_Desc.height) : 1;
         colorImageDesc.arrayLayers = 1;
         colorImageDesc.format = m_Desc.format;
-        colorImageDesc.usages = RHIImageUsageFlagBits::ColorAttachment | RHIImageUsageFlagBits::Sampled;
+        colorImageDesc.usages = RHIImageUsageFlagBits::ColorAttachment | RHIImageUsageFlagBits::Sampled | desc.usages;
 
         if (m_Desc.useMipmap)
         {
-            colorImageDesc.usages |= RHIImageUsageFlagBits::TransferSource |
-                RHIImageUsageFlagBits::TransferDestination;
+            colorImageDesc.usages |= RHIImageUsageFlagBits::TransferSource | RHIImageUsageFlagBits::TransferDestination;
         }
 
         RHIImageViewDesc colorViewDesc{};
@@ -156,11 +158,10 @@ namespace Hazel
             destinationRange.baseArrayLayer = 0;
             destinationRange.layerCount = 1;
             destinationRange.planes = RHIImagePlaneFlagBits::Color;
-            image->Transition(
-                commandBuffer,
-                RHIImageResourceState::Undefined,
-                RHIImageResourceState::TransferDestination,
-                destinationRange);
+            image->Transition(commandBuffer,
+                              RHIImageResourceState::Undefined,
+                              RHIImageResourceState::TransferDestination,
+                              destinationRange);
 
             RHIImageSubresourceRange sourceRange{};
             sourceRange.baseMipLevel = 0;
@@ -168,11 +169,7 @@ namespace Hazel
             sourceRange.baseArrayLayer = 0;
             sourceRange.layerCount = 1;
             sourceRange.planes = RHIImagePlaneFlagBits::Color;
-            image->Transition(
-                commandBuffer,
-                originalState,
-                RHIImageResourceState::TransferSource,
-                sourceRange);
+            image->Transition(commandBuffer, originalState, RHIImageResourceState::TransferSource, sourceRange);
 
             uint32_t srcWidth = imageDesc.width;
             uint32_t srcHeight = imageDesc.height;
@@ -183,36 +180,20 @@ namespace Hazel
 
                 RHIImageBlitDesc blitDesc{};
                 blitDesc.filter = RHIBlitFilter::Linear;
-                blitDesc.regions.push_back({
-                    // source subresource
+                blitDesc.regions.push_back(
                     {
-                        mipLevel - 1,
-                        0,
-                        1,
-                        RHIImagePlaneFlagBits::Color
-                    },
-                    {
-                        {0, 0, 0},
-                        {static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1}
-                    },
-                    {
-                        mipLevel,
-                        0,
-                        1,
-                        RHIImagePlaneFlagBits::Color
-                    },
-                    {
-                        {0, 0, 0},
-                        {static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1}
-                    }
-                });
+                        // source subresource
+                        {mipLevel - 1, 0, 1, RHIImagePlaneFlagBits::Color},
+                        {{0, 0, 0}, {static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1}},
+                        {mipLevel, 0, 1, RHIImagePlaneFlagBits::Color},
+                        {{0, 0, 0}, {static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1}}
+                    });
 
-                commandBuffer->BlitImage(
-                    image,
-                    RHIImageResourceState::TransferSource,
-                    image,
-                    RHIImageResourceState::TransferDestination,
-                    blitDesc);
+                commandBuffer->BlitImage(image,
+                                         RHIImageResourceState::TransferSource,
+                                         image,
+                                         RHIImageResourceState::TransferDestination,
+                                         blitDesc);
 
                 if (mipLevel < imageDesc.mipLevels - 1)
                 {
@@ -222,11 +203,10 @@ namespace Hazel
                     promotedRange.baseArrayLayer = 0;
                     promotedRange.layerCount = 1;
                     promotedRange.planes = RHIImagePlaneFlagBits::Color;
-                    image->Transition(
-                        commandBuffer,
-                        RHIImageResourceState::TransferDestination,
-                        RHIImageResourceState::TransferSource,
-                        promotedRange);
+                    image->Transition(commandBuffer,
+                                      RHIImageResourceState::TransferDestination,
+                                      RHIImageResourceState::TransferSource,
+                                      promotedRange);
                 }
 
                 srcWidth = dstWidth;
@@ -245,11 +225,7 @@ namespace Hazel
                 const RHIImageResourceState oldState = mipLevel == imageDesc.mipLevels - 1
                                                            ? RHIImageResourceState::TransferDestination
                                                            : RHIImageResourceState::TransferSource;
-                image->Transition(
-                    commandBuffer,
-                    oldState,
-                    RHIImageResourceState::ShaderRead,
-                    shaderReadRange);
+                image->Transition(commandBuffer, oldState, RHIImageResourceState::ShaderRead, shaderReadRange);
             }
         }
     }
@@ -259,10 +235,13 @@ namespace Hazel
         return m_Images[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0];
     }
 
-    const std::vector<RHIImage*>& RenderTexture::GetAllImages() const { return m_Images; }
+    const std::vector<RHIImage*>& RenderTexture::GetAllImages() const
+    {
+        return m_Images;
+    }
 
     RHIImageView* RenderTexture::GetImageView() const
     {
         return m_ImageViews[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0];
     }
-} // Hazel
+} // namespace Hazel

@@ -5,8 +5,8 @@
 #pragma once
 
 #include "RHIBase.h"
-#include "RHIImage.h"
 #include "RHICommon.h"
+#include "RHIImage.h"
 #include "RHISurface.h"
 #include "RHISyncPoint.h"
 
@@ -22,7 +22,7 @@ namespace Hazel
 
     struct RHISwapchainDesc
     {
-        RHISurface *surface = nullptr;
+        RHISurface* surface = nullptr;
         uint32_t width = 0;
         uint32_t height = 0;
         uint32_t imageCount = 2;

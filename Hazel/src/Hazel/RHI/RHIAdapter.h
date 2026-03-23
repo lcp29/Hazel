@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <string>
-
 #include "RHIBase.h"
 #include "RHICommon.h"
+
+#include <string>
 
 namespace Hazel
 {
@@ -26,4 +26,4 @@ namespace Hazel
         uint32_t vendorId;
         RHIAdapterType type;
     };
-} // Hazel
+} // namespace Hazel

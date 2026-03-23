@@ -23,4 +23,4 @@ namespace Hazel
 
         DebugMessageCallback debugMessageCallback = nullptr;
     };
-} // Hazel
+} // namespace Hazel

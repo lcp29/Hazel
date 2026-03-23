@@ -4,15 +4,16 @@
 
 #pragma once
 
-#include <cstdint>
 #include "RHIBase.h"
+
+#include <cstdint>
 
 namespace Hazel
 {
     struct RHISyncPoint
     {
         uint64_t value = 0;
-        RHIQueue *queue = nullptr;
+        RHIQueue* queue = nullptr;
         bool valid = false;
     };
-} // Hazel
+} // namespace Hazel

@@ -4,4 +4,4 @@
 
 #include "VulkanFrameBuffer.h"
 
-namespace Hazel {} // Hazel
+namespace Hazel {} // namespace Hazel

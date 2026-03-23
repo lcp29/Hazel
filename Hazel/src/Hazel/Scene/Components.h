@@ -1,8 +1,9 @@
 #pragma once
 
+#include <entt.hpp>
 #include "Hazel/Core/UUID.h"
-#include "Hazel/Scripting/ScriptEngine.h"
 #include "Hazel/Renderer/Camera.h"
+#include "Hazel/Scripting/ScriptEngine.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,9 +11,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
-
 #include <yaml-cpp/yaml.h>
-
 
 namespace YAML
 {
@@ -107,7 +106,7 @@ namespace YAML
             return true;
         }
     };
-}
+} // namespace YAML
 
 namespace Hazel
 {
@@ -117,7 +116,9 @@ namespace Hazel
 
         IDComponent() = default;
         IDComponent(const IDComponent&) = default;
-        IDComponent(const UUID& id) : ID(id) {}
+
+        IDComponent(const UUID& id)
+            : ID(id) {}
 
         YAML::Node Serialize() const
         {
@@ -129,7 +130,7 @@ namespace Hazel
         static IDComponent Deserialize(const YAML::Node& node)
         {
             IDComponent component;
-            component.ID = node["ID"].as<UUID>();
+            component.ID = node["ID"][0].as<UUID>();
             return component;
         }
     };
@@ -180,9 +181,7 @@ namespace Hazel
         {
             glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotationMatrix));
 
-            return glm::translate(glm::mat4(1.0f), translation)
-                * rotationMatrix
-                * glm::scale(glm::mat4(1.0f), scale);
+            return glm::translate(glm::mat4(1.0f), translation) * rotationMatrix * glm::scale(glm::mat4(1.0f), scale);
         }
 
         void SetTransform(const glm::mat4& transform)
@@ -224,10 +223,10 @@ namespace Hazel
         YAML::Node Serialize(entt::registry& registry) const
         {
             YAML::Node node;
-            node["Parent"] = registry.get<UUID>(parent);
-            node["FirstChild"] = registry.get<UUID>(firstChild);
-            node["NextSibling"] = registry.get<UUID>(nextSibling);
-            node["PrevSibling"] = registry.get<UUID>(prevSibling);
+            node["Parent"] = (parent == entt::null) ? UUID(-1) : registry.get<UUID>(parent);
+            node["FirstChild"] = (firstChild == entt::null) ? UUID(-1) : registry.get<UUID>(firstChild);
+            node["NextSibling"] = (nextSibling == entt::null) ? UUID(-1) : registry.get<UUID>(nextSibling);
+            node["PrevSibling"] = (prevSibling == entt::null) ? UUID(-1) : registry.get<UUID>(prevSibling);
             node["ChildCount"] = childCount;
             return node;
         }
@@ -237,10 +236,14 @@ namespace Hazel
                                                        std::unordered_map<UUID, entt::entity>& uuidToEntityMap)
         {
             EntityRelationshipComponent component;
-            component.parent = uuidToEntityMap[node["Parent"].as<UUID>()];
-            component.firstChild = uuidToEntityMap[node["FirstChild"].as<UUID>()];
-            component.nextSibling = uuidToEntityMap[node["NextSibling"].as<UUID>()];
-            component.prevSibling = uuidToEntityMap[node["PrevSibling"].as<UUID>()];
+            auto parentUUID = node["Parent"][0].as<UUID>();
+            auto firstChildUUID = node["FirstChild"][0].as<UUID>();
+            auto nextSiblingUUID = node["NextSibling"][0].as<UUID>();
+            auto prevSiblingUUID = node["PrevSibling"][0].as<UUID>();
+            component.parent = (parentUUID == UUID(-1)) ? entt::null : uuidToEntityMap[parentUUID];
+            component.firstChild = (firstChildUUID == UUID(-1)) ? entt::null : uuidToEntityMap[firstChildUUID];
+            component.nextSibling = (nextSiblingUUID == UUID(-1)) ? entt::null : uuidToEntityMap[nextSiblingUUID];
+            component.prevSibling = (prevSiblingUUID == UUID(-1)) ? entt::null : uuidToEntityMap[prevSiblingUUID];
             component.childCount = node["ChildCount"].as<uint32_t>();
             return component;
         }
@@ -280,8 +283,16 @@ namespace Hazel
     struct MeshRendererComponent
     {
         int dummyInt;
-        YAML::Node Serialize() const { return YAML::Node(); }
-        static MeshRendererComponent Deserialize(const YAML::Node& node) { return MeshRendererComponent(); }
+
+        YAML::Node Serialize() const
+        {
+            return YAML::Node();
+        }
+
+        static MeshRendererComponent Deserialize(const YAML::Node& node)
+        {
+            return MeshRendererComponent();
+        }
     };
 
     struct ScriptComponent
@@ -302,7 +313,7 @@ namespace Hazel
     {
         ScriptableEntity* instance = nullptr;
 
-        ScriptableEntity*(*instantiateScript)();
+        ScriptableEntity* (*instantiateScript)();
         void (*destroyScript)(NativeScriptComponent*);
 
         template <typename T>
@@ -320,6 +331,9 @@ namespace Hazel
     template <typename... Component>
     struct ComponentGroup {};
 
-    using AllComponents =
-    ComponentGroup<TransformComponent, MeshRendererComponent, CameraComponent, ScriptComponent, NativeScriptComponent>;
-}
+    using AllComponents = ComponentGroup<TransformComponent,
+                                         MeshRendererComponent,
+                                         CameraComponent,
+                                         ScriptComponent,
+                                         NativeScriptComponent>;
+} // namespace Hazel

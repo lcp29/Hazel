@@ -2,18 +2,17 @@
 // Created by helmholtz on 2026/3/15.
 //
 
+#include "VulkanImageView.h"
+
 #include "../RHIImageView.h"
 #include "VulkanCommon.h"
-#include "VulkanImage.h"
 #include "VulkanDevice.h"
-#include "VulkanImageView.h"
+#include "VulkanImage.h"
 #include "VulkanSwapchain.h"
 
 namespace Hazel
 {
-    vk::ImageView CreateImageViewHandle(RHIDevice *device,
-                                        vk::Image image,
-                                        const RHIImageViewDesc &desc)
+    vk::ImageView CreateImageViewHandle(RHIDevice* device, vk::Image image, const RHIImageViewDesc& desc)
     {
         if (!device || !image || desc.format == RHIFormat::Undefined)
         {
@@ -36,7 +35,10 @@ namespace Hazel
         return result == vk::Result::eSuccess ? imageView : VK_NULL_HANDLE;
     }
 
-    RHI_VK_FUNC_IMPL(RHIImageView, RHIImageViewImpl)(RHIDevice *device, RHIImage *image, const RHIImageViewDesc &desc)
+    RHI_VK_FUNC_IMPL(RHIImageView, RHIImageViewImpl)(RHIDevice* device,
+                                                     RHIImage* image,
+                                                     const RHIImageViewDesc& desc,
+                                                     bool isDetached)
     {
         if (!device || !image || desc.format == RHIFormat::Undefined)
         {
@@ -48,6 +50,7 @@ namespace Hazel
         m_ImageOwner = image;
         m_DeviceOwner = device;
         m_Desc = desc;
+        m_IsDetached = isDetached;
 
         m_ImageView = CreateImageViewHandle(device, image->GetHandle(), desc);
         if (!m_ImageView)
@@ -55,8 +58,11 @@ namespace Hazel
             return;
         }
 
-        std::unique_ptr<RHIImageView> self(this);
-        image->RegisterView(std::move(self));
+        if (!m_IsDetached)
+        {
+            std::unique_ptr<RHIImageView> self(this);
+            image->RegisterView(std::move(self));
+        }
         m_IsValid = true;
     }
 
@@ -72,9 +78,9 @@ namespace Hazel
             return;
         }
 
-        auto *imageOwner = m_ImageOwner;
+        auto* imageOwner = m_ImageOwner;
         ReleaseWithoutUnregister();
-        if (imageOwner)
+        if (imageOwner && !m_IsDetached)
         {
             imageOwner->UnregisterView(this);
         }
@@ -87,9 +93,9 @@ namespace Hazel
             return;
         }
 
-        auto *imageOwner = m_ImageOwner;
+        auto* imageOwner = m_ImageOwner;
         ReleaseImmediateWithoutUnregister();
-        if (imageOwner)
+        if (imageOwner && !m_IsDetached)
         {
             imageOwner->UnregisterView(this);
         }
@@ -99,8 +105,7 @@ namespace Hazel
     {
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device = m_DeviceOwner->GetHandle(), imageView = m_ImageView]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device = m_DeviceOwner->GetHandle(), imageView = m_ImageView]() {
                 device.destroyImageView(imageView);
             });
         }
@@ -110,6 +115,7 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_ImageView = VK_NULL_HANDLE;
         m_IsValid = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIImageView, ReleaseImmediateWithoutUnregister)()
@@ -124,5 +130,6 @@ namespace Hazel
         m_DeviceOwner = nullptr;
         m_ImageView = VK_NULL_HANDLE;
         m_IsValid = false;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

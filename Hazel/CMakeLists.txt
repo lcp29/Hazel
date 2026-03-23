@@ -52,7 +52,6 @@ endif()
 
 target_link_libraries(Hazel
     PUBLIC
-        box2d
         glfw
         Glad
         ImGui
@@ -60,7 +59,6 @@ target_link_libraries(Hazel
         stb_image
         entt
         filewatch
-        msdf-atlas-gen::msdf-atlas-gen
         yaml-cpp::yaml-cpp
         glm
         spdlog
@@ -76,7 +74,6 @@ endif()
 
 if(WIN32)
     target_link_libraries(Hazel PUBLIC
-        opengl32
         ws2_32
         winmm
         version

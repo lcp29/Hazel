@@ -17,6 +17,7 @@ namespace Hazel
         bool useMipmap = false;
         bool perFrame = true;
         RHIFormat format = RHIFormat::BGRA8UNorm;
+        RHIImageUsages usages = {};
     };
 
     class RenderTexture
@@ -24,7 +25,6 @@ namespace Hazel
     public:
         RenderTexture() = default;
         RenderTexture(Renderer* renderer, const RenderTextureDesc& desc);
-        ~RenderTexture() { Release(); }
 
         void Release();
         void ReleaseImmediate();
@@ -35,10 +35,21 @@ namespace Hazel
         RHIImage* GetImage() const;
         const std::vector<RHIImage*>& GetAllImages() const;
         RHIImageView* GetImageView() const;
-        const std::vector<RHIImageView*>& GetAllImageViews() const { return m_ImageViews; }
-        const RenderTextureDesc& GetDesc() const { return m_Desc; }
 
-        bool IsValid() const { return m_IsValid; }
+        const std::vector<RHIImageView*>& GetAllImageViews() const
+        {
+            return m_ImageViews;
+        }
+
+        const RenderTextureDesc& GetDesc() const
+        {
+            return m_Desc;
+        }
+
+        bool IsValid() const
+        {
+            return m_IsValid;
+        }
 
     private:
         bool m_IsValid = false;
@@ -49,4 +60,4 @@ namespace Hazel
         std::vector<RHIImage*> m_Images;
         std::vector<RHIImageView*> m_ImageViews;
     };
-} // Hazel
+} // namespace Hazel

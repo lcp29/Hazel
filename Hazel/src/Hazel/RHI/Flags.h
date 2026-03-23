@@ -20,15 +20,27 @@ namespace Hazel
 
         UnderlyingType value;
 
-        Flags() : value(0) {}
+        Flags()
+            : value(0) {}
 
-        constexpr Flags(const UnderlyingType& value) : value(value) {}
-        constexpr Flags(const BitType& value) : value(static_cast<UnderlyingType>(value)) {}
-        constexpr Flags(const Flags& other) : value(other.value) {}
+        constexpr Flags(const UnderlyingType& value)
+            : value(value) {}
 
-        constexpr operator UnderlyingType() const { return value; }
+        constexpr Flags(const BitType& value)
+            : value(static_cast<UnderlyingType>(value)) {}
 
-        constexpr operator bool() const { return value != 0; }
+        constexpr Flags(const Flags& other)
+            : value(other.value) {}
+
+        constexpr operator UnderlyingType() const
+        {
+            return value;
+        }
+
+        constexpr operator bool() const
+        {
+            return value != 0;
+        }
 
         constexpr Flags operator|(const Flags& rhs) const
         {
@@ -87,4 +99,4 @@ namespace Hazel
     {
         return static_cast<UnderlyingType>(lhs) & static_cast<UnderlyingType>(rhs);
     }
-} // Hazel
+} // namespace Hazel

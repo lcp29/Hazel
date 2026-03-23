@@ -22,7 +22,8 @@ namespace Hazel
         constexpr const char* s_SceneFileFilter = "Hazel Scene (*.hazel)\0*.hazel\0";
 
         EditorLayer::EditorUITexture CreateEditorUITexture(Renderer* renderer,
-                                                           RHICommandBuffer* commandBuffer, RHISampler* sampler,
+                                                           RHICommandBuffer* commandBuffer,
+                                                           RHISampler* sampler,
                                                            const std::filesystem::path& path)
         {
             EditorLayer::EditorUITexture texture;
@@ -40,6 +41,7 @@ namespace Hazel
                 imageDesc,
                 path,
                 renderer->GetDevice()->GetUniformQueue());
+
             if (!texture.Image)
                 return texture;
 
@@ -59,7 +61,9 @@ namespace Hazel
             }
 
             texture.ImGuiTexture = Application::Get().GetImGuiLayer()->AddTexture(
-                sampler, texture.View, RHIImageResourceState::ShaderRead);
+                sampler,
+                texture.View,
+                RHIImageResourceState::ShaderRead);
             return texture;
         }
 
@@ -171,19 +175,32 @@ namespace Hazel
         checkerboardSamplerDesc.addressModeW = RHISamplerAddressMode::Repeat;
         m_CheckerboardSampler = device->CreateSampler(checkerboardSamplerDesc);
 
-        m_IconPlay = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_IconPlay = CreateEditorUITexture(m_Renderer,
+                                           uploadCommandBuffer,
+                                           m_UISampler,
                                            "Resources/Icons/PlayButton.png");
-        m_IconPause = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_IconPause = CreateEditorUITexture(m_Renderer,
+                                            uploadCommandBuffer,
+                                            m_UISampler,
                                             "Resources/Icons/PauseButton.png");
-        m_IconStep = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_IconStep = CreateEditorUITexture(m_Renderer,
+                                           uploadCommandBuffer,
+                                           m_UISampler,
                                            "Resources/Icons/StepButton.png");
-        m_IconStop = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_IconStop = CreateEditorUITexture(m_Renderer,
+                                           uploadCommandBuffer,
+                                           m_UISampler,
                                            "Resources/Icons/StopButton.png");
-        m_ContentBrowserDirectoryIcon = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_ContentBrowserDirectoryIcon = CreateEditorUITexture(m_Renderer,
+                                                              uploadCommandBuffer,
+                                                              m_UISampler,
                                                               "Resources/Icons/ContentBrowser/DirectoryIcon.png");
-        m_ContentBrowserFileIcon = CreateEditorUITexture(m_Renderer, uploadCommandBuffer, m_UISampler,
+        m_ContentBrowserFileIcon = CreateEditorUITexture(m_Renderer,
+                                                         uploadCommandBuffer,
+                                                         m_UISampler,
                                                          "Resources/Icons/ContentBrowser/FileIcon.png");
-        m_CheckerboardTexture = CreateEditorUITexture(m_Renderer, uploadCommandBuffer,
+        m_CheckerboardTexture = CreateEditorUITexture(m_Renderer,
+                                                      uploadCommandBuffer,
                                                       m_CheckerboardSampler,
                                                       "assets/textures/Checkerboard.png");
 
@@ -233,6 +250,7 @@ namespace Hazel
         ReleaseEditorUITexture(m_ContentBrowserDirectoryIcon);
         ReleaseEditorUITexture(m_ContentBrowserFileIcon);
         ReleaseEditorUITexture(m_CheckerboardTexture);
+
         if (m_UISampler)
         {
             m_UISampler->Release();
@@ -260,7 +278,7 @@ namespace Hazel
         auto renderTexture = m_Renderer->GetDefaultRenderTexture();
         if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f &&
             (renderTexture->GetDesc().width != static_cast<uint32_t>(m_ViewportSize.x) ||
-                renderTexture->GetDesc().height != static_cast<uint32_t>(m_ViewportSize.y)))
+             renderTexture->GetDesc().height != static_cast<uint32_t>(m_ViewportSize.y)))
         {
             // the render texture may be rebuilt here
             m_Renderer->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x),
@@ -271,7 +289,7 @@ namespace Hazel
 
         switch (m_SceneState)
         {
-        case SceneState::Edit:
+            case SceneState::Edit:
             {
                 if (m_ViewportFocused)
                     m_ViewportCameraController.OnUpdate(ts);
@@ -279,7 +297,7 @@ namespace Hazel
                 m_ActiveScene->OnUpdateEditor(ts);
                 break;
             }
-        case SceneState::Play:
+            case SceneState::Play:
             {
                 m_ActiveScene->OnUpdateRuntime(ts);
                 break;
@@ -290,6 +308,13 @@ namespace Hazel
         // TODO
         Camera camera;
         m_Renderer->Render(camera);
+
+        // transition the default render texture to shader read for ImGui rendering
+        auto* image = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].Image;
+        image->Transition(
+            m_Renderer->GetCurrentFrameData().commandBuffer,
+            image->GetCurrentState(),
+            RHIImageResourceState::ShaderRead);
 
         // separate object id map pass
         OnObjectIDMapRender();
@@ -312,7 +337,7 @@ namespace Hazel
             size_t pixelIndex = (mouseY * static_cast<size_t>(viewportSize.x) + mouseX);
             int pixelData =
                 *(static_cast<uint32_t*>(m_ObjectIDRenderTextureBuffer[(currentFrameIndex - 1) % m_Renderer->
-                    GetMaxFramesInFlight()]->Map()) + pixelIndex);
+                                                                       GetMaxFramesInFlight()]->Map()) + pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
@@ -337,7 +362,9 @@ namespace Hazel
         for (int i = 0; i < images.size(); i++)
         {
             void* texture = Application::Get().GetImGuiLayer()->AddTexture(
-                m_UISampler, imageViews[i], RHIImageResourceState::ShaderRead);
+                m_UISampler,
+                imageViews[i],
+                RHIImageResourceState::ShaderRead);
             m_DefaultRenderTextureUIData.push_back({images[i], imageViews[i], texture});
         }
     }
@@ -355,6 +382,7 @@ namespace Hazel
         objectIDRenderTextureDesc.format = RHIFormat::R32SInt;
         objectIDRenderTextureDesc.perFrame = true;
         objectIDRenderTextureDesc.useMipmap = false;
+        objectIDRenderTextureDesc.usages = RHIImageUsageFlagBits::TransferSource;
         m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(objectIDRenderTextureDesc);
 
         RHIBufferDesc objectIDBufferDesc{};
@@ -398,15 +426,19 @@ namespace Hazel
         };
         renderingInfo.colorAttachments = {objectIDAttachmentDesc};
 
-        objectIDImage->Transition(commandBuffer, objectIDImage->GetCurrentState(),
+        objectIDImage->Transition(commandBuffer,
+                                  objectIDImage->GetCurrentState(),
                                   RHIImageResourceState::ColorAttachment);
         commandBuffer->BeginRendering(renderingInfo);
         // TODO: rendering
         commandBuffer->EndRendering();
-        objectIDImage->Transition(commandBuffer, objectIDImage->GetCurrentState(),
+        objectIDImage->Transition(commandBuffer,
+                                  objectIDImage->GetCurrentState(),
                                   RHIImageResourceState::TransferSource);
 
-        commandBuffer->CopyImageToBuffer(objectIDImage, objectIDImageBuffer, 0,
+        commandBuffer->CopyImageToBuffer(objectIDImage,
+                                         objectIDImageBuffer,
+                                         0,
                                          {
                                              static_cast<uint32_t>(m_ViewportSize.x),
                                              static_cast<uint32_t>(m_ViewportSize.y)
@@ -452,7 +484,8 @@ namespace Hazel
             ImVec2(viewport->GetCenter().x - windowSize.x * 0.5f, viewport->GetCenter().y - windowSize.y * 0.5f));
         ImGui::SetNextWindowSize(windowSize);
 
-        ImGui::Begin("Project", nullptr,
+        ImGui::Begin("Project",
+                     nullptr,
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking);
         ImGui::TextUnformatted("No project is currently open.");
         ImGui::Spacing();
@@ -698,7 +731,6 @@ namespace Hazel
         //     }
         // }
 
-
         ImGui::End();
         ImGui::PopStyleVar();
 
@@ -718,7 +750,8 @@ namespace Hazel
         const auto& buttonActive = colors[ImGuiCol_ButtonActive];
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
-        ImGui::Begin("##toolbar", nullptr,
+        ImGui::Begin("##toolbar",
+                     nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
         bool toolbarEnabled = (bool)m_ActiveScene;
@@ -738,8 +771,13 @@ namespace Hazel
             void* icon = m_SceneState == SceneState::Edit
                              ? m_IconPlay.ImGuiTexture
                              : m_IconStop.ImGuiTexture;
-            if (ImGui::ImageButton("PlayButton", icon, ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
-                                   ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+            if (ImGui::ImageButton("PlayButton",
+                                   icon,
+                                   ImVec2(size, size),
+                                   ImVec2(0, 0),
+                                   ImVec2(1, 1),
+                                   ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                   tintColor) && toolbarEnabled)
             {
                 if (m_SceneState == SceneState::Edit)
                     OnScenePlay();
@@ -753,8 +791,13 @@ namespace Hazel
             bool isPaused = m_ActiveScene->IsPaused();
             ImGui::SameLine();
             {
-                if (ImGui::ImageButton("PauseButton", m_IconPause.ImGuiTexture, ImVec2(size, size), ImVec2(0, 0),
-                                       ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+                if (ImGui::ImageButton("PauseButton",
+                                       m_IconPause.ImGuiTexture,
+                                       ImVec2(size, size),
+                                       ImVec2(0, 0),
+                                       ImVec2(1, 1),
+                                       ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                       tintColor) && toolbarEnabled)
                 {
                     m_ActiveScene->SetPaused(!isPaused);
                 }
@@ -766,8 +809,13 @@ namespace Hazel
                 ImGui::SameLine();
                 {
                     bool isPaused = m_ActiveScene->IsPaused();
-                    if (ImGui::ImageButton("StepButton", m_IconStep.ImGuiTexture, ImVec2(size, size), ImVec2(0, 0),
-                                           ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+                    if (ImGui::ImageButton("StepButton",
+                                           m_IconStep.ImGuiTexture,
+                                           ImVec2(size, size),
+                                           ImVec2(0, 0),
+                                           ImVec2(1, 1),
+                                           ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                           tintColor) && toolbarEnabled)
                     {
                         m_ActiveScene->Step();
                     }
@@ -803,21 +851,21 @@ namespace Hazel
 
         switch (e.GetKeyCode())
         {
-        case Key::N:
+            case Key::N:
             {
                 if (control && HasOpenProject())
                     NewScene();
 
                 break;
             }
-        case Key::O:
+            case Key::O:
             {
                 if (control)
                     OpenProject();
 
                 break;
             }
-        case Key::S:
+            case Key::S:
             {
                 if (control && HasOpenProject())
                 {
@@ -830,8 +878,8 @@ namespace Hazel
                 break;
             }
 
-        // Scene Commands
-        case Key::D:
+            // Scene Commands
+            case Key::D:
             {
                 if (control && HasOpenProject())
                     OnDuplicateEntity();
@@ -839,26 +887,26 @@ namespace Hazel
                 break;
             }
 
-        // Gizmos
-        case Key::Q:
+            // Gizmos
+            case Key::Q:
             {
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = -1;
                 break;
             }
-        case Key::W:
+            case Key::W:
             {
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
                 break;
             }
-        case Key::E:
+            case Key::E:
             {
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = ImGuizmo::OPERATION::ROTATE;
                 break;
             }
-        case Key::R:
+            case Key::R:
             {
                 if (control && HasOpenProject())
                 {
@@ -871,7 +919,7 @@ namespace Hazel
                 }
                 break;
             }
-        case Key::Delete:
+            case Key::Delete:
             {
                 if (Application::Get().GetImGuiLayer()->GetActiveWidgetID() == 0)
                 {
@@ -952,7 +1000,8 @@ namespace Hazel
 
         Ref<Scene> defaultScene = CreateRef<Scene>();
         SerializeScene(defaultScene, defaultScenePath);
-        WriteProjectMakefile(projectDirectory / "Makefile", projectName,
+        WriteProjectMakefile(projectDirectory / "Makefile",
+                             projectName,
                              assetDirectory.filename() / scriptModuleRelativePath);
 
         Project::CloseActive();

@@ -30,4 +30,4 @@ namespace Hazel
     {
         std::vector<RHIResourceBindingSlotDesc> bindings;
     };
-} // Hazel
+} // namespace Hazel

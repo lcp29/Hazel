@@ -1,11 +1,9 @@
-#include "hzpch.h"
 #include "Hazel/Core/Layer.h"
 
-namespace Hazel {
+#include "hzpch.h"
 
-	Layer::Layer(const std::string& debugName)
-		: m_DebugName(debugName)
-	{
-	}
-	
-}
+namespace Hazel
+{
+    Layer::Layer(const std::string& debugName)
+        : m_DebugName(debugName) {}
+} // namespace Hazel

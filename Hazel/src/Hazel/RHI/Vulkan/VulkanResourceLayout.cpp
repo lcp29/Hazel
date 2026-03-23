@@ -9,9 +9,9 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIResourceLayout, RHIResourceLayoutImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHIResourceLayout, RHIResourceLayoutImpl)(RHIDevice* deviceOwner,
                                                                vk::Device device,
-                                                               const RHIResourceLayoutDesc &desc)
+                                                               const RHIResourceLayoutDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
@@ -24,13 +24,12 @@ namespace Hazel
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         bindings.reserve(desc.bindings.size());
-        for (const auto &bindingDesc: desc.bindings)
+        for (const auto& bindingDesc : desc.bindings)
         {
-            bindings.emplace_back(
-                bindingDesc.slot,
-                VulkanConvertResourceBindingType(bindingDesc.type),
-                bindingDesc.count,
-                VulkanConvertShaderStages(bindingDesc.stages));
+            bindings.emplace_back(bindingDesc.slot,
+                                  VulkanConvertResourceBindingType(bindingDesc.type),
+                                  bindingDesc.count,
+                                  VulkanConvertShaderStages(bindingDesc.stages));
         }
 
         vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
@@ -57,9 +56,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceLayout(this);
         }
@@ -72,9 +71,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterResourceLayout(this);
         }
@@ -86,8 +85,7 @@ namespace Hazel
         const auto descriptorSetLayout = m_DescriptorSetLayout;
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, descriptorSetLayout]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device, descriptorSetLayout]() {
                 if (device && descriptorSetLayout)
                 {
                     device.destroyDescriptorSetLayout(descriptorSetLayout);
@@ -103,6 +101,7 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceLayout, ReleaseImmediateWithoutUnregister)()
@@ -116,5 +115,6 @@ namespace Hazel
         m_IsValid = false;
         m_DeviceOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

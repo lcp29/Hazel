@@ -8,8 +8,12 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHISurface, RHISurfaceImpl)(RHIInstance *instanceOwner, vk::Instance instance, const RHISurfaceDesc &desc)
-        : m_InstanceOwner(instanceOwner), m_Desc(desc), m_Instance(instance)
+    RHI_VK_FUNC_IMPL(RHISurface, RHISurfaceImpl)(RHIInstance* instanceOwner,
+                                                 vk::Instance instance,
+                                                 const RHISurfaceDesc& desc)
+        : m_InstanceOwner(instanceOwner),
+          m_Desc(desc),
+          m_Instance(instance)
     {
         if (!desc.backendHandle)
         {
@@ -32,7 +36,7 @@ namespace Hazel
             return;
         }
 
-        auto *instanceOwner = m_InstanceOwner;
+        auto* instanceOwner = m_InstanceOwner;
         ReleaseWithoutUnregister();
 
         if (instanceOwner)
@@ -52,8 +56,7 @@ namespace Hazel
         const auto surface = m_Surface;
         if (m_InstanceOwner)
         {
-            m_InstanceOwner->EnqueueDeletion([instance, surface]()
-            {
+            m_InstanceOwner->EnqueueDeletion([instance, surface]() {
                 if (instance && surface)
                 {
                     instance.destroySurfaceKHR(surface);

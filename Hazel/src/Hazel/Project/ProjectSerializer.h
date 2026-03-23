@@ -2,17 +2,17 @@
 
 #include "Project.h"
 
-namespace Hazel {
+namespace Hazel
+{
+    class ProjectSerializer
+    {
+    public:
+        ProjectSerializer(Ref<Project> project);
 
-	class ProjectSerializer
-	{
-	public:
-		ProjectSerializer(Ref<Project> project);
+        bool Serialize(const std::filesystem::path& filepath);
+        bool Deserialize(const std::filesystem::path& filepath);
 
-		bool Serialize(const std::filesystem::path& filepath);
-		bool Deserialize(const std::filesystem::path& filepath);
-	private:
-		Ref<Project> m_Project;
-	};
-
-}
+    private:
+        Ref<Project> m_Project;
+    };
+} // namespace Hazel

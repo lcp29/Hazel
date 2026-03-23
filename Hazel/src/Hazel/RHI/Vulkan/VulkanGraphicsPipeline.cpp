@@ -13,52 +13,51 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, RHIGraphicsPipelineImpl)(RHIDevice *deviceOwner,
+    RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, RHIGraphicsPipelineImpl)(RHIDevice* deviceOwner,
                                                                    vk::Device device,
-                                                                   const RHIGraphicsPipelineDesc &desc)
+                                                                   const RHIGraphicsPipelineDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_Device || !desc.vertexShader || !desc.fragmentShader || desc.colorAttachmentFormats.empty())
+        if (!m_DeviceOwner || !m_Device || !desc.vertexShader || !desc.fragmentShader
+            || desc.colorAttachmentFormats.empty())
         {
             return;
         }
 
-        auto *vertexShader = desc.vertexShader;
-        auto *fragmentShader = desc.fragmentShader;
-        HZ_RHI_DEBUG_RETURN_IF(!vertexShader || !fragmentShader || !vertexShader->IsValid() || !fragmentShader->IsValid());
+        auto* vertexShader = desc.vertexShader;
+        auto* fragmentShader = desc.fragmentShader;
+        HZ_RHI_DEBUG_RETURN_IF(!vertexShader || !fragmentShader || !vertexShader->IsValid()
+            || !fragmentShader->IsValid());
 
-        auto *resourceSignature = desc.resourceSignature;
+        auto* resourceSignature = desc.resourceSignature;
         HZ_RHI_DEBUG_RETURN_IF(!resourceSignature || !resourceSignature->IsValid());
         m_ResourceSignature = resourceSignature;
 
-        const vk::PipelineShaderStageCreateInfo shaderStages[] = {
-            {
-                {},
-                vk::ShaderStageFlagBits::eVertex,
-                vertexShader->GetHandle(),
-                desc.vertexShader->GetEntryPoint().c_str()
-            },
-            {
-                {},
-                vk::ShaderStageFlagBits::eFragment,
-                fragmentShader->GetHandle(),
-                desc.fragmentShader->GetEntryPoint().c_str()
-            }
-        };
+        const vk::PipelineShaderStageCreateInfo shaderStages[] = {{{},
+                                                                   vk::ShaderStageFlagBits::eVertex,
+                                                                   vertexShader->GetHandle(),
+                                                                   desc.vertexShader->GetEntryPoint().c_str()},
+                                                                  {{},
+                                                                   vk::ShaderStageFlagBits::eFragment,
+                                                                   fragmentShader->GetHandle(),
+                                                                   desc.fragmentShader->GetEntryPoint().c_str()}};
 
         std::vector<vk::VertexInputBindingDescription> vertexBindings;
         vertexBindings.reserve(desc.vertexBindings.size());
-        for (const auto &binding: desc.vertexBindings)
+        for (const auto& binding : desc.vertexBindings)
         {
-            vertexBindings.emplace_back(binding.binding, binding.stride, VulkanConvertVertexInputRate(binding.inputRate));
+            vertexBindings.emplace_back(
+                binding.binding,
+                binding.stride,
+                VulkanConvertVertexInputRate(binding.inputRate));
         }
 
         std::vector<vk::VertexInputAttributeDescription> vertexAttributes;
         vertexAttributes.reserve(desc.vertexAttributes.size());
-        for (const auto &attribute: desc.vertexAttributes)
+        for (const auto& attribute : desc.vertexAttributes)
         {
             vertexAttributes.emplace_back(
                 attribute.location,
@@ -103,9 +102,8 @@ namespace Hazel
         {
             defaultBlendAttachments.resize(desc.colorAttachmentFormats.size());
         }
-        const auto &blendAttachmentsSource = desc.colorBlendAttachments.empty()
-                                                 ? defaultBlendAttachments
-                                                 : desc.colorBlendAttachments;
+        const auto& blendAttachmentsSource =
+            desc.colorBlendAttachments.empty() ? defaultBlendAttachments : desc.colorBlendAttachments;
         if (blendAttachmentsSource.size() != desc.colorAttachmentFormats.size())
         {
             return;
@@ -113,7 +111,7 @@ namespace Hazel
 
         std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments;
         colorBlendAttachments.reserve(blendAttachmentsSource.size());
-        for (const auto &attachment: blendAttachmentsSource)
+        for (const auto& attachment : blendAttachmentsSource)
         {
             vk::PipelineColorBlendAttachmentState state;
             state.blendEnable = attachment.blendEnable;
@@ -131,19 +129,17 @@ namespace Hazel
         colorBlendState.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
         colorBlendState.pAttachments = colorBlendAttachments.data();
 
-        const vk::DynamicState dynamicStates[] = {
-            vk::DynamicState::eViewport,
-            vk::DynamicState::eScissor,
-            vk::DynamicState::eBlendConstants,
-            vk::DynamicState::eStencilReference
-        };
+        const vk::DynamicState dynamicStates[] = {vk::DynamicState::eViewport,
+                                                  vk::DynamicState::eScissor,
+                                                  vk::DynamicState::eBlendConstants,
+                                                  vk::DynamicState::eStencilReference};
         vk::PipelineDynamicStateCreateInfo dynamicState;
         dynamicState.dynamicStateCount = 4;
         dynamicState.pDynamicStates = dynamicStates;
 
         std::vector<vk::Format> colorAttachmentFormats;
         colorAttachmentFormats.reserve(desc.colorAttachmentFormats.size());
-        for (const auto format: desc.colorAttachmentFormats)
+        for (const auto format : desc.colorAttachmentFormats)
         {
             colorAttachmentFormats.push_back(VulkanConvertFormat(format));
         }
@@ -211,9 +207,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterGraphicsPipeline(this);
         }
@@ -226,9 +222,9 @@ namespace Hazel
             return;
         }
 
-        auto *deviceOwner = m_DeviceOwner;
+        auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
+        if (deviceOwner && !m_IsDetached)
         {
             deviceOwner->UnregisterGraphicsPipeline(this);
         }
@@ -241,8 +237,7 @@ namespace Hazel
 
         if (m_DeviceOwner)
         {
-            m_DeviceOwner->EnqueueDeletion([device, pipeline]()
-            {
+            m_DeviceOwner->EnqueueDeletion([device, pipeline]() {
                 if (device && pipeline)
                 {
                     device.destroyPipeline(pipeline);
@@ -259,6 +254,7 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ReleaseImmediateWithoutUnregister)()
@@ -273,5 +269,6 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
         m_IsValid = false;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

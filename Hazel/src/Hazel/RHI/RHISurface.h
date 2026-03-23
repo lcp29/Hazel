@@ -11,6 +11,6 @@ namespace Hazel
 {
     struct RHISurfaceDesc
     {
-        void *backendHandle = nullptr;
+        void* backendHandle = nullptr;
     };
 } // namespace Hazel

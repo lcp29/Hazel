@@ -172,4 +172,4 @@ namespace Hazel
             return true;
         }
     }
-} // Hazel
+} // namespace Hazel

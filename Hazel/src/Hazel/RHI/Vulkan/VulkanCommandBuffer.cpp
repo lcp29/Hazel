@@ -7,16 +7,16 @@
 #include "VulkanCommandBuffer.h"
 
 #include "VulkanBuffer.h"
-#include "VulkanCommon.h"
-#include "VulkanQueue.h"
 #include "VulkanCommandPool.h"
+#include "VulkanCommon.h"
 #include "VulkanComputePipeline.h"
 #include "VulkanGraphicsPipeline.h"
+#include "VulkanImage.h"
 #include "VulkanImageView.h"
+#include "VulkanPipelineCommon.h"
+#include "VulkanQueue.h"
 #include "VulkanResourceGroup.h"
 #include "VulkanResourceSignature.h"
-#include "VulkanPipelineCommon.h"
-#include "VulkanImage.h"
 
 #include <array>
 #include <concepts>
@@ -95,7 +95,7 @@ namespace Hazel
             return vk::Filter::eLinear;
         }
 
-        vk::ClearColorValue VulkanConvertClearColorValue(const RHIClearColorValue &value)
+        vk::ClearColorValue VulkanConvertClearColorValue(const RHIClearColorValue& value)
         {
             switch (value.type)
             {
@@ -109,26 +109,16 @@ namespace Hazel
             return {};
         }
 
-        vk::ClearDepthStencilValue VulkanConvertClearDepthStencilValue(const RHIClearDepthStencilValue &value)
+        vk::ClearDepthStencilValue VulkanConvertClearDepthStencilValue(const RHIClearDepthStencilValue& value)
         {
             return vk::ClearDepthStencilValue(value.depth, value.stencil);
         }
-
-        bool VulkanIsDepthFormat(RHIFormat format)
-        {
-            return format == RHIFormat::D32SFloat || format == RHIFormat::D32SFloatS8Uint;
-        }
-
-        bool VulkanIsStencilFormat(RHIFormat format)
-        {
-            return format == RHIFormat::S8Uint || format == RHIFormat::D32SFloatS8Uint;
-        }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHICommandBuffer, RHICommandBufferImpl)(RHICommandPool *commandPoolOwner,
+    RHI_VK_FUNC_IMPL(RHICommandBuffer, RHICommandBufferImpl)(RHICommandPool* commandPoolOwner,
                                                              vk::Device device,
                                                              vk::CommandPool commandPool,
-                                                             const RHICommandBufferDesc &desc)
+                                                             const RHICommandBufferDesc& desc)
     {
         m_CommandPoolOwner = commandPoolOwner;
         m_Device = device;
@@ -204,15 +194,18 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BeginRendering)(const RHIRenderingInfo &info)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BeginRendering)(
+
+        const RHIRenderingInfo& info
+    )
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering);
 
         std::vector<vk::RenderingAttachmentInfo> colorAttachments;
         colorAttachments.reserve(info.colorAttachments.size());
-        for (const auto &attachment: info.colorAttachments)
+        for (const auto& attachment : info.colorAttachments)
         {
-            auto *imageView = attachment.imageView;
+            auto* imageView = attachment.imageView;
             HZ_RHI_DEBUG_FAIL_IF(!imageView || !imageView->IsValid());
 
             vk::RenderingAttachmentInfo attachmentInfo;
@@ -229,8 +222,8 @@ namespace Hazel
 
         if (info.depthAttachment.has_value())
         {
-            const auto &attachment = info.depthAttachment.value();
-            auto *imageView = attachment.imageView;
+            const auto& attachment = info.depthAttachment.value();
+            auto* imageView = attachment.imageView;
             HZ_RHI_DEBUG_FAIL_IF(!imageView || !imageView->IsValid());
 
             depthAttachment.emplace();
@@ -243,8 +236,8 @@ namespace Hazel
 
         if (info.stencilAttachment.has_value())
         {
-            const auto &attachment = info.stencilAttachment.value();
-            auto *imageView = attachment.imageView;
+            const auto& attachment = info.stencilAttachment.value();
+            auto* imageView = attachment.imageView;
             HZ_RHI_DEBUG_FAIL_IF(!imageView || !imageView->IsValid());
 
             stencilAttachment.emplace();
@@ -255,11 +248,9 @@ namespace Hazel
             stencilAttachment->clearValue.depthStencil.stencil = attachment.clearDepthStencilValue.stencil;
         }
 
-        vk::RenderingAttachmentInfo a;
         vk::RenderingInfo renderingInfo;
-        renderingInfo.renderArea = vk::Rect2D(
-            vk::Offset2D(info.renderOffset.x, info.renderOffset.y),
-            vk::Extent2D(info.renderViewSize.width, info.renderViewSize.height));
+        renderingInfo.renderArea = vk::Rect2D(vk::Offset2D(info.renderOffset.x, info.renderOffset.y),
+                                              vk::Extent2D(info.renderViewSize.width, info.renderViewSize.height));
         renderingInfo.layerCount = info.layerCount;
         renderingInfo.viewMask = info.viewMask;
         renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
@@ -287,27 +278,29 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsPipeline)(RHIGraphicsPipeline *pipeline)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsPipeline)(RHIGraphicsPipeline* pipeline)
     {
-        auto *vkPipeline = pipeline;
+        auto* vkPipeline = pipeline;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkPipeline || !vkPipeline->IsValid());
 
         m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputePipeline)(RHIComputePipeline *pipeline)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputePipeline)(RHIComputePipeline* pipeline)
     {
-        auto *vkPipeline = pipeline;
+        auto* vkPipeline = pipeline;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkPipeline || !vkPipeline->IsValid());
 
         m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, vkPipeline->GetHandle());
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindVertexBuffer)(uint32_t binding, RHIBuffer *buffer, uint64_t offset)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindVertexBuffer)(uint32_t binding,
+                                                              RHIBuffer* buffer,
+                                                              uint64_t offset)
     {
-        auto *vkBuffer = buffer;
+        auto* vkBuffer = buffer;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkBuffer || !vkBuffer->IsValid());
 
         const vk::Buffer handle = vkBuffer->GetHandle();
@@ -316,32 +309,35 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindIndexBuffer)(RHIBuffer *buffer, RHIIndexType indexType, uint64_t offset)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindIndexBuffer)(RHIBuffer* buffer,
+                                                             RHIIndexType indexType,
+                                                             uint64_t offset)
     {
-        auto *vkBuffer = buffer;
+        auto* vkBuffer = buffer;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkBuffer || !vkBuffer->IsValid());
 
         m_CommandBuffer.bindIndexBuffer(vkBuffer->GetHandle(), offset, VulkanConvertIndexType(indexType));
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIGraphicsPipeline *pipeline,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIGraphicsPipeline* pipeline,
                                                                        uint32_t set,
-                                                                       RHIResourceGroup *resourceGroup)
+                                                                       RHIResourceGroup* resourceGroup)
     {
-        auto *vkPipeline = pipeline;
+        auto* vkPipeline = pipeline;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkPipeline || !vkPipeline->IsValid());
 
         return BindGraphicsResourceGroup(vkPipeline->GetDesc().resourceSignature, set, resourceGroup);
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIResourceSignature *signature,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindGraphicsResourceGroup)(RHIResourceSignature* signature,
                                                                        uint32_t set,
-                                                                       RHIResourceGroup *resourceGroup)
+                                                                       RHIResourceGroup* resourceGroup)
     {
-        auto *vkSignature = signature;
-        auto *vkGroup = resourceGroup;
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid() || !vkGroup->IsValid());
+        auto* vkSignature = signature;
+        auto* vkGroup = resourceGroup;
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid()
+            || !vkGroup->IsValid());
 
         const vk::DescriptorSet descriptorSet = vkGroup->GetHandle();
         m_CommandBuffer.bindDescriptorSets(
@@ -355,23 +351,24 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputeResourceGroup)(RHIComputePipeline *pipeline,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputeResourceGroup)(RHIComputePipeline* pipeline,
                                                                       uint32_t set,
-                                                                      RHIResourceGroup *resourceGroup)
+                                                                      RHIResourceGroup* resourceGroup)
     {
-        auto *vkPipeline = pipeline;
+        auto* vkPipeline = pipeline;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkPipeline || !vkPipeline->IsValid());
 
         return BindComputeResourceGroup(vkPipeline->GetDesc().resourceSignature, set, resourceGroup);
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputeResourceGroup)(RHIResourceSignature *signature,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindComputeResourceGroup)(RHIResourceSignature* signature,
                                                                       uint32_t set,
-                                                                      RHIResourceGroup *resourceGroup)
+                                                                      RHIResourceGroup* resourceGroup)
     {
-        auto *vkSignature = signature;
-        auto *vkGroup = resourceGroup;
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid() || !vkGroup->IsValid());
+        auto* vkSignature = signature;
+        auto* vkGroup = resourceGroup;
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid()
+            || !vkGroup->IsValid());
 
         const vk::DescriptorSet descriptorSet = vkGroup->GetHandle();
         m_CommandBuffer.bindDescriptorSets(
@@ -385,40 +382,40 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BlitImage)(RHIImage *srcImage,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BlitImage)(RHIImage* srcImage,
                                                        RHIImageResourceState srcState,
-                                                       RHIImage *dstImage,
+                                                       RHIImage* dstImage,
                                                        RHIImageResourceState dstState,
-                                                       const RHIImageBlitDesc &desc)
+                                                       const RHIImageBlitDesc& desc)
     {
-        auto *vkSrcImage = srcImage;
-        auto *vkDstImage = dstImage;
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !vkSrcImage || !vkDstImage || !vkSrcImage->IsValid() || !vkDstImage->IsValid());
+        auto* vkSrcImage = srcImage;
+        auto* vkDstImage = dstImage;
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !vkSrcImage || !vkDstImage
+            || !vkSrcImage->IsValid() || !vkDstImage->IsValid());
 
         std::vector<vk::ImageBlit> blitRegions;
         blitRegions.reserve(desc.regions.size());
-        vk::ImageBlit2 a;
-        for (const auto &region: desc.regions)
+        for (const auto& region : desc.regions)
         {
-            const auto &srcSubresource = region.srcSubresource;
-            const auto &dstSubresource = region.dstSubresource;
+            const auto& srcSubresource = region.srcSubresource;
+            const auto& dstSubresource = region.dstSubresource;
             vk::ImageBlit blitRegion;
             blitRegion.srcSubresource.aspectMask = VulkanConvertImagePlanes(srcSubresource.planes);
             blitRegion.srcSubresource.mipLevel = srcSubresource.mipLevel;
             blitRegion.srcSubresource.baseArrayLayer = srcSubresource.baseArrayLayer;
             blitRegion.srcSubresource.layerCount = srcSubresource.layerCount;
-            blitRegion.srcOffsets[0] = vk::Offset3D(region.srcOffsets[0].x, region.srcOffsets[0].y,
-                                                    region.srcOffsets[0].z);
-            blitRegion.srcOffsets[1] = vk::Offset3D(region.srcOffsets[1].x, region.srcOffsets[1].y,
-                                                    region.srcOffsets[1].z);
+            blitRegion.srcOffsets[0] =
+                vk::Offset3D(region.srcOffsets[0].x, region.srcOffsets[0].y, region.srcOffsets[0].z);
+            blitRegion.srcOffsets[1] =
+                vk::Offset3D(region.srcOffsets[1].x, region.srcOffsets[1].y, region.srcOffsets[1].z);
             blitRegion.dstSubresource.aspectMask = VulkanConvertImagePlanes(dstSubresource.planes);
             blitRegion.dstSubresource.mipLevel = dstSubresource.mipLevel;
             blitRegion.dstSubresource.baseArrayLayer = dstSubresource.baseArrayLayer;
             blitRegion.dstSubresource.layerCount = dstSubresource.layerCount;
-            blitRegion.dstOffsets[0] = vk::Offset3D(region.dstOffsets[0].x, region.dstOffsets[0].y,
-                                                    region.dstOffsets[0].z);
-            blitRegion.dstOffsets[1] = vk::Offset3D(region.dstOffsets[1].x, region.dstOffsets[1].y,
-                                                    region.dstOffsets[1].z);
+            blitRegion.dstOffsets[0] =
+                vk::Offset3D(region.dstOffsets[0].x, region.dstOffsets[0].y, region.dstOffsets[0].z);
+            blitRegion.dstOffsets[1] =
+                vk::Offset3D(region.dstOffsets[1].x, region.dstOffsets[1].y, region.dstOffsets[1].z);
             blitRegions.push_back(blitRegion);
         }
 
@@ -431,15 +428,16 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyBufferToImage)(RHIBuffer *srcBuffer,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyBufferToImage)(RHIBuffer* srcBuffer,
                                                                uint64_t bufferOffset,
                                                                RHIExtent2D bufferMemoryExtent,
-                                                               RHIImage *dstImage,
+                                                               RHIImage* dstImage,
                                                                RHIOffset3D dstOffset,
                                                                RHIExtent3D dstExtent,
                                                                RHIImageSubresourceLayers dstSubresource)
     {
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !srcBuffer || !dstImage || !srcBuffer->IsValid() || !dstImage->IsValid());
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !srcBuffer || !dstImage || !srcBuffer->IsValid()
+            || !dstImage->IsValid());
         vk::BufferImageCopy2 info{};
         info.bufferOffset = bufferOffset;
         info.bufferRowLength = bufferMemoryExtent.width;
@@ -463,15 +461,16 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyImageToBuffer)(RHIImage *srcImage,
-                                                               RHIBuffer *dstBuffer,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyImageToBuffer)(RHIImage* srcImage,
+                                                               RHIBuffer* dstBuffer,
                                                                uint64_t bufferOffset,
                                                                RHIExtent2D bufferMemoryExtent,
                                                                RHIOffset3D srcOffset,
                                                                RHIExtent3D srcExtent,
                                                                RHIImageSubresourceLayers srcSubresource)
     {
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcImage || !dstBuffer || !srcImage->IsValid() || !dstBuffer->IsValid());
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcImage || !dstBuffer
+            || !srcImage->IsValid() || !dstBuffer->IsValid());
 
         vk::BufferImageCopy2 info{};
         info.bufferOffset = bufferOffset;
@@ -495,13 +494,13 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearAttachments)(const RHIClearAttachmentsDesc &desc)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearAttachments)(const RHIClearAttachmentsDesc& desc)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !m_IsRendering);
 
         std::vector<vk::ClearAttachment> attachments;
         attachments.reserve(desc.attachments.size());
-        for (const auto &attachment: desc.attachments)
+        for (const auto& attachment : desc.attachments)
         {
             vk::ClearAttachment clearAttachment{};
             clearAttachment.aspectMask = VulkanConvertImagePlanes(attachment.planes);
@@ -509,10 +508,11 @@ namespace Hazel
             if ((attachment.planes & RHIImagePlaneFlagBits::Color) != RHIImagePlanes())
             {
                 clearAttachment.clearValue.color = VulkanConvertClearColorValue(attachment.colorValue);
-            } else
+            }
+            else
             {
-                clearAttachment.clearValue.depthStencil = VulkanConvertClearDepthStencilValue(
-                    attachment.depthStencilValue);
+                clearAttachment.clearValue.depthStencil =
+                    VulkanConvertClearDepthStencilValue(attachment.depthStencilValue);
             }
 
             attachments.push_back(clearAttachment);
@@ -520,12 +520,11 @@ namespace Hazel
 
         std::vector<vk::ClearRect> rects;
         rects.reserve(desc.rects.size());
-        for (const auto &rect: desc.rects)
+        for (const auto& rect : desc.rects)
         {
             vk::ClearRect clearRect{};
-            clearRect.rect = vk::Rect2D(
-                vk::Offset2D(rect.offset.x, rect.offset.y),
-                vk::Extent2D(rect.extent.width, rect.extent.height));
+            clearRect.rect = vk::Rect2D(vk::Offset2D(rect.offset.x, rect.offset.y),
+                                        vk::Extent2D(rect.extent.width, rect.extent.height));
             clearRect.baseArrayLayer = rect.baseArrayLayer;
             clearRect.layerCount = rect.layerCount;
             rects.push_back(clearRect);
@@ -535,10 +534,10 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearColorImage)(RHIImage *image,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearColorImage)(RHIImage* image,
                                                              RHIImageResourceState state,
-                                                             const RHIClearColorValue &value,
-                                                             const RHIImageSubresourceRange &subresourceRange)
+                                                             const RHIClearColorValue& value,
+                                                             const RHIImageSubresourceRange& subresourceRange)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !image || !image->IsValid());
 
@@ -550,18 +549,14 @@ namespace Hazel
         range.layerCount = subresourceRange.layerCount;
 
         const vk::ClearColorValue clearValue = VulkanConvertClearColorValue(value);
-        m_CommandBuffer.clearColorImage(
-            image->GetHandle(),
-            VulkanConvertImageResourceState(state),
-            clearValue,
-            range);
+        m_CommandBuffer.clearColorImage(image->GetHandle(), VulkanConvertImageResourceState(state), clearValue, range);
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearDepthStencilImage)(RHIImage *image,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, ClearDepthStencilImage)(RHIImage* image,
                                                                     RHIImageResourceState state,
-                                                                    const RHIClearDepthStencilValue &value,
-                                                                    const RHIImageSubresourceRange &subresourceRange)
+                                                                    const RHIClearDepthStencilValue& value,
+                                                                    const RHIImageSubresourceRange& subresourceRange)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !image || !image->IsValid());
 
@@ -581,15 +576,16 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyBuffer)(RHIBuffer *srcBuffer,
-                                                        RHIBuffer *dstBuffer,
-                                                        const RHIBufferCopyDesc &desc)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyBuffer)(RHIBuffer* srcBuffer,
+                                                        RHIBuffer* dstBuffer,
+                                                        const RHIBufferCopyDesc& desc)
     {
-        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcBuffer || !dstBuffer || !srcBuffer->IsValid() || !dstBuffer->IsValid());
+        HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcBuffer || !dstBuffer
+            || !srcBuffer->IsValid() || !dstBuffer->IsValid());
 
         std::vector<vk::BufferCopy2> regions;
         regions.reserve(desc.regions.size());
-        for (const auto &region: desc.regions)
+        for (const auto& region : desc.regions)
         {
             vk::BufferCopy2 copyRegion{};
             copyRegion.srcOffset = region.srcOffset;
@@ -631,7 +627,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndirect)(RHIBuffer *buffer,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndirect)(RHIBuffer* buffer,
                                                           uint64_t offset,
                                                           uint32_t drawCount,
                                                           uint32_t stride)
@@ -644,7 +640,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndexedIndirect)(RHIBuffer *buffer,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndexedIndirect)(RHIBuffer* buffer,
                                                                  uint64_t offset,
                                                                  uint32_t drawCount,
                                                                  uint32_t stride)
@@ -667,7 +663,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DispatchIndirect)(RHIBuffer *buffer, uint64_t offset)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DispatchIndirect)(RHIBuffer* buffer, uint64_t offset)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !buffer || !buffer->IsValid());
 
@@ -689,7 +685,10 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetScissor)(int32_t x, int32_t y, uint32_t width, uint32_t height)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetScissor)(int32_t x,
+                                                        int32_t y,
+                                                        uint32_t width,
+                                                        uint32_t height)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording);
 
@@ -698,7 +697,10 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetBlendConstants)(float red, float green, float blue, float alpha)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetBlendConstants)(float red,
+                                                               float green,
+                                                               float blue,
+                                                               float alpha)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording);
 
@@ -716,13 +718,13 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, PushConstants)(RHIResourceSignature *signature,
-                                                           RHIShaderStages stages,
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, PushConstants)(RHIResourceSignature* signature,
+                                                           const RHIShaderStages& stages,
                                                            uint32_t offset,
                                                            uint32_t size,
-                                                           const void *data)
+                                                           const void* data)
     {
-        auto *vkSignature = signature;
+        auto* vkSignature = signature;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkSignature->IsValid() || !data);
 
         m_CommandBuffer.pushConstants(
@@ -734,7 +736,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, PipelineBarriers)(const RHIPipelineBarrierDesc &desc)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, PipelineBarriers)(const RHIPipelineBarrierDesc& desc)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsRecording);
         vk::DependencyInfo dependencyInfo;
@@ -742,7 +744,7 @@ namespace Hazel
         dependencyInfo.memoryBarrierCount = desc.memoryBarriers.size();
         std::vector<vk::MemoryBarrier2> memoryBarriers;
         memoryBarriers.reserve(dependencyInfo.memoryBarrierCount);
-        for (const auto &barrier: desc.memoryBarriers)
+        for (const auto& barrier : desc.memoryBarriers)
         {
             vk::MemoryBarrier2 memoryBarrier;
             memoryBarrier.srcAccessMask = VulkanConvertAccessFlags(barrier.srcAccess);
@@ -756,7 +758,7 @@ namespace Hazel
         dependencyInfo.bufferMemoryBarrierCount = desc.bufferBarriers.size();
         std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
         bufferMemoryBarriers.reserve(dependencyInfo.bufferMemoryBarrierCount);
-        for (const auto &barrier: desc.bufferBarriers)
+        for (const auto& barrier : desc.bufferBarriers)
         {
             HZ_RHI_DEBUG_FAIL_IF(!barrier.buffer);
             vk::BufferMemoryBarrier2 bufferMemoryBarrier;
@@ -764,12 +766,10 @@ namespace Hazel
             bufferMemoryBarrier.dstAccessMask = VulkanConvertAccessFlags(barrier.dstAccess);
             bufferMemoryBarrier.srcStageMask = VulkanConvertPipelineStages(barrier.srcStages);
             bufferMemoryBarrier.dstStageMask = VulkanConvertPipelineStages(barrier.dstStages);
-            bufferMemoryBarrier.srcQueueFamilyIndex = barrier.srcQueue
-                                                          ? barrier.srcQueue->GetFamilyIndex()
-                                                          : VK_QUEUE_FAMILY_IGNORED;
-            bufferMemoryBarrier.dstQueueFamilyIndex = barrier.dstQueue
-                                                          ? barrier.dstQueue->GetFamilyIndex()
-                                                          : VK_QUEUE_FAMILY_IGNORED;
+            bufferMemoryBarrier.srcQueueFamilyIndex =
+                barrier.srcQueue ? barrier.srcQueue->GetFamilyIndex() : VK_QUEUE_FAMILY_IGNORED;
+            bufferMemoryBarrier.dstQueueFamilyIndex =
+                barrier.dstQueue ? barrier.dstQueue->GetFamilyIndex() : VK_QUEUE_FAMILY_IGNORED;
             bufferMemoryBarrier.buffer = barrier.buffer->GetHandle();
             bufferMemoryBarrier.offset = barrier.offset;
             bufferMemoryBarrier.size = barrier.size;
@@ -780,7 +780,7 @@ namespace Hazel
         dependencyInfo.imageMemoryBarrierCount = desc.imageBarriers.size();
         std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
         imageMemoryBarriers.reserve(dependencyInfo.imageMemoryBarrierCount);
-        for (const auto &barrier: desc.imageBarriers)
+        for (const auto& barrier : desc.imageBarriers)
         {
             HZ_RHI_DEBUG_FAIL_IF(!barrier.image);
             vk::ImageMemoryBarrier2 imageMemoryBarrier;
@@ -790,12 +790,10 @@ namespace Hazel
             imageMemoryBarrier.dstStageMask = VulkanConvertPipelineStages(barrier.dstStages);
             imageMemoryBarrier.oldLayout = VulkanConvertImageResourceState(barrier.oldState);
             imageMemoryBarrier.newLayout = VulkanConvertImageResourceState(barrier.newState);
-            imageMemoryBarrier.srcQueueFamilyIndex = barrier.srcQueue
-                                                         ? barrier.srcQueue->GetFamilyIndex()
-                                                         : VK_QUEUE_FAMILY_IGNORED;
-            imageMemoryBarrier.dstQueueFamilyIndex = barrier.dstQueue
-                                                         ? barrier.dstQueue->GetFamilyIndex()
-                                                         : VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.srcQueueFamilyIndex =
+                barrier.srcQueue ? barrier.srcQueue->GetFamilyIndex() : VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex =
+                barrier.dstQueue ? barrier.dstQueue->GetFamilyIndex() : VK_QUEUE_FAMILY_IGNORED;
             imageMemoryBarrier.image = barrier.image->GetHandle();
             imageMemoryBarrier.subresourceRange.aspectMask = VulkanConvertImagePlanes(barrier.subresourceRange.planes);
             imageMemoryBarrier.subresourceRange.baseMipLevel = barrier.subresourceRange.baseMipLevel;
@@ -817,10 +815,10 @@ namespace Hazel
             return;
         }
 
-        auto *commandPoolOwner = m_CommandPoolOwner;
+        auto* commandPoolOwner = m_CommandPoolOwner;
         ReleaseWithoutUnregister();
 
-        if (commandPoolOwner)
+        if (commandPoolOwner && !m_IsDetached)
         {
             commandPoolOwner->UnregisterCommandBuffer(this);
         }
@@ -833,10 +831,10 @@ namespace Hazel
             return;
         }
 
-        auto *commandPoolOwner = m_CommandPoolOwner;
+        auto* commandPoolOwner = m_CommandPoolOwner;
         ReleaseImmediateWithoutUnregister();
 
-        if (commandPoolOwner)
+        if (commandPoolOwner && !m_IsDetached)
         {
             commandPoolOwner->UnregisterCommandBuffer(this);
         }
@@ -854,14 +852,14 @@ namespace Hazel
         const auto commandBuffer = m_CommandBuffer;
         if (m_CommandPoolOwner)
         {
-            m_CommandPoolOwner->EnqueueDeletion([device, commandPool, commandBuffer]()
-            {
+            m_CommandPoolOwner->EnqueueDeletion([device, commandPool, commandBuffer]() {
                 if (device && commandPool && commandBuffer)
                 {
                     device.freeCommandBuffers(commandPool, commandBuffer);
                 }
             });
-        } else if (device && commandPool && commandBuffer)
+        }
+        else if (device && commandPool && commandBuffer)
         {
             device.freeCommandBuffers(commandPool, commandBuffer);
         }
@@ -873,6 +871,7 @@ namespace Hazel
         m_CommandPoolOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
         m_CommandPool = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandBuffer, ReleaseImmediateWithoutUnregister)()
@@ -894,5 +893,6 @@ namespace Hazel
         m_CommandPoolOwner = nullptr;
         m_Device = VK_NULL_HANDLE;
         m_CommandPool = VK_NULL_HANDLE;
+        m_IsDetached = false;
     }
-} // Hazel
+} // namespace Hazel

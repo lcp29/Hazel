@@ -32,24 +32,15 @@ add_subdirectory(${HAZEL_VENDOR_DIR}/glm ${CMAKE_CURRENT_BINARY_DIR}/vendor/glm)
 
 add_subdirectory(${HAZEL_VENDOR_DIR}/yaml-cpp ${CMAKE_CURRENT_BINARY_DIR}/vendor/yaml-cpp)
 
-add_subdirectory(${HAZEL_VENDOR_DIR}/Box2D ${CMAKE_CURRENT_BINARY_DIR}/vendor/Box2D)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/spdlog ${CMAKE_CURRENT_BINARY_DIR}/vendor/spdlog)
 
 add_subdirectory(${HAZEL_VENDOR_DIR}/vk-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/vendor/vk-bootstrap)
-
-set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
-set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
-set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
-add_subdirectory(${HAZEL_VENDOR_DIR}/msdf-atlas-gen ${CMAKE_CURRENT_BINARY_DIR}/vendor/msdf-atlas-gen)
-
 
 add_subdirectory(Hazel)
 add_subdirectory(Hazelnut/SandboxProject/Assets/Scripts)
 add_subdirectory(Hazel-ScriptCore)
 add_subdirectory(Hazelnut)
 add_subdirectory(Sandbox)
-add_subdirectory(RenderingPlayground)
 
 set_property(TARGET Hazel PROPERTY FOLDER "Core")
 set_property(TARGET Hazel-ScriptCore PROPERTY FOLDER "Core")

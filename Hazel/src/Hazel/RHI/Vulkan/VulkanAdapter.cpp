@@ -2,19 +2,17 @@
 // Created by helmholtz on 2026/3/14.
 //
 
-
-#include <vulkan/vulkan.hpp>
+#include "VulkanAdapter.h"
 
 #include "../RHIAdapter.h"
 #include "../RHIBase.h"
 #include "VulkanCommon.h"
-#include "VulkanAdapter.h"
 
-#include <cstring>
+#include <vulkan/vulkan.hpp>
 
 namespace Hazel
 {
-    bool RHI_VK_FUNC_IMPL(RHIAdapter, CanCreateDevice)(const RHIDeviceCapabilities &caps) const
+    bool RHI_VK_FUNC_IMPL(RHIAdapter, CanCreateDevice)(const RHIDeviceCapabilities& caps) const
     {
         if (m_Properties.apiVersion < vk::ApiVersion13)
         {
@@ -49,14 +47,11 @@ namespace Hazel
         }
 
         // required features supported by almost all devices
-        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing &&
-              m_RequiredVulkanFeatures.supportDynamicRendering &&
-              m_RequiredVulkanFeatures.supportGpuAddress &&
-              m_RequiredVulkanFeatures.supportDescriptorPartiallyBound &&
-              m_RequiredVulkanFeatures.supportTimelineSemaphore &&
-              m_RequiredVulkanFeatures.supportSynchronization2 &&
-              m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics &&
-              m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics))
+        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing && m_RequiredVulkanFeatures.supportDynamicRendering
+              && m_RequiredVulkanFeatures.supportGpuAddress && m_RequiredVulkanFeatures.supportDescriptorPartiallyBound
+              && m_RequiredVulkanFeatures.supportTimelineSemaphore && m_RequiredVulkanFeatures.supportSynchronization2
+              && m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics
+              && m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics))
         {
             return false;
         }
@@ -72,9 +67,8 @@ namespace Hazel
         const auto extensionProperties = adapter.enumerateDeviceExtensionProperties();
         const auto queueFamilyProperties = adapter.getQueueFamilyProperties();
 
-        const auto hasExtension = [&extensionProperties](const char *extensionName)
-        {
-            for (const auto &extensionProperty: extensionProperties)
+        const auto hasExtension = [&extensionProperties](const char* extensionName) {
+            for (const auto& extensionProperty : extensionProperties)
             {
                 if (std::strcmp(extensionProperty.extensionName, extensionName) == 0)
                 {
@@ -107,7 +101,7 @@ namespace Hazel
         m_Info.vendorId = m_Properties.vendorID;
         m_Info.type = VulkanConvertAdapterType(m_Properties.deviceType);
 
-        for (const auto &queueFamily: queueFamilyProperties)
+        for (const auto& queueFamily : queueFamilyProperties)
         {
             if (queueFamily.queueCount == 0)
             {
@@ -132,19 +126,15 @@ namespace Hazel
         m_Capabilities.subgroupSizeMin = subgroupProperties.subgroupSize;
         m_Capabilities.subgroupSizeMax = subgroupProperties.subgroupSize;
 
-        m_RequiredVulkanFeatures.supportGpuAddress =
-                supportsVulkan12 && vulkan12Features.bufferDeviceAddress;
-        m_RequiredVulkanFeatures.supportDescriptorIndexing =
-                supportsVulkan12 && vulkan12Features.descriptorIndexing;
+        m_RequiredVulkanFeatures.supportGpuAddress = supportsVulkan12 && vulkan12Features.bufferDeviceAddress;
+        m_RequiredVulkanFeatures.supportDescriptorIndexing = supportsVulkan12 && vulkan12Features.descriptorIndexing;
         m_RequiredVulkanFeatures.supportDynamicRendering = supportsVulkan13 && vulkan13Features.dynamicRendering;
         m_RequiredVulkanFeatures.supportDescriptorPartiallyBound =
-                m_RequiredVulkanFeatures.supportDescriptorIndexing && vulkan12Features.descriptorBindingPartiallyBound;
-        m_RequiredVulkanFeatures.supportTimelineSemaphore =
-                supportsVulkan12 && vulkan12Features.timelineSemaphore;
-        m_RequiredVulkanFeatures.supportSynchronization2 =
-                supportsVulkan13 && vulkan13Features.synchronization2;
+            m_RequiredVulkanFeatures.supportDescriptorIndexing && vulkan12Features.descriptorBindingPartiallyBound;
+        m_RequiredVulkanFeatures.supportTimelineSemaphore = supportsVulkan12 && vulkan12Features.timelineSemaphore;
+        m_RequiredVulkanFeatures.supportSynchronization2 = supportsVulkan13 && vulkan13Features.synchronization2;
         m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics = features2.features.fragmentStoresAndAtomics;
-        m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics = features2.features.
-                vertexPipelineStoresAndAtomics;
+        m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics =
+            features2.features.vertexPipelineStoresAndAtomics;
     }
-} // Hazel
+} // namespace Hazel

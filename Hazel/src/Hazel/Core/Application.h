@@ -1,12 +1,10 @@
 #pragma once
 
 #include "Hazel/Core/Base.h"
-
-#include "Hazel/Core/Window.h"
 #include "Hazel/Core/LayerStack.h"
-#include "Hazel/Events/Event.h"
+#include "Hazel/Core/Window.h"
 #include "Hazel/Events/ApplicationEvent.h"
-
+#include "Hazel/Events/Event.h"
 #include "Hazel/ImGui/ImGuiLayer.h"
 #include "Hazel/Renderer/Renderer.h"
 
@@ -44,16 +42,32 @@ namespace Hazel
         void PushLayer(Layer* layer);
         void PushOverlay(Layer* layer);
 
-        Window& GetWindow() { return *m_Window; }
-        void* GetGraphicsContext() const { return m_GraphicsContext.get(); }
+        Window& GetWindow()
+        {
+            return *m_Window;
+        }
+
+        void* GetGraphicsContext() const
+        {
+            return m_GraphicsContext.get();
+        }
+
+        ImGuiLayer* GetImGuiLayer()
+        {
+            return m_ImGuiLayer;
+        }
 
         void Close();
 
-        ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
+        static Application& Get()
+        {
+            return *s_Instance;
+        }
 
-        static Application& Get() { return *s_Instance; }
-
-        const ApplicationSpecification& GetSpecification() const { return m_Specification; }
+        const ApplicationSpecification& GetSpecification() const
+        {
+            return m_Specification;
+        }
 
         void SubmitToMainThread(const std::function<void()>& function);
 
@@ -83,4 +97,4 @@ namespace Hazel
 
     // To be defined in CLIENT
     Application* CreateApplication(ApplicationCommandLineArgs args);
-}
+} // namespace Hazel
