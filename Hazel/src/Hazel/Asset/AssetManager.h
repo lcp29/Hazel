@@ -24,6 +24,8 @@ namespace Hazel
         AssetManager() = default;
         AssetManager(Project* project, Renderer* renderer);
 
+        void ScanAll();
+
         void WriteAllMetaFiles() const;
 
         const std::unordered_map<UUID, ComputeShaderAsset>& GetComputeShaders() const
