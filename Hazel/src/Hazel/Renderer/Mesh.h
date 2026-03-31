@@ -3,47 +3,36 @@
 //
 
 #pragma once
-#include <cstdint>
-#include <filesystem>
+#include "Hazel/Asset/MeshAsset.h"
 #include <vector>
-#include <glm/glm.hpp>
 
 namespace Hazel
 {
-    struct Vertex
-    {
-        glm::vec3 position;
-        glm::vec2 texCoord;
-        glm::vec3 normal;
-        glm::vec3 tangent;
-    };
-
-    struct MeshletInfo
-    {
-        uint32_t indexStart = 0;
-        uint32_t indexCount = 0;
-        uint32_t vertexStart = 0;
-        uint32_t vertexCount = 0;
-    };
-
     class Mesh
     {
     public:
-        Mesh() = default;
-        Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
-        Mesh(const std::vector<Vertex>& vertices,
+        Mesh() = delete;
+
+        Mesh(UUID uuid, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+            : m_UUID(uuid), m_IsValid(true), m_Vertices(vertices), m_Indices(indices) {}
+
+        Mesh(UUID uuid,
+             const std::vector<Vertex>& vertices,
              const std::vector<uint32_t>& indices,
-             const std::vector<MeshletInfo>& meshlets);
+             const std::vector<MeshletInfo>& meshlets)
+            : m_UUID(uuid), m_IsValid(true), m_Vertices(vertices), m_Indices(indices), m_Meshlets(meshlets),
+              m_HasMeshlets(true) {}
+
         Mesh(Mesh&& other) noexcept;
         Mesh& operator=(Mesh&& other) noexcept;
         ~Mesh();
 
-        static Mesh CreateFromObj(std::filesystem::path filePath,
-                                  bool generateMeshlets = false,
-                                  uint32_t maxMeshletVertices = 64,
-                                  uint32_t maxMeshletIndices = 126);
+        void Release();
+        void ReleaseImmediate();
 
     private:
+        UUID m_UUID = 0;
+        bool m_IsValid = false;
         std::vector<Vertex> m_Vertices;
         std::vector<uint32_t> m_Indices;
         std::vector<MeshletInfo> m_Meshlets;

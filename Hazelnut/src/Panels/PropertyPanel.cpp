@@ -132,34 +132,24 @@ namespace Hazel
             }
         }
 
-        void WriteMetaFile(const TextureAsset& asset)
+        template <typename T>
+        void WriteMetaFile(const T& asset)
         {
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << asset.GetMeta().Serialize();
-        }
+            using decayed = std::decay_t<T>;
 
-        void WriteMetaFile(const ComputeShaderAsset& asset)
-        {
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << asset.GetMeta().Serialize();
-        }
-
-        void WriteMetaFile(const ShaderAsset& asset)
-        {
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << asset.GetMeta().Serialize();
-        }
-
-        void WriteMetaFile(const RenderTextureAsset& asset)
-        {
-            std::ofstream output(asset.GetFilePath().string());
-            output << asset.GetMeta().Serialize();
-        }
-
-        void WriteMetaFile(const SamplerAsset& asset)
-        {
-            std::ofstream output(asset.GetFilePath().string());
-            output << asset.GetMeta().Serialize();
+            if constexpr (std::is_same_v<decayed, TextureAsset> ||
+                          std::is_same_v<decayed, ComputeShaderAsset> ||
+                          std::is_same_v<decayed, ShaderAsset> ||
+                          std::is_same_v<decayed, MeshAsset>)
+            {
+                std::ofstream output(asset.GetFilePath().string() + ".meta");
+                output << asset.GetMeta().Serialize();
+            }
+            else
+            {
+                std::ofstream output(asset.GetFilePath().string());
+                output << asset.GetMeta().Serialize();
+            }
         }
 
         const char* GetFormatName(RHIFormat format)
@@ -743,6 +733,24 @@ namespace Hazel
             changed |= ImGui::Checkbox("Enable Anisotropy", &desc.enableAnisotropy);
             changed |= ImGui::Checkbox("Compare Enable", &desc.compareEnable);
             changed |= DrawCompareOpCombo("Compare Op", desc.compareOp);
+            if (changed)
+            {
+                WriteMetaFile(*asset);
+                asset->Recreate();
+            }
+        }
+
+        if (assetType == AssetType::Mesh)
+        {
+            auto* asset = assetManager.GetAsset<MeshAsset>(uuid);
+            if (!asset)
+                return;
+
+            ImGui::Text("Type: Mesh");
+            ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
+            ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
+            bool changed = false;
+            changed |= ImGui::Checkbox("Generate Meshlets", &asset->GetMeta().generateMeshlets);
             if (changed)
             {
                 WriteMetaFile(*asset);

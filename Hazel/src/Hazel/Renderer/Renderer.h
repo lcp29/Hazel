@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mesh.h"
 #include "Hazel/Renderer/ComputeShader.h"
 #include "Hazel/Renderer/Camera.h"
 #include "Hazel/Renderer/GraphicsContext.h"
@@ -8,6 +9,7 @@
 #include "Hazel/Renderer/Shader.h"
 #include "Hazel/Renderer/Texture.h"
 #include "Hazel/Renderer/RendererAPI.h"
+#include "Hazel/Renderer/Mesh.h"
 
 #include <memory>
 
@@ -103,6 +105,9 @@ namespace Hazel
             return m_DefaultRenderTexture.get();
         }
 
+        Mesh* AddMesh(std::unique_ptr<Mesh> mesh);
+        void RemoveMesh(Mesh* mesh);
+
         RenderTexture* AddRenderTexture(std::unique_ptr<RenderTexture> renderTexture);
         void RemoveRenderTexture(RenderTexture* renderTexture);
 
@@ -117,8 +122,6 @@ namespace Hazel
 
         ComputeShader* AddComputeShader(std::unique_ptr<ComputeShader> computeShader);
         void RemoveComputeShader(ComputeShader* computeShader);
-
-        void CreateDefaultResources();
 
         Texture* GetErrorTexture()
         {
@@ -141,6 +144,7 @@ namespace Hazel
         void CreateSwapchainResources();
         void DestroySwapchainResources();
         void RecreateDefaultRenderTexture();
+        void CreateDefaultResources();
 
         // synchronized from global setting
         uint32_t m_MaxFramesInFlight = 3;
@@ -165,10 +169,13 @@ namespace Hazel
         RHIOwnerSet<Texture> m_Textures;
         RHIOwnerSet<Shader> m_Shaders;
         RHIOwnerSet<ComputeShader> m_ComputeShaders;
+        RHIOwnerSet<Mesh> m_Meshes;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();
         std::unique_ptr<Texture> m_ErrorTexture;
+        UUID m_WhiteTextureUUID = UUID();
+        std::unique_ptr<Texture> m_WhiteTexture;
         UUID m_DefaultSamplerUUID = UUID();
         std::unique_ptr<Sampler> m_DefaultSampler;
     };

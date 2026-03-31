@@ -10,6 +10,7 @@
 #include "ShaderAsset.h"
 #include "TextureAsset.h"
 #include "Hazel/Core/UUID.h"
+#include "Hazel/Renderer/Mesh.h"
 
 #include <type_traits>
 #include <unordered_map>
@@ -26,7 +27,8 @@ namespace Hazel
         Shader,
         Sampler,
         RenderTexture,
-        ComputeShader
+        ComputeShader,
+        Mesh
     };
 
     class AssetManager
@@ -66,6 +68,11 @@ namespace Hazel
             {
                 auto it = m_Samplers.find(uuid);
                 return it == m_Samplers.end() ? nullptr : &it->second;
+            }
+            else if constexpr (std::is_same_v<T, MeshAsset>)
+            {
+                auto it = m_Meshes.find(uuid);
+                return it == m_Meshes.end() ? nullptr : &it->second;
             }
 
             return nullptr;
@@ -115,5 +122,6 @@ namespace Hazel
         std::unordered_map<UUID, RenderTextureAsset> m_RenderTextures;
         std::unordered_map<UUID, SamplerAsset> m_Samplers;
         std::unordered_map<UUID, TextureAsset> m_Textures;
+        std::unordered_map<UUID, MeshAsset> m_Meshes;
     };
 } // namespace Hazel

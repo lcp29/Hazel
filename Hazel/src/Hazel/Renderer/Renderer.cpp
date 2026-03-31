@@ -33,6 +33,18 @@ namespace Hazel
         CreateDefaultResources();
     }
 
+    Mesh* Renderer::AddMesh(std::unique_ptr<Mesh> mesh)
+    {
+        return m_Meshes.Register(std::move(mesh));
+    }
+
+    void Renderer::RemoveMesh(Mesh* mesh)
+    {
+        if (mesh)
+            mesh->Release();
+        m_Meshes.Unregister(mesh);
+    }
+
     RenderTexture* Renderer::AddRenderTexture(std::unique_ptr<RenderTexture> renderTexture)
     {
         return m_OffscreenRenderTextures.Register(std::move(renderTexture));
@@ -122,6 +134,11 @@ namespace Hazel
         textureDesc.usages = RHIImageUsageFlagBits::Sampled;
 
         m_ErrorTexture = std::make_unique<Texture>(m_ErrorTextureUUID, textureDesc, this, image, imageView);
+
+        data[1] = 255;
+        image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
+        imageView = m_Device->CreateImageView(image, imageViewDesc);
+        m_WhiteTexture = std::make_unique<Texture>(m_WhiteTextureUUID, textureDesc, this, image, imageView);
 
         RHISamplerDesc samplerDesc{};
         auto sampler = m_Device->CreateSampler(samplerDesc);

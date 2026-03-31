@@ -79,6 +79,31 @@ namespace Hazel
                     m_ComputeShaders.emplace(meta.uuid, std::move(asset));
                     m_AssetTypes.emplace(meta.uuid, AssetType::ComputeShader);
                 }
+                else if (extension == ".obj")
+                {
+                    auto metaFileName = path.string() + ".meta";
+                    MeshAssetMeta meta;
+                    if (std::filesystem::exists(metaFileName))
+                    {
+                        YAML::Node metaNode = YAML::LoadFile(metaFileName);
+                        meta = MeshAssetMeta::Deserialize(metaNode);
+                    }
+                    else
+                    {
+                        meta.uuid = UUID();
+                        auto metaNode = meta.Serialize();
+                        std::ofstream output(metaFileName);
+                        output << metaNode;
+                        output.close();
+                    }
+                    if (m_Meshes.contains(meta.uuid))
+                    {
+                        continue;
+                    }
+                    MeshAsset asset(meta.uuid, m_Renderer, path, meta);
+                    m_Meshes.emplace(meta.uuid, std::move(asset));
+                    m_AssetTypes.emplace(meta.uuid, AssetType::Mesh);
+                }
                 else if (extension == ".shader")
                 {
                     auto metaFileName = path.string() + ".meta";
