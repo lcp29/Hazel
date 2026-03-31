@@ -46,8 +46,13 @@ namespace Hazel
                         output << metaNode;
                         output.close();
                     }
+                    if (m_Textures.contains(meta.uuid))
+                    {
+                        continue;
+                    }
                     TextureAsset asset(meta.uuid, path, m_Renderer, meta);
                     m_Textures.emplace(meta.uuid, std::move(asset));
+                    m_AssetTypes.emplace(meta.uuid, AssetType::Texture);
                 }
                 else if (extension == ".comp")
                 {
@@ -66,8 +71,13 @@ namespace Hazel
                         output << metaNode;
                         output.close();
                     }
+                    if (m_ComputeShaders.contains(meta.uuid))
+                    {
+                        continue;
+                    }
                     ComputeShaderAsset asset(m_Renderer, path, meta);
                     m_ComputeShaders.emplace(meta.uuid, std::move(asset));
+                    m_AssetTypes.emplace(meta.uuid, AssetType::ComputeShader);
                 }
                 else if (extension == ".shader")
                 {
@@ -86,8 +96,13 @@ namespace Hazel
                         output << metaNode;
                         output.close();
                     }
+                    if (m_Shaders.contains(meta.uuid))
+                    {
+                        continue;
+                    }
                     ShaderAsset asset(m_Renderer, path, meta);
                     m_Shaders.emplace(meta.uuid, std::move(asset));
+                    m_AssetTypes.emplace(meta.uuid, AssetType::Shader);
                 }
                 else if (extension == ".meta")
                 {
@@ -105,8 +120,13 @@ namespace Hazel
                             output << metaNode;
                             output.close();
                         }
+                        if (m_RenderTextures.contains(meta.uuid))
+                        {
+                            continue;
+                        }
                         RenderTextureAsset asset(meta.uuid, path, m_Renderer, meta);
                         m_RenderTextures.emplace(meta.uuid, std::move(asset));
+                        m_AssetTypes.emplace(meta.uuid, AssetType::RenderTexture);
                     }
                     else if (stemExtension == ".sampler")
                     {
@@ -120,8 +140,13 @@ namespace Hazel
                             output << metaNode;
                             output.close();
                         }
+                        if (m_Samplers.contains(meta.uuid))
+                        {
+                            continue;
+                        }
                         SamplerAsset asset(meta.uuid, path, m_Renderer, meta);
                         m_Samplers.emplace(meta.uuid, std::move(asset));
+                        m_AssetTypes.emplace(meta.uuid, AssetType::Sampler);
                     }
                 }
             }

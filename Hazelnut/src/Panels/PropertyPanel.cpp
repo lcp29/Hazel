@@ -644,12 +644,9 @@ namespace Hazel
 
         UUID uuid = UUID(metaNode["UUID"].as<uint64_t>());
         auto& assetManager = Project::GetActive()->GetAssetManager();
-        const auto extension = m_SelectedMetaPath.stem().extension().string();
+        auto assetType = assetManager.GetAssetType(uuid);
 
-        static const std::unordered_set<std::string> imageExtensions =
-            {".png", ".jpg", ".jpeg", ".bmp", ".tga", ".hdr"};
-
-        if (imageExtensions.contains(extension))
+        if (assetType == AssetType::Texture)
         {
             auto* asset = assetManager.GetAsset<TextureAsset>(uuid);
             if (!asset)
@@ -667,7 +664,7 @@ namespace Hazel
             return;
         }
 
-        if (extension == ".comp")
+        if (assetType == AssetType::ComputeShader)
         {
             auto* asset = assetManager.GetAsset<ComputeShaderAsset>(uuid);
             if (!asset)
@@ -679,7 +676,7 @@ namespace Hazel
             return;
         }
 
-        if (extension == ".shader")
+        if (assetType == AssetType::Shader)
         {
             auto* asset = assetManager.GetAsset<ShaderAsset>(uuid);
             if (!asset)
@@ -691,7 +688,7 @@ namespace Hazel
             return;
         }
 
-        if (extension == ".rt")
+        if (assetType == AssetType::RenderTexture)
         {
             auto* asset = assetManager.GetAsset<RenderTextureAsset>(uuid);
             if (!asset)
@@ -725,7 +722,7 @@ namespace Hazel
             return;
         }
 
-        if (extension == ".sampler")
+        if (assetType == AssetType::Sampler)
         {
             auto* asset = assetManager.GetAsset<SamplerAsset>(uuid);
             if (!asset)

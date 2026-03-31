@@ -19,6 +19,16 @@ namespace Hazel
     class Project;
     class Renderer;
 
+    enum class AssetType
+    {
+        Unknown,
+        Texture,
+        Shader,
+        Sampler,
+        RenderTexture,
+        ComputeShader
+    };
+
     class AssetManager
     {
     public:
@@ -61,6 +71,16 @@ namespace Hazel
             return nullptr;
         }
 
+        AssetType GetAssetType(UUID uuid) const
+        {
+            const auto it = m_AssetTypes.find(uuid);
+            if (it == m_AssetTypes.end())
+            {
+                return AssetType::Unknown;
+            }
+            return it->second;
+        }
+
         const std::unordered_map<UUID, ComputeShaderAsset>& GetComputeShaders() const
         {
             return m_ComputeShaders;
@@ -89,6 +109,7 @@ namespace Hazel
     private:
         Project* m_Project = nullptr;
         Renderer* m_Renderer = nullptr;
+        std::unordered_map<UUID, AssetType> m_AssetTypes;
         std::unordered_map<UUID, ComputeShaderAsset> m_ComputeShaders;
         std::unordered_map<UUID, ShaderAsset> m_Shaders;
         std::unordered_map<UUID, RenderTextureAsset> m_RenderTextures;
