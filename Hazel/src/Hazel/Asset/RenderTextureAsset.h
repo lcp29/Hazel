@@ -62,6 +62,11 @@ namespace Hazel
             return m_Meta;
         }
 
+        RenderTextureAssetMeta& GetMeta()
+        {
+            return m_Meta;
+        }
+
         RenderTexture* GetRenderTexture() const
         {
             return m_RenderTexture;
@@ -73,6 +78,8 @@ namespace Hazel
         }
 
         void Release();
+
+        void Recreate();
 
     private:
         UUID m_UUID = 0;

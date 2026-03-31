@@ -18,16 +18,14 @@ namespace Hazel
 
         Entity GetSelectedEntity() const { return m_SelectionContext; }
         void SetSelectedEntity(Entity entity);
+        uint64_t GetSelectionVersion() const { return m_SelectionVersion; }
 
     private:
-        template <typename T>
-        void DisplayAddComponentEntry(const std::string& entryName);
-
         void DrawEntityNode(Entity entity);
-        void DrawComponents(Entity entity);
 
     private:
         Ref<Scene> m_Context;
         Entity m_SelectionContext;
+        uint64_t m_SelectionVersion = 0;
     };
 }

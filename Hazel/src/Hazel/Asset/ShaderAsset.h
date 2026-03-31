@@ -57,6 +57,11 @@ namespace Hazel
             return m_Meta;
         }
 
+        ShaderAssetMeta& GetMeta()
+        {
+            return m_Meta;
+        }
+
         const std::filesystem::path& GetFilePath() const
         {
             return m_FilePath;
@@ -79,7 +84,11 @@ namespace Hazel
 
         void Release();
 
+        void Recreate();
+
     private:
+        void CompileShaders();
+
         bool m_IsLoaded = false;
         UUID m_UUID = 0;
         ShaderAssetMeta m_Meta{};

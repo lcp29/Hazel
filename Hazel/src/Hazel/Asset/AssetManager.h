@@ -11,6 +11,7 @@
 #include "TextureAsset.h"
 #include "Hazel/Core/UUID.h"
 
+#include <type_traits>
 #include <unordered_map>
 
 namespace Hazel
@@ -27,6 +28,38 @@ namespace Hazel
         void ScanAll();
 
         void WriteAllMetaFiles() const;
+
+        template <typename T>
+        T* GetAsset(UUID uuid)
+        {
+            if constexpr (std::is_same_v<T, TextureAsset>)
+            {
+                auto it = m_Textures.find(uuid);
+                return it == m_Textures.end() ? nullptr : &it->second;
+            }
+            else if constexpr (std::is_same_v<T, ComputeShaderAsset>)
+            {
+                auto it = m_ComputeShaders.find(uuid);
+                return it == m_ComputeShaders.end() ? nullptr : &it->second;
+            }
+            else if constexpr (std::is_same_v<T, ShaderAsset>)
+            {
+                auto it = m_Shaders.find(uuid);
+                return it == m_Shaders.end() ? nullptr : &it->second;
+            }
+            else if constexpr (std::is_same_v<T, RenderTextureAsset>)
+            {
+                auto it = m_RenderTextures.find(uuid);
+                return it == m_RenderTextures.end() ? nullptr : &it->second;
+            }
+            else if constexpr (std::is_same_v<T, SamplerAsset>)
+            {
+                auto it = m_Samplers.find(uuid);
+                return it == m_Samplers.end() ? nullptr : &it->second;
+            }
+
+            return nullptr;
+        }
 
         const std::unordered_map<UUID, ComputeShaderAsset>& GetComputeShaders() const
         {

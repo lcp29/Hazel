@@ -57,6 +57,11 @@ namespace Hazel
             return static_cast<UnderlyingType>(value) & static_cast<UnderlyingType>(rhs.value);
         }
 
+        constexpr Flags operator~() const
+        {
+            return ~static_cast<UnderlyingType>(value);
+        }
+
         bool operator==(const Flags&) const = default;
 
         constexpr Flags& operator|=(const Flags& rhs)
@@ -65,7 +70,7 @@ namespace Hazel
             return *this;
         }
 
-        consteval Flags& operator&=(const Flags& rhs)
+        constexpr Flags& operator&=(const Flags& rhs)
         {
             value &= static_cast<UnderlyingType>(rhs.value);
             return *this;
@@ -84,6 +89,13 @@ namespace Hazel
     Flags<BitType> operator|(const BitType& lhs, const BitType& rhs)
     {
         return static_cast<UnderlyingType>(lhs) | static_cast<UnderlyingType>(rhs);
+    }
+
+    template <typename BitType, typename UnderlyingType = std::underlying_type_t<BitType>>
+        requires InRHIFlagScope<BitType>::value
+    Flags<BitType> operator~(const BitType& lhs)
+    {
+        return ~static_cast<UnderlyingType>(lhs);
     }
 
     template <typename BitType>

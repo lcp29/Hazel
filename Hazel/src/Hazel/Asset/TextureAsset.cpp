@@ -143,4 +143,14 @@ namespace Hazel
     {
         Unload();
     }
+
+    void TextureAsset::Recreate()
+    {
+        if (m_IsLoaded)
+        {
+            m_Renderer->GetDevice()->WaitIdle();
+            Unload();
+            Load();
+        }
+    }
 } // namespace Hazel

@@ -104,4 +104,14 @@ namespace Hazel
     {
         Unload();
     }
+
+    void ComputeShaderAsset::Recreate()
+    {
+        if (m_IsLoaded)
+        {
+            m_Renderer->GetDevice()->WaitIdle();
+            Unload();
+            Load();
+        }
+    }
 } // namespace Hazel

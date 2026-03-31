@@ -26,7 +26,7 @@ namespace Hazel
             project->m_ProjectFilePath = path;
             s_ActiveProject = project;
             project->m_AssetManager = AssetManager(project.get(), renderer);
-            //
+            project->m_AssetManager.ScanAll();
             return s_ActiveProject;
         }
 

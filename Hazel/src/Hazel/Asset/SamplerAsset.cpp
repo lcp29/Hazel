@@ -202,4 +202,14 @@ namespace Hazel
     {
         Unload();
     }
+
+    void SamplerAsset::Recreate()
+    {
+        if (m_IsLoaded)
+        {
+            m_Renderer->GetDevice()->WaitIdle();
+            Unload();
+            Load();
+        }
+    }
 } // namespace Hazel

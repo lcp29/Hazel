@@ -31,19 +31,24 @@ namespace Hazel
           m_FilePath(std::move(filePath)),
           m_Renderer(renderer)
     {
+        CompileShaders();
+    }
+
+    void ShaderAsset::CompileShaders()
+    {
         RHIShaderFileDesc vertexShaderFileDesc{};
-        vertexShaderFileDesc.path = filePath;
+        vertexShaderFileDesc.path = m_FilePath;
         vertexShaderFileDesc.entryPoint = "main";
         vertexShaderFileDesc.stage = RHIShaderStageFlagBits::Vertex;
-        vertexShaderFileDesc.debugName = filePath.filename().string() + " [VS]";
+        vertexShaderFileDesc.debugName = m_FilePath.filename().string() + " [VS]";
         vertexShaderFileDesc.macroDefinitions.push_back({"VERTEX_SHADER", ""});
         m_VertexCompileResult = CompileShaderFileToSPIRV(vertexShaderFileDesc);
 
         RHIShaderFileDesc fragmentShaderFileDesc{};
-        fragmentShaderFileDesc.path = filePath;
+        fragmentShaderFileDesc.path = m_FilePath;
         fragmentShaderFileDesc.entryPoint = "main";
         fragmentShaderFileDesc.stage = RHIShaderStageFlagBits::Fragment;
-        fragmentShaderFileDesc.debugName = filePath.filename().string() + " [FS]";
+        fragmentShaderFileDesc.debugName = m_FilePath.filename().string() + " [FS]";
         fragmentShaderFileDesc.macroDefinitions.push_back({"FRAGMENT_SHADER", ""});
         m_FragmentCompileResult = CompileShaderFileToSPIRV(fragmentShaderFileDesc);
     }
@@ -127,5 +132,15 @@ namespace Hazel
     void ShaderAsset::Release()
     {
         Unload();
+    }
+
+    void ShaderAsset::Recreate()
+    {
+        if (m_IsLoaded)
+        {
+            m_Renderer->GetDevice()->WaitIdle();
+            Unload();
+            Load();
+        }
     }
 } // namespace Hazel

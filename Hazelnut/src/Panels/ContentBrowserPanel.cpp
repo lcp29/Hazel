@@ -44,7 +44,8 @@ namespace Hazel
 
             ImGui::PushID(filenameString.c_str());
             void* icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            ImVec4 buttonColor = path == m_SelectedPath ? ImVec4(0.2f, 0.35f, 0.6f, 0.35f) : ImVec4(0, 0, 0, 0);
+            ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
             ImGui::ImageButton("##btn",
                                icon,
                                ImVec2(thumbnailSize, thumbnailSize),
@@ -60,6 +61,11 @@ namespace Hazel
             }
 
             ImGui::PopStyleColor();
+            if (ImGui::IsItemClicked())
+            {
+                m_SelectedPath = path;
+                m_SelectionVersion++;
+            }
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
                 if (directoryEntry.is_directory())
@@ -77,7 +83,11 @@ namespace Hazel
         ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 16, 512);
         ImGui::SliderFloat("Padding", &padding, 0, 32);
 
-        // TODO: status bar
         ImGui::End();
+    }
+
+    std::filesystem::path ContentBrowserPanel::GetSelectedMetaPath() const
+    {
+        return m_SelectedPath.extension() == ".meta" ? m_SelectedPath : std::filesystem::path{};
     }
 }

@@ -63,6 +63,11 @@ namespace Hazel
             return m_Meta;
         }
 
+        SamplerAssetMeta& GetMeta()
+        {
+            return m_Meta;
+        }
+
         Sampler* GetSampler() const
         {
             return m_Sampler;
@@ -74,6 +79,8 @@ namespace Hazel
         }
 
         void Release();
+
+        void Recreate();
 
     private:
         UUID m_UUID = 0;

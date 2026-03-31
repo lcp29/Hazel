@@ -56,6 +56,16 @@ namespace Hazel
             return m_Config;
         }
 
+        AssetManager& GetAssetManager()
+        {
+            return m_AssetManager;
+        }
+
+        const AssetManager& GetAssetManager() const
+        {
+            return m_AssetManager;
+        }
+
         static Ref<Project> GetActive()
         {
             return s_ActiveProject;

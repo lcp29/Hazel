@@ -3,6 +3,7 @@
 #include "Hazel.h"
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
+#include "Panels/PropertyPanel.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Hazel/Scene/ViewportCameraController.h"
@@ -103,5 +104,8 @@ namespace Hazel
         // Panels
         SceneHierarchyPanel m_SceneHierarchyPanel;
         Scope<ContentBrowserPanel> m_ContentBrowserPanel;
+        PropertyPanel m_PropertyPanel;
+        uint64_t m_LastSceneHierarchySelectionVersion = 0;
+        uint64_t m_LastContentBrowserSelectionVersion = 0;
     };
 }

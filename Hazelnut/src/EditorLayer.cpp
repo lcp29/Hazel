@@ -215,6 +215,7 @@ namespace Hazel
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
+        m_PropertyPanel.SetContext(m_EditorScene);
 
         auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
         if (commandLineArgs.Count > 1)
@@ -465,6 +466,10 @@ namespace Hazel
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
+        m_PropertyPanel.SetContext(m_EditorScene);
+        m_PropertyPanel.SetSelectedMetaPath({});
+        m_LastSceneHierarchySelectionVersion = m_SceneHierarchyPanel.GetSelectionVersion();
+        m_LastContentBrowserSelectionVersion = 0;
     }
 
     bool EditorLayer::HasOpenProject() const
@@ -616,6 +621,18 @@ namespace Hazel
         {
             m_ContentBrowserPanel->OnImGuiRender();
         }
+        if (m_SceneHierarchyPanel.GetSelectionVersion() != m_LastSceneHierarchySelectionVersion)
+        {
+            m_LastSceneHierarchySelectionVersion = m_SceneHierarchyPanel.GetSelectionVersion();
+            m_PropertyPanel.SetSelectedEntity(m_SceneHierarchyPanel.GetSelectedEntity());
+        }
+        if (m_ContentBrowserPanel &&
+            m_ContentBrowserPanel->GetSelectionVersion() != m_LastContentBrowserSelectionVersion)
+        {
+            m_LastContentBrowserSelectionVersion = m_ContentBrowserPanel->GetSelectionVersion();
+            m_PropertyPanel.SetSelectedMetaPath(m_ContentBrowserPanel->GetSelectedMetaPath());
+        }
+        m_PropertyPanel.OnImGuiRender();
 
         ImGui::Begin("Stats");
 
@@ -1020,6 +1037,7 @@ namespace Hazel
         m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>(
             m_ContentBrowserDirectoryIcon.ImGuiTexture,
             m_ContentBrowserFileIcon.ImGuiTexture);
+        m_LastContentBrowserSelectionVersion = m_ContentBrowserPanel->GetSelectionVersion();
 
         const auto& startSceneRelativePath = project->GetConfig().StartScene;
         const std::filesystem::path startScenePath = Project::GetAssetFileSystemPath(startSceneRelativePath);
@@ -1071,6 +1089,7 @@ namespace Hazel
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
+        m_PropertyPanel.SetContext(m_EditorScene);
         m_EditorScenePath.clear();
         m_HoveredEntity = {};
     }
@@ -1110,6 +1129,7 @@ namespace Hazel
             m_EditorScene = newScene;
             m_ActiveScene = m_EditorScene;
             m_SceneHierarchyPanel.SetContext(m_EditorScene);
+            m_PropertyPanel.SetContext(m_EditorScene);
             m_EditorScenePath = path;
             m_HoveredEntity = {};
         }
@@ -1170,6 +1190,7 @@ namespace Hazel
         m_ActiveScene->OnRuntimeStart();
 
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+        m_PropertyPanel.SetContext(m_ActiveScene);
     }
 
     void EditorLayer::OnSceneStop()
@@ -1183,6 +1204,7 @@ namespace Hazel
         m_ActiveScene = m_EditorScene;
 
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+        m_PropertyPanel.SetContext(m_ActiveScene);
     }
 
     void EditorLayer::OnScenePause()
