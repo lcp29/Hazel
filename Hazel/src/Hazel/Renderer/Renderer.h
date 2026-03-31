@@ -5,6 +5,7 @@
 #include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/RenderTexture.h"
 #include "Hazel/Renderer/Sampler.h"
+#include "Hazel/Renderer/Shader.h"
 #include "Hazel/Renderer/Texture.h"
 #include "Hazel/Renderer/RendererAPI.h"
 
@@ -111,6 +112,9 @@ namespace Hazel
         Texture* AddTexture(std::unique_ptr<Texture> texture);
         void RemoveTexture(Texture* texture);
 
+        Shader* AddShader(std::unique_ptr<Shader> shader);
+        void RemoveShader(Shader* shader);
+
         ComputeShader* AddComputeShader(std::unique_ptr<ComputeShader> computeShader);
         void RemoveComputeShader(ComputeShader* computeShader);
 
@@ -159,6 +163,7 @@ namespace Hazel
         RHIOwnerSet<RenderTexture> m_OffscreenRenderTextures;
         RHIOwnerSet<Sampler> m_Samplers;
         RHIOwnerSet<Texture> m_Textures;
+        RHIOwnerSet<Shader> m_Shaders;
         RHIOwnerSet<ComputeShader> m_ComputeShaders;
 
         // default resources

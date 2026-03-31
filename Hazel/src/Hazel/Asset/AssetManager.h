@@ -7,6 +7,7 @@
 #include "RenderTextureAsset.h"
 #include "SamplerAsset.h"
 #include "ComputeShaderAsset.h"
+#include "ShaderAsset.h"
 #include "TextureAsset.h"
 #include "Hazel/Core/UUID.h"
 
@@ -30,6 +31,11 @@ namespace Hazel
             return m_ComputeShaders;
         }
 
+        const std::unordered_map<UUID, ShaderAsset>& GetShaders() const
+        {
+            return m_Shaders;
+        }
+
         const std::unordered_map<UUID, RenderTextureAsset>& GetRenderTextures() const
         {
             return m_RenderTextures;
@@ -49,6 +55,7 @@ namespace Hazel
         Project* m_Project = nullptr;
         Renderer* m_Renderer = nullptr;
         std::unordered_map<UUID, ComputeShaderAsset> m_ComputeShaders;
+        std::unordered_map<UUID, ShaderAsset> m_Shaders;
         std::unordered_map<UUID, RenderTextureAsset> m_RenderTextures;
         std::unordered_map<UUID, SamplerAsset> m_Samplers;
         std::unordered_map<UUID, TextureAsset> m_Textures;

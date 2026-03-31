@@ -69,6 +69,18 @@ namespace Hazel
         m_Textures.Unregister(texture);
     }
 
+    Shader* Renderer::AddShader(std::unique_ptr<Shader> shader)
+    {
+        return m_Shaders.Register(std::move(shader));
+    }
+
+    void Renderer::RemoveShader(Shader* shader)
+    {
+        if (shader)
+            shader->Release();
+        m_Shaders.Unregister(shader);
+    }
+
     ComputeShader* Renderer::AddComputeShader(std::unique_ptr<ComputeShader> computeShader)
     {
         return m_ComputeShaders.Register(std::move(computeShader));
