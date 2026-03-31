@@ -11,7 +11,9 @@ namespace Hazel
     enum class RHIFormat
     {
         Undefined,
+        R8UNorm,
         R32SInt,
+        RG8UNorm,
         R32SFloat,
         RG32SFloat,
         RGB32SFloat,

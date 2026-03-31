@@ -172,19 +172,17 @@ namespace Hazel
 
         void SortReflection(RHIShaderReflection& reflection)
         {
-            std::sort(reflection.resourceGroups.begin(),
-                      reflection.resourceGroups.end(),
-                      [](const auto& lhs, const auto& rhs) {
-                          return lhs.set < rhs.set;
-                      });
+            std::ranges::sort(reflection.resourceGroups,
+                              [](const auto& lhs, const auto& rhs) {
+                                  return lhs.set < rhs.set;
+                              });
 
             for (auto& resourceGroup : reflection.resourceGroups)
             {
-                std::sort(resourceGroup.bindings.begin(),
-                          resourceGroup.bindings.end(),
-                          [](const auto& lhs, const auto& rhs) {
-                              return lhs.binding < rhs.binding;
-                          });
+                std::ranges::sort(resourceGroup.slots,
+                                  [](const auto& lhs, const auto& rhs) {
+                                      return lhs.slot < rhs.slot;
+                                  });
             }
         }
 
@@ -228,8 +226,8 @@ namespace Hazel
             const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 
             auto& resourceGroup = GetOrCreateResourceGroup(reflection, set);
-            auto& bindingReflection = resourceGroup.bindings.emplace_back();
-            bindingReflection.binding = binding;
+            auto& bindingReflection = resourceGroup.slots.emplace_back();
+            bindingReflection.slot = binding;
             bindingReflection.type = bindingType;
             bindingReflection.count = 1;
 

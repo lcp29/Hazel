@@ -29,9 +29,9 @@ namespace Hazel
 #if defined(HZ_DEBUG)
         instanceDesc.useValidation = true;
         instanceDesc.debugMessageSeverity = DebugMessageSeverityFlagBits::Error | DebugMessageSeverityFlagBits::Warning
-            | DebugMessageSeverityFlagBits::Info;
+                                            | DebugMessageSeverityFlagBits::Info;
         instanceDesc.debugMessageType = DebugMessageTypeFlagBits::General | DebugMessageTypeFlagBits::Validation
-            | DebugMessageTypeFlagBits::Performance;
+                                        | DebugMessageTypeFlagBits::Performance;
 #else
         instanceDesc.useValidation = false;
         instanceDesc.debugMessageSeverity = {};
@@ -43,7 +43,10 @@ namespace Hazel
 #if defined(RHI_USE_VULKAN)
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
-            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
+            m_Instance->GetHandle(),
+            static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
+            nullptr,
+            &surface);
         RHISurfaceDesc surfaceDesc{surface};
 #endif
 
@@ -52,7 +55,7 @@ namespace Hazel
         // enumerate physical devices and create device
         RHIDeviceCapabilities deviceCaps;
         deviceCaps.queueTypes = RHIQueueTypeFlagBits::Graphics | RHIQueueTypeFlagBits::Compute
-            | RHIQueueTypeFlagBits::Transfer | RHIQueueTypeFlagBits::Present;
+                                | RHIQueueTypeFlagBits::Transfer | RHIQueueTypeFlagBits::Present;
         deviceCaps.supportSubgroup = true;
         auto adapters = m_Instance->GetAdapters();
         for (auto& adapter : adapters)
@@ -65,6 +68,16 @@ namespace Hazel
             }
         }
         m_Device = m_Instance->CreateDevice(&m_Adapter, deviceCaps, m_Surface);
+
+        RHICommandPoolDesc cmdPoolDesc{};
+        cmdPoolDesc.allowCommandBufferReset = true;
+        cmdPoolDesc.transient = false;
+        m_DefaultCommandPool = m_Device->CreateCommandPoolUniformQueue(cmdPoolDesc);
+
+        RHICommandBufferDesc cmdDesc{};
+        cmdDesc.level = RHICommandBufferLevel::Primary;
+        m_DefaultCommandBuffer = m_DefaultCommandPool->CreateCommandBuffer(cmdDesc);
+
         m_Initialized = true;
     }
 

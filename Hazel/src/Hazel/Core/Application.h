@@ -47,7 +47,7 @@ namespace Hazel
             return *m_Window;
         }
 
-        void* GetGraphicsContext() const
+        GraphicsContext* GetGraphicsContext() const
         {
             return m_GraphicsContext.get();
         }

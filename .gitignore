@@ -31,3 +31,4 @@ cmake-build-release/
 !Hazel/vendor/mono
 
 Imperatives/
+**imgui.ini

@@ -19,22 +19,15 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(${HAZEL_VENDOR_DIR}/GLFW ${CMAKE_CURRENT_BINARY_DIR}/vendor/GLFW)
 
 add_subdirectory(${HAZEL_VENDOR_DIR}/imgui ${CMAKE_CURRENT_BINARY_DIR}/vendor/imgui)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/ImGuizmo ${CMAKE_CURRENT_BINARY_DIR}/vendor/ImGuizmo)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/stb_image ${CMAKE_CURRENT_BINARY_DIR}/vendor/stb_image)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/entt ${CMAKE_CURRENT_BINARY_DIR}/vendor/entt)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/filewatch ${CMAKE_CURRENT_BINARY_DIR}/vendor/filewatch)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/glm ${CMAKE_CURRENT_BINARY_DIR}/vendor/glm)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/yaml-cpp ${CMAKE_CURRENT_BINARY_DIR}/vendor/yaml-cpp)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/spdlog ${CMAKE_CURRENT_BINARY_DIR}/vendor/spdlog)
-
 add_subdirectory(${HAZEL_VENDOR_DIR}/vk-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/vendor/vk-bootstrap)
+add_subdirectory(${HAZEL_VENDOR_DIR}/tiny-obj-loader ${CMAKE_CURRENT_BINARY_DIR}/vendor/tiny-obj-loader)
 
 add_subdirectory(Hazel)
 add_subdirectory(Hazelnut/SandboxProject/Assets/Scripts)

@@ -78,13 +78,13 @@ namespace Hazel
                                                const RHIImageDesc& desc,
                                                const void* data,
                                                size_t dataSize,
-                                               RHIQueue* queue = nullptr,
                                                bool detached = false);
             static RHIImage* CreateFromFile(RHIDevice* device,
                                             RHICommandBuffer* cmd,
-                                            const RHIImageDesc& desc,
                                             const std::filesystem::path& path,
-                                            RHIQueue* queue = nullptr,
+                                            bool isSRGB,
+                                            bool useMipmap = false,
+                                            RHIImageUsages usages = {},
                                             bool detached = false);
         };
 

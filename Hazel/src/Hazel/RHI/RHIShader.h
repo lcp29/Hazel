@@ -33,7 +33,9 @@ namespace Hazel
         UniformBuffer,
         StorageBuffer,
         UniformTexelBuffer,
-        StorageTexelBuffer
+        StorageTexelBuffer,
+        UniformDynamicBuffer,
+        StorageDynamicBuffer
     };
 
     enum class RHIShaderValueBaseType : uint8_t
@@ -65,9 +67,9 @@ namespace Hazel
         std::vector<RHIShaderBufferMemberReflection> members;
     };
 
-    struct RHIShaderBindingReflection
+    struct RHIShaderSlotReflection
     {
-        uint32_t binding = 0;
+        uint32_t slot = 0;
         RHIResourceBindingType type = RHIResourceBindingType::UniformBuffer;
         uint32_t count = 1;
         std::string variableName;
@@ -77,7 +79,7 @@ namespace Hazel
     struct RHIShaderResourceGroupReflection
     {
         uint32_t set = 0;
-        std::vector<RHIShaderBindingReflection> bindings;
+        std::vector<RHIShaderSlotReflection> slots;
     };
 
     struct RHIShaderPushConstantReflection

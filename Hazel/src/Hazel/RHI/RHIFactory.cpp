@@ -18,12 +18,12 @@ namespace Hazel
         {
             switch (stage)
             {
-            case RHIShaderStageFlagBits::Vertex:
-                return shaderc_glsl_vertex_shader;
-            case RHIShaderStageFlagBits::Fragment:
-                return shaderc_glsl_fragment_shader;
-            case RHIShaderStageFlagBits::Compute:
-                return shaderc_glsl_compute_shader;
+                case RHIShaderStageFlagBits::Vertex:
+                    return shaderc_glsl_vertex_shader;
+                case RHIShaderStageFlagBits::Fragment:
+                    return shaderc_glsl_fragment_shader;
+                case RHIShaderStageFlagBits::Compute:
+                    return shaderc_glsl_compute_shader;
             }
 
             return shaderc_glsl_infer_from_source;
@@ -50,102 +50,53 @@ namespace Hazel
             return contents;
         }
 
-        RHIImageResourceState GetUploadFinalState(const RHIImageDesc& desc)
+        class GLSLFileIncluder : public shaderc::CompileOptions::IncluderInterface
         {
-            if (desc.initialState != RHIImageResourceState::Undefined)
+        public:
+            shaderc_include_result* GetInclude(const char* requested_source,
+                                               shaderc_include_type type,
+                                               const char* requesting_source,
+                                               size_t include_depth) override
             {
-                return desc.initialState;
+                std::filesystem::path requestingPath(requesting_source);
+                std::filesystem::path requestedPath(requested_source);
+                std::filesystem::path filePath;
+                if (requestedPath.is_absolute())
+                {
+                    filePath = requestedPath;
+                }
+                else
+                {
+                    filePath = requestingPath.parent_path() / requestedPath;
+                }
+                auto requestedFileContent = ReadTextFile(filePath);
+
+                auto* result = new shaderc_include_result;
+                result->source_name = new char[filePath.string().size() + 1];
+                std::strcpy(const_cast<char*>(result->source_name), filePath.string().c_str());
+                result->source_name_length = filePath.string().size();
+                result->content = new char[requestedFileContent.size() + 1];
+                std::strcpy(const_cast<char*>(result->content), requestedFileContent.c_str());
+                result->content_length = requestedFileContent.size();
+
+                return result;
             }
 
-            if (desc.usages & RHIImageUsageFlagBits::Sampled)
+            void ReleaseInclude(shaderc_include_result* data) override
             {
-                return RHIImageResourceState::ShaderRead;
+                delete[] data->source_name;
+                delete[] data->content;
+                delete data;
             }
-            if (desc.usages & RHIImageUsageFlagBits::ColorAttachment)
-            {
-                return RHIImageResourceState::ColorAttachment;
-            }
-            if (desc.usages & RHIImageUsageFlagBits::DepthStencilAttachment)
-            {
-                return RHIImageResourceState::DepthStencilAttachment;
-            }
-
-            return RHIImageResourceState::TransferDestination;
-        }
-
-        RHIPipelineStages GetStageMask(RHIImageResourceState state)
-        {
-            switch (state)
-            {
-            case RHIImageResourceState::Undefined:
-                return RHIPipelineStageFlagBits::Top;
-            case RHIImageResourceState::Common:
-                return RHIPipelineStageFlagBits::AllCommands;
-            case RHIImageResourceState::TransferSource:
-            case RHIImageResourceState::TransferDestination:
-                return RHIPipelineStageFlagBits::Transfer;
-            case RHIImageResourceState::ShaderRead:
-            case RHIImageResourceState::ShaderWrite:
-                return RHIPipelineStageFlagBits::AllCommands;
-            case RHIImageResourceState::ColorAttachment:
-                return RHIPipelineStageFlagBits::ColorAttachmentOutput;
-            case RHIImageResourceState::DepthStencilAttachment:
-                return RHIPipelineStageFlagBits::EarlyDepthStencil | RHIPipelineStageFlagBits::LateDepthStencil;
-            case RHIImageResourceState::Present:
-                return RHIPipelineStageFlagBits::Bottom;
-            }
-
-            return RHIPipelineStageFlagBits::AllCommands;
-        }
-
-        vk::AccessFlags2 GetAccessMask(RHIImageResourceState state)
-        {
-            switch (state)
-            {
-            case RHIImageResourceState::Undefined:
-                return {};
-            case RHIImageResourceState::Common:
-                return vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite;
-            case RHIImageResourceState::TransferSource:
-                return vk::AccessFlagBits2::eTransferRead;
-            case RHIImageResourceState::TransferDestination:
-                return vk::AccessFlagBits2::eTransferWrite;
-            case RHIImageResourceState::ShaderRead:
-                return vk::AccessFlagBits2::eShaderRead;
-            case RHIImageResourceState::ShaderWrite:
-                return vk::AccessFlagBits2::eShaderWrite;
-            case RHIImageResourceState::ColorAttachment:
-                return vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite;
-            case RHIImageResourceState::DepthStencilAttachment:
-                return vk::AccessFlagBits2::eDepthStencilAttachmentRead
-                    | vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
-            case RHIImageResourceState::Present:
-                return {};
-            }
-
-            return {};
-        }
-
-        vk::ImageAspectFlags GetAspectMask(RHIFormat format)
-        {
-            switch (format)
-            {
-            case RHIFormat::D32SFloat:
-                return vk::ImageAspectFlagBits::eDepth;
-            case RHIFormat::D32SFloatS8Uint:
-                return vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-            default:
-                return vk::ImageAspectFlagBits::eColor;
-            }
-        }
-    } // namespace
+        };
+    }
 
     std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc& desc)
     {
         switch (desc.backend)
         {
-        case RHIBackend::Auto:
-        case RHIBackend::Vulkan:
+            case RHIBackend::Auto:
+            case RHIBackend::Vulkan:
             {
                 auto instance = std::make_unique<RHIInstance>(desc);
                 return instance->IsValid() ? std::make_optional(std::move(instance)) : std::nullopt;
@@ -154,7 +105,7 @@ namespace Hazel
         return std::nullopt;
     }
 
-    RHIShader* CreateShaderFromGLSLFile(RHIDevice& device, const RHIShaderFileDesc& desc)
+    RHIShader* CreateShaderFromGLSLFile(RHIDevice* device, const RHIShaderFileDesc& desc)
     {
         if (desc.path.empty())
         {
@@ -169,11 +120,22 @@ namespace Hazel
 
         shaderc::Compiler compiler;
         shaderc::CompileOptions options;
-        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
+#ifdef RHI_USE_VULKAN
+        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+#endif
         options.SetSourceLanguage(shaderc_source_language_glsl);
+        options.SetIncluder(std::make_unique<GLSLFileIncluder>());
+        for (const auto& macroDefinition : desc.macroDefinitions)
+        {
+            options.AddMacroDefinition(macroDefinition.name, macroDefinition.value);
+        }
 
         auto result = compiler.CompileGlslToSpv(
-            source, ToShadercShaderKind(desc.stage), desc.path.string().c_str(), desc.entryPoint.c_str(), options);
+            source,
+            ToShadercShaderKind(desc.stage),
+            desc.path.string().c_str(),
+            desc.entryPoint.c_str(),
+            options);
         if (result.GetCompilationStatus() != shaderc_compilation_status_success)
         {
             return nullptr;
@@ -185,6 +147,6 @@ namespace Hazel
         shaderDesc.debugName = desc.debugName.empty() ? desc.path.filename().string() : desc.debugName;
         shaderDesc.binary.assign(result.cbegin(), result.cend());
 
-        return device.CreateShader(shaderDesc);
+        return device->CreateShader(shaderDesc);
     }
 } // namespace Hazel

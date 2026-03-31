@@ -2,6 +2,9 @@
 
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/Renderer/Sampler.h"
+#include "Hazel/Renderer/Texture.h"
+#include "Hazel/RHI/RHI.h"
 
 namespace Hazel
 {
@@ -14,7 +17,10 @@ namespace Hazel
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
-            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
+            m_Instance->GetHandle(),
+            static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
+            nullptr,
+            &surface);
 #endif
         m_WindowSurface = m_GraphicsContext->GetSurface();
 
@@ -24,17 +30,90 @@ namespace Hazel
         CreateSwapchainResources();
         CreatePerFrameData();
         RecreateDefaultRenderTexture();
+        CreateDefaultResources();
     }
 
-    RenderTexture* Renderer::AddRenderTexture(const RenderTextureDesc& desc)
+    RenderTexture* Renderer::AddRenderTexture(std::unique_ptr<RenderTexture> renderTexture)
     {
-        auto renderTexture = std::make_unique<RenderTexture>(this, desc);
         return m_OffscreenRenderTextures.Register(std::move(renderTexture));
     }
 
     void Renderer::RemoveRenderTexture(RenderTexture* renderTexture)
     {
+        if (renderTexture)
+            renderTexture->Release();
         m_OffscreenRenderTextures.Unregister(renderTexture);
+    }
+
+    Sampler* Renderer::AddSampler(std::unique_ptr<Sampler> sampler)
+    {
+        return m_Samplers.Register(std::move(sampler));
+    }
+
+    void Renderer::RemoveSampler(Sampler* sampler)
+    {
+        if (sampler)
+            sampler->Release();
+        m_Samplers.Unregister(sampler);
+    }
+
+    Texture* Renderer::AddTexture(std::unique_ptr<Texture> texture)
+    {
+        return m_Textures.Register(std::move(texture));
+    }
+
+    void Renderer::RemoveTexture(Texture* texture)
+    {
+        if (texture)
+            texture->Release();
+        m_Textures.Unregister(texture);
+    }
+
+    ComputeShader* Renderer::AddComputeShader(std::unique_ptr<ComputeShader> computeShader)
+    {
+        return m_ComputeShaders.Register(std::move(computeShader));
+    }
+
+    void Renderer::RemoveComputeShader(ComputeShader* computeShader)
+    {
+        if (computeShader)
+            computeShader->Release();
+        m_ComputeShaders.Unregister(computeShader);
+    }
+
+    void Renderer::CreateDefaultResources()
+    {
+        auto cmd = m_GraphicsContext->GetDefaultCommandBuffer();
+
+        // error texture
+        uint8_t data[4] = {255, 0, 255, 255};
+        RHIImageDesc imageDesc{};
+        imageDesc.height = 1;
+        imageDesc.width = 1;
+        imageDesc.depth = 1;
+        imageDesc.arrayLayers = 1;
+        imageDesc.mipLevels = 1;
+        imageDesc.format = RHIFormat::RGBA8UNorm;
+        imageDesc.initialState = RHIImageResourceState::ShaderRead;
+        imageDesc.usages = RHIImageUsageFlagBits::Sampled;
+        auto image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
+
+        RHIImageViewDesc imageViewDesc{};
+        imageViewDesc.format = RHIFormat::RGBA8UNorm;
+        auto imageView = m_Device->CreateImageView(image, imageViewDesc);
+
+        TextureDesc textureDesc{};
+        textureDesc.format = RHIFormat::RGBA8UNorm;
+        textureDesc.width = 1;
+        textureDesc.height = 1;
+        textureDesc.useMipmap = false;
+        textureDesc.usages = RHIImageUsageFlagBits::Sampled;
+
+        m_ErrorTexture = std::make_unique<Texture>(m_ErrorTextureUUID, textureDesc, this, image, imageView);
+
+        RHISamplerDesc samplerDesc{};
+        auto sampler = m_Device->CreateSampler(samplerDesc);
+        m_DefaultSampler = std::make_unique<Sampler>(m_DefaultSamplerUUID, this, samplerDesc, sampler);
     }
 
     void Renderer::CreatePerFrameData()
@@ -70,7 +149,27 @@ namespace Hazel
 
     void Renderer::Render(Camera& camera)
     {
-        (void)camera;
+        auto& frameData = GetCurrentFrameData();
+        auto* image = m_DefaultRenderTexture->GetImage();
+        auto* imageView = m_DefaultRenderTexture->GetImageView();
+        auto* cmd = frameData.commandBuffer;
+
+        image->Transition(frameData.commandBuffer, image->GetCurrentState(), RHIImageResourceState::ColorAttachment);
+
+        RHIRenderingAttachmentDesc colorAttachmentDesc{};
+        colorAttachmentDesc.imageView = imageView;
+        colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
+        colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
+        colorAttachmentDesc.clearColorValue.float32 = {0.4f, 0.4f, 0.6f, 1.0f};
+        colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
+
+        RHIRenderingInfo renderingInfo{};
+        renderingInfo.colorAttachments = {colorAttachmentDesc};
+        renderingInfo.renderOffset = {0, 0};
+        renderingInfo.renderViewSize = {image->GetDesc().width, image->GetDesc().height};
+
+        cmd->BeginRendering(renderingInfo);
+        cmd->EndRendering();
     }
 
     void Renderer::BeginSwapchainTargetRendering()
@@ -81,7 +180,9 @@ namespace Hazel
         auto* swapchainImageView = m_Swapchain->FetchImageView(frameData.frameNumber);
 
         swapchainImage->Transition(
-            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::ColorAttachment);
+            frameData.commandBuffer,
+            swapchainImage->GetCurrentState(),
+            RHIImageResourceState::ColorAttachment);
 
         RHIRenderingAttachmentDesc colorAttachmentDesc{};
         colorAttachmentDesc.imageView = swapchainImageView;
@@ -105,7 +206,9 @@ namespace Hazel
 
         auto* swapchainImage = m_Swapchain->FetchImage(frameData.frameNumber);
         swapchainImage->Transition(
-            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::Present);
+            frameData.commandBuffer,
+            swapchainImage->GetCurrentState(),
+            RHIImageResourceState::Present);
     }
 
     void Renderer::OnResize()
@@ -133,17 +236,13 @@ namespace Hazel
         renderTextureDesc.perFrame = true;
         renderTextureDesc.useMipmap = false;
 
-        if (m_DefaultRenderTexture&& m_DefaultRenderTexture
-        
-        ->
-        IsValid()
-        )
+        if (m_DefaultRenderTexture && m_DefaultRenderTexture->IsValid())
         {
             m_DefaultRenderTexture->ReleaseImmediate();
             m_DefaultRenderTexture.reset();
         }
 
-        m_DefaultRenderTexture = std::make_unique<RenderTexture>(this, renderTextureDesc);
+        m_DefaultRenderTexture = std::make_unique<RenderTexture>(m_DefaultRenderTextureUUID, this, renderTextureDesc);
     }
 
     void Renderer::BeginFrame()

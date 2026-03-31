@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Hazel/Core/UUID.h"
 #include "Hazel/RHI/RHI.h"
 
 namespace Hazel
@@ -14,6 +15,9 @@ namespace Hazel
     {
         uint32_t width = 256;
         uint32_t height = 256;
+        uint32_t depth = 1;
+        uint32_t arrayLayers = 1;
+        RHIImageViewType viewType = Image2D;
         bool useMipmap = false;
         bool perFrame = true;
         RHIFormat format = RHIFormat::BGRA8UNorm;
@@ -23,8 +27,8 @@ namespace Hazel
     class RenderTexture
     {
     public:
-        RenderTexture() = default;
-        RenderTexture(Renderer* renderer, const RenderTextureDesc& desc);
+        RenderTexture() = delete;
+        RenderTexture(UUID uuid, Renderer* renderer, const RenderTextureDesc& desc);
 
         void Release();
         void ReleaseImmediate();
@@ -54,6 +58,7 @@ namespace Hazel
     private:
         bool m_IsValid = false;
         bool m_PerFrame = true;
+        UUID m_UUID = 0;
         uint32_t m_MaxFramesInFlight = 0;
         RenderTextureDesc m_Desc{};
         Renderer* m_Renderer = nullptr;

@@ -44,6 +44,12 @@ namespace Hazel
 
         static Scope<GraphicsContext> Create(std::string appName, Window* window);
 
+        RHICommandBuffer* GetDefaultCommandBuffer() const
+        {
+            m_DefaultCommandBuffer->Reset();
+            return m_DefaultCommandBuffer;
+        }
+
     private:
         bool m_Initialized = false;
         std::string m_AppName;
@@ -53,5 +59,9 @@ namespace Hazel
         std::unique_ptr<RHIInstance> m_Instance;
         RHIAdapter m_Adapter;
         RHIDevice* m_Device = nullptr;
+
+        RHICommandPool* m_DefaultCommandPool;
+        // Do not use with multiple threads!!!
+        RHICommandBuffer* m_DefaultCommandBuffer;
     };
 } // namespace Hazel

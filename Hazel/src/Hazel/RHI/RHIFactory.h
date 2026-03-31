@@ -10,17 +10,25 @@
 #include "RHIShader.h"
 
 #include <filesystem>
+#include <vector>
 
 namespace Hazel
 {
+    struct RHIShaderMacroDefinition
+    {
+        std::string name;
+        std::string value;
+    };
+
     struct RHIShaderFileDesc
     {
         std::filesystem::path path;
         RHIShaderStageFlagBits stage = RHIShaderStageFlagBits::Vertex;
         std::string entryPoint = "main";
         std::string debugName;
+        std::vector<RHIShaderMacroDefinition> macroDefinitions;
     };
 
     std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc& desc);
-    RHIShader* CreateShaderFromGLSLFile(RHIDevice& device, const RHIShaderFileDesc& desc);
+    RHIShader* CreateShaderFromGLSLFile(RHIDevice* device, const RHIShaderFileDesc& desc);
 } // namespace Hazel

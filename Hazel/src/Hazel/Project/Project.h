@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hazel/Asset/AssetManager.h"
 #include "Hazel/Core/Base.h"
 
 #include <filesystem>
@@ -7,12 +8,12 @@
 
 namespace Hazel
 {
+    class Renderer;
+
     struct ProjectConfig
     {
         std::string Name = "Untitled";
-
         std::filesystem::path StartScene;
-
         std::filesystem::path AssetDirectory;
         std::filesystem::path ScriptModulePath;
     };
@@ -61,7 +62,7 @@ namespace Hazel
         }
 
         static Ref<Project> New();
-        static Ref<Project> Load(const std::filesystem::path& path);
+        static Ref<Project> Load(const std::filesystem::path& path, Renderer* renderer);
         static bool SaveActive(const std::filesystem::path& path);
 
         static void CloseActive()
@@ -73,6 +74,7 @@ namespace Hazel
         ProjectConfig m_Config;
         std::filesystem::path m_ProjectDirectory;
         std::filesystem::path m_ProjectFilePath;
+        AssetManager m_AssetManager;
 
         inline static Ref<Project> s_ActiveProject;
     };

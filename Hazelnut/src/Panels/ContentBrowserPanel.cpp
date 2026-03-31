@@ -31,11 +31,11 @@ namespace Hazel
         float cellSize = thumbnailSize + padding;
 
         float panelWidth = ImGui::GetContentRegionAvail().x;
-        int columnCount = (int)(panelWidth / cellSize);
+        int columnCount = static_cast<int>(panelWidth / cellSize);
         if (columnCount < 1)
             columnCount = 1;
 
-        ImGui::Columns(columnCount, 0, false);
+        ImGui::Columns(columnCount, nullptr, false);
 
         for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
         {
@@ -45,7 +45,11 @@ namespace Hazel
             ImGui::PushID(filenameString.c_str());
             void* icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            ImGui::ImageButton("##btn", icon, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
+            ImGui::ImageButton("##btn",
+                               icon,
+                               ImVec2(thumbnailSize, thumbnailSize),
+                               ImVec2(0, 0),
+                               ImVec2(1, 1));
 
             if (ImGui::BeginDragDropSource())
             {

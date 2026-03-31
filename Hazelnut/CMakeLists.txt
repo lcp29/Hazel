@@ -19,7 +19,7 @@ add_executable(Hazelnut
     ${HAZELNUT_SOURCES}
 )
 
-target_compile_features(Hazelnut PUBLIC cxx_std_17)
+target_compile_features(Hazelnut PUBLIC cxx_std_23)
 
 target_compile_definitions(Hazelnut PRIVATE
     $<$<CONFIG:Debug>:HZ_DEBUG>

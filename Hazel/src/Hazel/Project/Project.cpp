@@ -3,6 +3,8 @@
 #include "ProjectSerializer.h"
 #include "hzpch.h"
 
+#include <complex>
+
 namespace Hazel
 {
     Ref<Project> Project::New()
@@ -13,7 +15,7 @@ namespace Hazel
         return s_ActiveProject;
     }
 
-    Ref<Project> Project::Load(const std::filesystem::path& path)
+    Ref<Project> Project::Load(const std::filesystem::path& path, Renderer* renderer)
     {
         Ref<Project> project = CreateRef<Project>();
 
@@ -23,6 +25,8 @@ namespace Hazel
             project->m_ProjectDirectory = path.parent_path();
             project->m_ProjectFilePath = path;
             s_ActiveProject = project;
+            project->m_AssetManager = AssetManager(project.get(), renderer);
+            //
             return s_ActiveProject;
         }
 
@@ -36,6 +40,7 @@ namespace Hazel
         {
             s_ActiveProject->m_ProjectDirectory = path.parent_path();
             s_ActiveProject->m_ProjectFilePath = path;
+            s_ActiveProject->m_AssetManager.WriteAllMetaFiles();
             return true;
         }
 

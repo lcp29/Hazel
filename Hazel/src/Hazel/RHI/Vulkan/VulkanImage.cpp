@@ -10,6 +10,7 @@
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
 #include "VulkanMemoryAllocator.h"
+#include "Hazel/Core/Log.h"
 
 #include <stb_image.h>
 #include <utility>
@@ -21,10 +22,53 @@ namespace Hazel
 {
     namespace
     {
-        bool IsRGBA8LikeFormat(RHIFormat format)
+        uint32_t DeduceMipLevelCount(uint32_t width, uint32_t height)
         {
-            return format == RHIFormat::RGBA8UNorm || format == RHIFormat::RGBA8SRGB || format == RHIFormat::BGRA8UNorm
-                   || format == RHIFormat::BGRA8SRGB;
+            uint32_t maxDimension = width > height ? width : height;
+            uint32_t mipLevels = 1;
+            while (maxDimension > 1)
+            {
+                maxDimension >>= 1;
+                ++mipLevels;
+            }
+
+            return mipLevels;
+        }
+
+        uint32_t GetBytesPerPixel(RHIFormat format)
+        {
+            switch (format)
+            {
+                case RHIFormat::R8UNorm:
+                    return 1;
+                case RHIFormat::RG8UNorm:
+                    return 2;
+                case RHIFormat::RGB32SFloat:
+                    return 12;
+                case RHIFormat::RGBA8UNorm:
+                case RHIFormat::RGBA8SRGB:
+                case RHIFormat::BGRA8UNorm:
+                case RHIFormat::BGRA8SRGB:
+                    return 4;
+                default:
+                    return 0;
+            }
+        }
+
+        RHIFormat DeduceNonHDRFormat(const int channels, const bool isSRGB)
+        {
+            switch (channels)
+            {
+                case 1:
+                    return RHIFormat::R8UNorm;
+                case 2:
+                    return RHIFormat::RG8UNorm;
+                case 3:
+                case 4:
+                    return isSRGB ? RHIFormat::RGBA8SRGB : RHIFormat::RGBA8UNorm;
+                default:
+                    return RHIFormat::Undefined;
+            }
         }
 
         RHIImagePlanes GetDefaultTransitionPlanes(RHIFormat format)
@@ -182,12 +226,11 @@ namespace Hazel
                                                                     const RHIImageDesc& desc,
                                                                     const void* data,
                                                                     size_t dataSize,
-                                                                    RHIQueue* queue,
                                                                     bool detached)
     {
-        (void)queue;
-
         HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !cmd || !cmd->IsValid() || !data || dataSize == 0);
+        const uint32_t bytesPerPixel = GetBytesPerPixel(desc.format);
+        HZ_RHI_DEBUG_RETURN_NULL_IF(bytesPerPixel == 0);
 
         RHIImageDesc imageDesc = desc;
         const RHIImageResourceState finalState = imageDesc.initialState == RHIImageResourceState::Undefined
@@ -266,50 +309,86 @@ namespace Hazel
 
     RHIImage*RHI_VK_FUNC_IMPL(RHIImage, Factory)::CreateFromFile(RHIDevice* device,
                                                                  RHICommandBuffer* cmd,
-                                                                 const RHIImageDesc& desc,
                                                                  const std::filesystem::path& path,
-                                                                 RHIQueue* queue,
+                                                                 bool isSRGB,
+                                                                 bool useMipmap,
+                                                                 RHIImageUsages usages,
                                                                  bool detached)
     {
-        if (!IsRGBA8LikeFormat(desc.format))
+        HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !cmd || !cmd->IsValid());
+
+        const auto filePath = path.string();
+        RHIImageDesc fileDesc{};
+        fileDesc.depth = 1;
+        fileDesc.arrayLayers = 1;
+        fileDesc.usages = RHIImageUsageFlagBits::Sampled | usages;
+        fileDesc.initialState = RHIImageResourceState::ShaderRead;
+        if (useMipmap)
         {
-            return nullptr;
+            fileDesc.usages |= RHIImageUsageFlagBits::TransferSource | RHIImageUsageFlagBits::TransferDestination;
         }
-        if (desc.depth != 1 || desc.arrayLayers == 0 || desc.mipLevels == 0)
+
+        if (stbi_is_hdr(filePath.c_str()) == 1)
         {
-            return nullptr;
+            int width = 0;
+            int height = 0;
+            int channels = 0;
+            float* pixels = stbi_loadf(filePath.c_str(), &width, &height, &channels, STBI_rgb);
+            if (!pixels || width <= 0 || height <= 0)
+            {
+                if (pixels)
+                {
+                    stbi_image_free(pixels);
+                }
+
+                HZ_CORE_ERROR("Failed to load HDR image '{}'", filePath);
+                return nullptr;
+            }
+
+            fileDesc.width = static_cast<uint32_t>(width);
+            fileDesc.height = static_cast<uint32_t>(height);
+            fileDesc.mipLevels = useMipmap ? DeduceMipLevelCount(fileDesc.width, fileDesc.height) : 1;
+            fileDesc.format = RHIFormat::RGB32SFloat;
+
+            const size_t dataSize = static_cast<size_t>(width) * static_cast<size_t>(height)
+                                    * static_cast<size_t>(GetBytesPerPixel(fileDesc.format));
+            auto* image = CreateFromRawData(device, cmd, fileDesc, pixels, dataSize, detached);
+            stbi_image_free(pixels);
+            return image;
         }
 
         int width = 0;
         int height = 0;
         int channels = 0;
-        stbi_uc* pixels = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, 4);
         if (!pixels || width <= 0 || height <= 0)
         {
             if (pixels)
             {
                 stbi_image_free(pixels);
             }
+
+            HZ_CORE_ERROR("Failed to load image '{}'", filePath);
             return nullptr;
         }
 
-        const size_t dataSize = static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
+        fileDesc.width = static_cast<uint32_t>(width);
+        fileDesc.height = static_cast<uint32_t>(height);
+        fileDesc.mipLevels = useMipmap ? DeduceMipLevelCount(fileDesc.width, fileDesc.height) : 1;
+        fileDesc.format = DeduceNonHDRFormat(channels, isSRGB);
+        if (fileDesc.format == RHIFormat::Undefined)
+        {
+            stbi_image_free(pixels);
+            HZ_CORE_ERROR("Unsupported image channel count {} for '{}'", channels, filePath);
+            return nullptr;
+        }
+
+        const size_t dataSize = static_cast<size_t>(width) * static_cast<size_t>(height)
+                                * static_cast<size_t>(GetBytesPerPixel(fileDesc.format));
         std::vector<stbi_uc> pixelData(pixels, pixels + dataSize);
         stbi_image_free(pixels);
 
-        if (desc.format == RHIFormat::BGRA8UNorm || desc.format == RHIFormat::BGRA8SRGB)
-        {
-            for (size_t i = 0; i < pixelData.size(); i += 4)
-            {
-                std::swap(pixelData[i], pixelData[i + 2]);
-            }
-        }
-
-        RHIImageDesc fileDesc = desc;
-        fileDesc.width = static_cast<uint32_t>(width);
-        fileDesc.height = static_cast<uint32_t>(height);
-
-        return CreateFromRawData(device, cmd, fileDesc, pixelData.data(), pixelData.size(), queue, detached);
+        return CreateFromRawData(device, cmd, fileDesc, pixelData.data(), pixelData.size(), detached);
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, Release)()

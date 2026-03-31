@@ -1,14 +1,17 @@
 #pragma once
 
+#include "Hazel/Renderer/ComputeShader.h"
 #include "Hazel/Renderer/Camera.h"
 #include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/Renderer/Sampler.h"
+#include "Hazel/Renderer/Texture.h"
 #include "Hazel/Renderer/RendererAPI.h"
+
+#include <memory>
 
 namespace Hazel
 {
-    struct RenderTextureDesc;
-
     class Renderer
     {
     public:
@@ -99,8 +102,29 @@ namespace Hazel
             return m_DefaultRenderTexture.get();
         }
 
-        RenderTexture* AddRenderTexture(const RenderTextureDesc& desc);
+        RenderTexture* AddRenderTexture(std::unique_ptr<RenderTexture> renderTexture);
         void RemoveRenderTexture(RenderTexture* renderTexture);
+
+        Sampler* AddSampler(std::unique_ptr<Sampler> sampler);
+        void RemoveSampler(Sampler* sampler);
+
+        Texture* AddTexture(std::unique_ptr<Texture> texture);
+        void RemoveTexture(Texture* texture);
+
+        ComputeShader* AddComputeShader(std::unique_ptr<ComputeShader> computeShader);
+        void RemoveComputeShader(ComputeShader* computeShader);
+
+        void CreateDefaultResources();
+
+        Texture* GetErrorTexture()
+        {
+            return m_ErrorTexture.get();
+        }
+
+        Sampler* GetDefaultSampler()
+        {
+            return m_DefaultSampler.get();
+        }
 
         void Step()
         {
@@ -130,7 +154,17 @@ namespace Hazel
         RHISwapchain* m_Swapchain = nullptr;
         uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
         std::vector<FrameData> m_Frames;
+        UUID m_DefaultRenderTextureUUID = UUID();
         std::unique_ptr<RenderTexture> m_DefaultRenderTexture;
         RHIOwnerSet<RenderTexture> m_OffscreenRenderTextures;
+        RHIOwnerSet<Sampler> m_Samplers;
+        RHIOwnerSet<Texture> m_Textures;
+        RHIOwnerSet<ComputeShader> m_ComputeShaders;
+
+        // default resources
+        UUID m_ErrorTextureUUID = UUID();
+        std::unique_ptr<Texture> m_ErrorTexture;
+        UUID m_DefaultSamplerUUID = UUID();
+        std::unique_ptr<Sampler> m_DefaultSampler;
     };
 } // namespace Hazel

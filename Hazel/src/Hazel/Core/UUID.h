@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Hazel
 {
     class UUID

@@ -1,4 +1,6 @@
+X(R8UNorm, eR8Unorm)
 X(R32SInt, eR32Sint)
+X(RG8UNorm, eR8G8Unorm)
 X(R32SFloat, eR32Sfloat)
 X(RG32SFloat, eR32G32Sfloat)
 X(RGB32SFloat, eR32G32B32Sfloat)

@@ -63,17 +63,54 @@ namespace Hazel
             return ptr;
         }
 
+        uint32_t RegisterHandle(std::unique_ptr<T> object)
+        {
+            if (!m_FreeSlots.empty())
+            {
+                uint32_t slotIndex = m_FreeSlots.back();
+                m_FreeSlots.pop_back();
+                m_Objects[slotIndex] = std::move(object);
+                return slotIndex;
+            }
+            else
+            {
+                m_Objects.push_back(std::move(object));
+                return static_cast<uint32_t>(m_Objects.size() - 1);
+            }
+        }
+
+        T* Get(uint32_t handle) const
+        {
+            if (handle >= m_Objects.size())
+            {
+                return nullptr;
+            }
+            return m_Objects[handle].get();
+        }
+
         void Unregister(T* object)
         {
-            auto it = std::find_if(m_Objects.begin(), m_Objects.end(), [object](const std::unique_ptr<T>& ownedObject)
-            {
-                return ownedObject.get() == object;
-            });
+            auto it = std::find_if(m_Objects.begin(),
+                                   m_Objects.end(),
+                                   [object](const std::unique_ptr<T>& ownedObject) {
+                                       return ownedObject.get() == object;
+                                   });
             if (it != m_Objects.end())
             {
                 it->reset();
                 m_FreeSlots.push_back(std::distance(m_Objects.begin(), it));
             }
+        }
+
+        void UnregisterHandle(uint32_t handle)
+        {
+            if (handle >= m_Objects.size())
+            {
+                return;
+            }
+
+            m_Objects[handle].reset();
+            m_FreeSlots.push_back(handle);
         }
 
         void Clear()
@@ -110,10 +147,11 @@ namespace Hazel
     template <typename T>
     auto FindOwnedObject(RHIOwnerSet<T>& set, T* object)
     {
-        return std::find_if(set.begin(), set.end(), [object](const std::unique_ptr<T>& ownedObject)
-        {
-            return ownedObject.get() == object;
-        });
+        return std::find_if(set.begin(),
+                            set.end(),
+                            [object](const std::unique_ptr<T>& ownedObject) {
+                                return ownedObject.get() == object;
+                            });
     }
 
     template <typename T>

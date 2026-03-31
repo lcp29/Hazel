@@ -62,24 +62,26 @@ namespace Hazel
         void OnDuplicateEntity();
 
         // UI Panels
-        void UI_Toolbar();
+        void UIToolbar();
 
     private:
-        // Editor textures
+        // editor textures
         RHISampler* m_UISampler = nullptr;
         RHISampler* m_CheckerboardSampler = nullptr;
         EditorUITexture m_IconPlay, m_IconPause, m_IconStep, m_IconStop;
         EditorUITexture m_ContentBrowserDirectoryIcon, m_ContentBrowserFileIcon;
         EditorUITexture m_CheckerboardTexture;
         std::vector<EditorUITexture> m_DefaultRenderTextureUIData;
-        // Scenes
+
+        // scenes
         Ref<Scene> m_ActiveScene;
         Ref<Scene> m_EditorScene;
         std::filesystem::path m_EditorScenePath;
         Entity m_HoveredEntity;
 
-        // Rendering
+        // rendering
         Renderer* m_Renderer = nullptr;
+        UUID m_ObjectIDRenderTextureUUID = UUID();
         RenderTexture* m_ObjectIDRenderTexture = nullptr;
         std::vector<RHIBuffer*> m_ObjectIDRenderTextureBuffer;
 

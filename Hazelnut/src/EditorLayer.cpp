@@ -30,23 +30,18 @@ namespace Hazel
             if (!renderer || !commandBuffer || !sampler)
                 return texture;
 
-            RHIImageDesc imageDesc{};
-            imageDesc.format = RHIFormat::RGBA8SRGB;
-            imageDesc.usages = RHIImageUsageFlagBits::Sampled;
-            imageDesc.initialState = RHIImageResourceState::ShaderRead;
-
             texture.Image = RHIImage::Factory::CreateFromFile(
                 renderer->GetDevice(),
                 commandBuffer,
-                imageDesc,
                 path,
+                true,
                 renderer->GetDevice()->GetUniformQueue());
 
             if (!texture.Image)
                 return texture;
 
             RHIImageViewDesc viewDesc{};
-            viewDesc.format = imageDesc.format;
+            viewDesc.format = texture.Image->GetDesc().format;
             viewDesc.viewType = RHIImageViewType::Image2D;
             viewDesc.subresourceRange.levelCount = 1;
             viewDesc.subresourceRange.layerCount = 1;
@@ -280,7 +275,6 @@ namespace Hazel
             (renderTexture->GetDesc().width != static_cast<uint32_t>(m_ViewportSize.x) ||
              renderTexture->GetDesc().height != static_cast<uint32_t>(m_ViewportSize.y)))
         {
-            // the render texture may be rebuilt here
             m_Renderer->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x),
                                          static_cast<uint32_t>(m_ViewportSize.y));
             RecreateObjectIDRenderData();
@@ -371,10 +365,7 @@ namespace Hazel
 
     void EditorLayer::RecreateObjectIDRenderData()
     {
-        if (m_ObjectIDRenderTexture && m_ObjectIDRenderTexture->IsValid())
-        {
-            m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
-        }
+        m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
 
         RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
@@ -383,7 +374,12 @@ namespace Hazel
         objectIDRenderTextureDesc.perFrame = true;
         objectIDRenderTextureDesc.useMipmap = false;
         objectIDRenderTextureDesc.usages = RHIImageUsageFlagBits::TransferSource;
-        m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(objectIDRenderTextureDesc);
+
+        auto objectIDRenderTexture = std::make_unique<RenderTexture>(m_ObjectIDRenderTextureUUID,
+                                                                     m_Renderer,
+                                                                     objectIDRenderTextureDesc);
+
+        m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(std::move(objectIDRenderTexture));
 
         RHIBufferDesc objectIDBufferDesc{};
         objectIDBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
@@ -396,7 +392,7 @@ namespace Hazel
         m_ObjectIDRenderTextureBuffer.resize(maxFramesInFlight, nullptr);
         for (auto*& buffer : m_ObjectIDRenderTextureBuffer)
         {
-            if (buffer && buffer->IsValid())
+            if (buffer)
             {
                 buffer->ReleaseImmediate();
             }
@@ -621,7 +617,7 @@ namespace Hazel
             m_ContentBrowserPanel->OnImGuiRender();
         }
 
-        // ImGui::Begin("Stats");
+        ImGui::Begin("Stats");
 
 #if 0
         std::string name = "None";
@@ -645,7 +641,7 @@ namespace Hazel
         // ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
         //
         //
-        // ImGui::End();
+        ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport");
@@ -666,14 +662,14 @@ namespace Hazel
         if (!m_DefaultRenderTextureUIData.empty())
         {
             void* textureID = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].ImGuiTexture;
-            ImGui::Image(textureID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
+            ImGui::Image(textureID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 0}, ImVec2{1, 1});
         }
 
         if (ImGui::BeginDragDropTarget())
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
             {
-                const wchar_t* path = (const wchar_t*)payload->Data;
+                const wchar_t* path = static_cast<const wchar_t*>(payload->Data);
                 OpenScene(path);
             }
             ImGui::EndDragDropTarget();
@@ -734,12 +730,12 @@ namespace Hazel
         ImGui::End();
         ImGui::PopStyleVar();
 
-        UI_Toolbar();
+        UIToolbar();
 
         ImGui::End();
     }
 
-    void EditorLayer::UI_Toolbar()
+    void EditorLayer::UIToolbar()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
@@ -808,7 +804,6 @@ namespace Hazel
             {
                 ImGui::SameLine();
                 {
-                    bool isPaused = m_ActiveScene->IsPaused();
                     if (ImGui::ImageButton("StepButton",
                                            m_IconStep.ImGuiTexture,
                                            ImVec2(size, size),
@@ -1015,7 +1010,7 @@ namespace Hazel
             ResetProjectContext();
         }
 
-        Ref<Project> project = Project::Load(path);
+        Ref<Project> project = Project::Load(path, m_Renderer);
         if (!project)
         {
             return;
