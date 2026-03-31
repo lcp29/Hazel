@@ -28,7 +28,7 @@ namespace Hazel
     class SamplerAsset
     {
     public:
-        SamplerAsset() = default;
+        SamplerAsset() = delete;
 
         SamplerAsset(UUID uuid,
                      std::filesystem::path filePath,
@@ -58,9 +58,9 @@ namespace Hazel
             return m_FilePath;
         }
 
-        const RHISamplerDesc& GetDesc() const
+        const SamplerAssetMeta& GetMeta() const
         {
-            return m_Meta.desc;
+            return m_Meta;
         }
 
         Sampler* GetSampler() const

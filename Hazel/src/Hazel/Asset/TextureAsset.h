@@ -28,7 +28,7 @@ namespace Hazel
     class TextureAsset
     {
     public:
-        TextureAsset() = default;
+        TextureAsset() = delete;
 
         TextureAsset(UUID uuid,
                      std::filesystem::path filePath,

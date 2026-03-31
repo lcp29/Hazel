@@ -27,7 +27,7 @@ namespace Hazel
     class RenderTextureAsset
     {
     public:
-        RenderTextureAsset() = default;
+        RenderTextureAsset() = delete;
 
         RenderTextureAsset(UUID uuid,
                            std::filesystem::path filePath,
@@ -57,9 +57,9 @@ namespace Hazel
             return m_MetaPath;
         }
 
-        const RenderTextureDesc& GetDesc() const
+        const RenderTextureAssetMeta& GetMeta() const
         {
-            return m_Meta.desc;
+            return m_Meta;
         }
 
         RenderTexture* GetRenderTexture() const

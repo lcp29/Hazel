@@ -190,7 +190,6 @@ namespace Hazel
         m_IsLoaded = false;
     }
 
-
     RenderTextureAsset::RenderTextureAsset(RenderTextureAsset&& other) noexcept
         : m_UUID(other.m_UUID)
           , m_IsLoaded(other.m_IsLoaded)
