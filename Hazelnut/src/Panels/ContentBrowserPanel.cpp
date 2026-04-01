@@ -16,18 +16,43 @@ namespace Hazel
 
     void ContentBrowserPanel::OnImGuiRender()
     {
-        ImGui::Begin("Content Browser");
+        ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_MenuBar);
 
-        if (m_CurrentDirectory != std::filesystem::path(m_BaseDirectory))
+        static float thumbnailSize = 128.0f;
+        static float padding = 16.0f;
+
+        if (ImGui::BeginMenuBar())
         {
-            if (ImGui::Button("<-"))
+            bool canGoUp = m_CurrentDirectory != std::filesystem::path(m_BaseDirectory);
+            ImGui::BeginDisabled(!canGoUp);
+            if (ImGui::ArrowButton("ButtonAssetBrowserGoUp", ImGuiDir_Left))
             {
                 m_CurrentDirectory = m_CurrentDirectory.parent_path();
             }
+            ImGui::EndDisabled();
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 4.0f));
+            float h = ImGui::GetFrameHeight();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 150 - 2 * h);
+            ImGui::PushID("ContentIconSizeSlider");
+            if (ImGui::Button("-", ImVec2(h, h)))
+            {
+                thumbnailSize = std::max(16.0, thumbnailSize - 32.0);
+            }
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(150);
+            ImGui::SliderFloat("", &thumbnailSize, 16, 512, "");
+            ImGui::SameLine();
+            if (ImGui::Button("+", ImVec2(h, h)))
+            {
+                thumbnailSize = std::min(512.0, thumbnailSize + 32.0);
+            }
+            ImGui::PopID();
+            ImGui::PopStyleVar();
+
+            ImGui::EndMenuBar();
         }
 
-        static float padding = 16.0f;
-        static float thumbnailSize = 128.0f;
         float cellSize = thumbnailSize + padding;
 
         float panelWidth = ImGui::GetContentRegionAvail().x;
@@ -79,9 +104,6 @@ namespace Hazel
         }
 
         ImGui::Columns(1);
-
-        ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 16, 512);
-        ImGui::SliderFloat("Padding", &padding, 0, 32);
 
         ImGui::End();
     }
