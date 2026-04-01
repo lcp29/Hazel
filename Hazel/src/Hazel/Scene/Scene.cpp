@@ -22,9 +22,8 @@ namespace Hazel
     CopyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
     {
         (
-            [&]()
-            {
-                auto view = src.view < Component > ();
+            [&]() {
+                auto view = src.view<Component>();
                 for (auto srcEntity : view)
                 {
                     entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
@@ -49,8 +48,7 @@ namespace Hazel
     static void CopyComponentIfExists(Entity dst, Entity src)
     {
         (
-            [&]()
-            {
+            [&]() {
                 if (src.HasComponent<Component>())
                     dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
             }(),
@@ -65,7 +63,7 @@ namespace Hazel
 
     Ref<Scene> Scene::Copy(Ref<Scene> other)
     {
-        Ref < Scene > newScene = CreateRef<Scene>();
+        Ref<Scene> newScene = CreateRef<Scene>();
 
         newScene->m_ViewportWidth = other->m_ViewportWidth;
         newScene->m_ViewportHeight = other->m_ViewportHeight;
@@ -81,7 +79,7 @@ namespace Hazel
             UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
             const auto& name = srcSceneRegistry.get<TagComponent>(e).tag;
             Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
-            enttMap[uuid] = (entt::entity)newEntity;
+            enttMap[uuid] = static_cast<entt::entity>(newEntity);
         }
 
         // Copy components (except IDComponent and TagComponent)
@@ -124,7 +122,7 @@ namespace Hazel
             ScriptEngine::OnRuntimeStart(this);
             // Instantiate all script entities
 
-            auto view = m_Registry.view < ScriptComponent > ();
+            auto view = m_Registry.view<ScriptComponent>();
             for (auto e : view)
             {
                 Entity entity = {e, this};
@@ -147,14 +145,14 @@ namespace Hazel
             // Update scripts
             {
                 // C# Entity OnUpdate
-                auto view = m_Registry.view < ScriptComponent > ();
+                auto view = m_Registry.view<ScriptComponent>();
                 for (auto e : view)
                 {
                     Entity entity = {e, this};
                     ScriptEngine::OnUpdateEntity(entity, ts);
                 }
 
-                auto scriptView = m_Registry.view < NativeScriptComponent > ();
+                auto scriptView = m_Registry.view<NativeScriptComponent>();
 
                 for (auto [entity, nsc] : scriptView.each())
                 {
@@ -208,7 +206,7 @@ namespace Hazel
 
     Entity Scene::FindEntityByName(std::string_view name)
     {
-        auto view = m_Registry.view < TagComponent > ();
+        auto view = m_Registry.view<TagComponent>();
         for (auto entity : view)
         {
             const TagComponent& tc = view.get<TagComponent>(entity);

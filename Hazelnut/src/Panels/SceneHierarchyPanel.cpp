@@ -25,10 +25,15 @@ namespace Hazel
         {
             for (auto& enttEntity : m_Context->m_Registry.view<entt::entity>())
             {
-                Entity entity{enttEntity, m_Context.get()};
-                DrawEntityNode(entity);
+                auto& relationshipComponent = m_Context->m_Registry.get<EntityRelationshipComponent>(enttEntity);
+                // only initiate root entities
+                if (relationshipComponent.parent == entt::null)
+                {
+                    Entity entity{enttEntity, m_Context.get()};
+                    DrawEntityNode(entity);
+                }
             }
-            if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered())
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
             {
                 m_SelectionContext = {};
                 m_SelectionVersion++;
@@ -56,9 +61,16 @@ namespace Hazel
     void SceneHierarchyPanel::DrawEntityNode(Entity entity)
     {
         auto& tag = entity.GetComponent<TagComponent>().tag;
+        auto& relationship = entity.GetComponent<EntityRelationshipComponent>();
 
         ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow;
+                                   ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
+        if (relationship.childCount == 0)
+        {
+            flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        }
+
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
         if (ImGui::IsItemClicked())
@@ -68,21 +80,55 @@ namespace Hazel
         }
 
         bool entityDeleted = false;
+        bool newEntityCreated = false;
         if (ImGui::BeginPopupContextItem())
         {
+            if (ImGui::MenuItem("Create Entity"))
+            {
+                newEntityCreated = true;
+            }
+
             if (ImGui::MenuItem("Delete Entity"))
+            {
                 entityDeleted = true;
+            }
 
             ImGui::EndPopup();
         }
 
         if (opened)
         {
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-            bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-            if (opened)
+            if (relationship.childCount > 0)
+            {
+                auto currentChild = relationship.firstChild;
+                while (currentChild != entt::null)
+                {
+                    Entity childEntity{currentChild, m_Context.get()};
+                    DrawEntityNode(childEntity);
+                    auto& childRelationship = childEntity.GetComponent<EntityRelationshipComponent>();
+                    currentChild = childRelationship.nextSibling;
+                }
+            }
+            if (relationship.childCount > 0)
+            {
                 ImGui::TreePop();
-            ImGui::TreePop();
+            }
+        }
+
+        if (newEntityCreated)
+        {
+            auto newEntity = m_Context->CreateEntity("Empty Entity");
+            auto& newEntityRelationship = m_Context->m_Registry.get<EntityRelationshipComponent>(newEntity);
+            newEntityRelationship.parent = entity;
+            if (relationship.firstChild != entt::null)
+            {
+                auto& firstChildRelationship = Entity{relationship.firstChild, m_Context.get()}
+                .GetComponent<EntityRelationshipComponent>();
+                firstChildRelationship.prevSibling = static_cast<entt::entity>(newEntity);
+                newEntityRelationship.nextSibling = relationship.firstChild;
+            }
+            relationship.firstChild = static_cast<entt::entity>(newEntity);
+            relationship.childCount++;
         }
 
         if (entityDeleted)

@@ -223,10 +223,10 @@ namespace Hazel
         YAML::Node Serialize(entt::registry& registry) const
         {
             YAML::Node node;
-            node["Parent"] = (parent == entt::null) ? UUID(-1) : registry.get<UUID>(parent);
-            node["FirstChild"] = (firstChild == entt::null) ? UUID(-1) : registry.get<UUID>(firstChild);
-            node["NextSibling"] = (nextSibling == entt::null) ? UUID(-1) : registry.get<UUID>(nextSibling);
-            node["PrevSibling"] = (prevSibling == entt::null) ? UUID(-1) : registry.get<UUID>(prevSibling);
+            node["Parent"] = (parent == entt::null) ? UUID(-1) : registry.get<IDComponent>(parent).ID;
+            node["FirstChild"] = (firstChild == entt::null) ? UUID(-1) : registry.get<IDComponent>(firstChild).ID;
+            node["NextSibling"] = (nextSibling == entt::null) ? UUID(-1) : registry.get<IDComponent>(nextSibling).ID;
+            node["PrevSibling"] = (prevSibling == entt::null) ? UUID(-1) : registry.get<IDComponent>(prevSibling).ID;
             node["ChildCount"] = childCount;
             return node;
         }
