@@ -27,5 +27,6 @@ namespace Hazel
         Ref<Scene> m_Context;
         Entity m_SelectionContext;
         uint64_t m_SelectionVersion = 0;
+        std::vector<Entity> m_EntityDeletionQueue;
     };
 }

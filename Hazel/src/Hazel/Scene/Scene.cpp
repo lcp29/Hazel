@@ -109,6 +109,53 @@ namespace Hazel
 
     void Scene::DestroyEntity(Entity entity)
     {
+        auto relationship = entity.GetComponent<EntityRelationshipComponent>();
+        if (relationship.prevSibling != entt::null)
+        {
+            auto& prevSiblingRelationship = m_Registry.get<EntityRelationshipComponent>(relationship.prevSibling);
+            prevSiblingRelationship.nextSibling = relationship.nextSibling;
+        }
+        if (relationship.nextSibling != entt::null)
+        {
+            auto& nextSiblingRelationship = m_Registry.get<EntityRelationshipComponent>(relationship.nextSibling);
+            nextSiblingRelationship.prevSibling = relationship.prevSibling;
+        }
+        if (relationship.parent != entt::null)
+        {
+            auto& parentRelationship = m_Registry.get<EntityRelationshipComponent>(relationship.parent);
+            if (parentRelationship.firstChild == entity)
+            {
+                parentRelationship.firstChild = relationship.nextSibling;
+            }
+            parentRelationship.childCount--;
+        }
+        if (relationship.childCount > 0)
+        {
+            auto firstChild = relationship.firstChild;
+            auto currentChild = firstChild;
+            auto lastChild = relationship.firstChild;
+
+            while (currentChild != entt::null)
+            {
+                auto& childRelationship = m_Registry.get<EntityRelationshipComponent>(currentChild);
+                childRelationship.parent = relationship.parent;
+                lastChild = currentChild;
+                currentChild = childRelationship.nextSibling;
+            }
+
+            if (relationship.parent != entt::null)
+            {
+                auto& parentRelationship = m_Registry.get<EntityRelationshipComponent>(relationship.parent);
+                auto parentFirstChild = parentRelationship.firstChild;
+                if (parentFirstChild != entt::null)
+                {
+                    auto& parentFirstChildRelationship = m_Registry.get<EntityRelationshipComponent>(parentFirstChild);
+                    parentFirstChildRelationship.prevSibling = lastChild;
+                }
+                parentRelationship.firstChild = firstChild;
+                parentRelationship.childCount += relationship.childCount;
+            }
+        }
         m_EntityMap.erase(entity.GetUUID());
         m_Registry.destroy(entity);
     }

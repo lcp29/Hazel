@@ -23,6 +23,8 @@ namespace Hazel
 
         if (m_Context)
         {
+            m_EntityDeletionQueue.clear();
+
             for (auto& enttEntity : m_Context->m_Registry.view<entt::entity>())
             {
                 auto& relationshipComponent = m_Context->m_Registry.get<EntityRelationshipComponent>(enttEntity);
@@ -33,6 +35,17 @@ namespace Hazel
                     DrawEntityNode(entity);
                 }
             }
+
+            for (auto& entity : m_EntityDeletionQueue)
+            {
+                m_Context->DestroyEntity(entity);
+                if (m_SelectionContext == entity)
+                {
+                    m_SelectionContext = {};
+                }
+                m_SelectionVersion++;
+            }
+
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
             {
                 m_SelectionContext = {};
@@ -123,7 +136,7 @@ namespace Hazel
             if (relationship.firstChild != entt::null)
             {
                 auto& firstChildRelationship = Entity{relationship.firstChild, m_Context.get()}
-                .GetComponent<EntityRelationshipComponent>();
+                    .GetComponent<EntityRelationshipComponent>();
                 firstChildRelationship.prevSibling = static_cast<entt::entity>(newEntity);
                 newEntityRelationship.nextSibling = relationship.firstChild;
             }
@@ -133,12 +146,7 @@ namespace Hazel
 
         if (entityDeleted)
         {
-            m_Context->DestroyEntity(entity);
-            if (m_SelectionContext == entity)
-            {
-                m_SelectionContext = {};
-            }
-            m_SelectionVersion++;
+            m_EntityDeletionQueue.push_back(entity);
         }
     }
 }
