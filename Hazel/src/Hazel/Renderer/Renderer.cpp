@@ -105,6 +105,18 @@ namespace Hazel
         m_ComputeShaders.Unregister(computeShader);
     }
 
+    RenderBuffer* Renderer::AddRenderBuffer(std::unique_ptr<RenderBuffer> renderBuffer)
+    {
+        return m_RenderBuffers.Register(std::move(renderBuffer));
+    }
+
+    void Renderer::RemoveRenderBuffer(RenderBuffer* renderBuffer)
+    {
+        if (renderBuffer)
+            renderBuffer->Release();
+        m_RenderBuffers.Unregister(renderBuffer);
+    }
+
     void Renderer::CreateDefaultResources()
     {
         auto cmd = m_GraphicsContext->GetDefaultCommandBuffer();

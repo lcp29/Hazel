@@ -77,6 +77,11 @@ namespace Hazel
         auto allocationCreateInfo = VulkanConvertAllocationCreateInfo(desc);
         VmaAllocationInfo allocationInfo{};
 
+        if (desc.hostCoherent)
+        {
+            allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        }
+
         VkBuffer buffer = VK_NULL_HANDLE;
         const VkBufferCreateInfo vkBufferCreateInfo = bufferCreateInfo;
         if (!m_AllocatorOwner->CreateBuffer(

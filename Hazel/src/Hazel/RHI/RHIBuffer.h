@@ -58,5 +58,6 @@ namespace Hazel
         RHIBufferCpuAccess cpuAccess = RHIBufferCpuAccess::None;
         bool mapOnCreate = false;
         bool allowGpuAddress = false;
+        bool hostCoherent = false;
     };
 } // namespace Hazel

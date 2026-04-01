@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Mesh.h"
 #include "Hazel/Renderer/ComputeShader.h"
 #include "Hazel/Renderer/Camera.h"
 #include "Hazel/Renderer/GraphicsContext.h"
@@ -9,6 +8,7 @@
 #include "Hazel/Renderer/Shader.h"
 #include "Hazel/Renderer/Texture.h"
 #include "Hazel/Renderer/RendererAPI.h"
+#include "Hazel/Renderer/RenderBuffer.h"
 #include "Hazel/Renderer/Mesh.h"
 
 #include <memory>
@@ -123,6 +123,9 @@ namespace Hazel
         ComputeShader* AddComputeShader(std::unique_ptr<ComputeShader> computeShader);
         void RemoveComputeShader(ComputeShader* computeShader);
 
+        RenderBuffer* AddRenderBuffer(std::unique_ptr<RenderBuffer> renderBuffer);
+        void RemoveRenderBuffer(RenderBuffer* renderBuffer);
+
         Texture* GetErrorTexture()
         {
             return m_ErrorTexture.get();
@@ -170,6 +173,7 @@ namespace Hazel
         RHIOwnerSet<Shader> m_Shaders;
         RHIOwnerSet<ComputeShader> m_ComputeShaders;
         RHIOwnerSet<Mesh> m_Meshes;
+        RHIOwnerSet<RenderBuffer> m_RenderBuffers;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();
