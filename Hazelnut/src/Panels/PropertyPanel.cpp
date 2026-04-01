@@ -1,6 +1,8 @@
 #include "PropertyPanel.h"
 
 #include "Hazel/Asset/ComputeShaderAsset.h"
+#include "Hazel/Asset/MaterialAsset.h"
+#include "Hazel/Asset/MeshAsset.h"
 #include "Hazel/Asset/RenderTextureAsset.h"
 #include "Hazel/Asset/SamplerAsset.h"
 #include "Hazel/Asset/ShaderAsset.h"
@@ -16,6 +18,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
 #include <unordered_set>
@@ -415,6 +418,54 @@ namespace Hazel
 
             return false;
         }
+
+        std::string GetShaderLabel(const std::unordered_map<UUID, ShaderAsset>& shaders, UUID uuid)
+        {
+            if (uuid == UUID(-1))
+            {
+                return "None";
+            }
+
+            auto it = shaders.find(uuid);
+            if (it == shaders.end())
+            {
+                return "None";
+            }
+
+            return it->second.GetFilePath().filename().string();
+        }
+
+        std::string GetSamplerLabel(const std::unordered_map<UUID, SamplerAsset>& samplers, UUID uuid)
+        {
+            if (uuid == UUID(-1))
+            {
+                return "None";
+            }
+
+            auto it = samplers.find(uuid);
+            if (it == samplers.end())
+            {
+                return "None";
+            }
+
+            return it->second.GetFilePath().filename().string();
+        }
+
+        std::string GetTextureLabel(const std::unordered_map<UUID, TextureAsset>& textures, UUID uuid)
+        {
+            if (uuid == UUID(-1))
+            {
+                return "None";
+            }
+
+            auto it = textures.find(uuid);
+            if (it == textures.end())
+            {
+                return "None";
+            }
+
+            return it->second.GetFilePath().filename().string();
+        }
     } // namespace
 
     void PropertyPanel::SetContext(const Ref<Scene>& scene)
@@ -755,6 +806,251 @@ namespace Hazel
             {
                 WriteMetaFile(*asset);
                 asset->Recreate();
+            }
+            return;
+        }
+
+        if (assetType == AssetType::Material)
+        {
+            auto* asset = assetManager.GetAsset<MaterialAsset>(uuid);
+            if (!asset)
+                return;
+
+            auto& meta = asset->GetMeta();
+            auto& shaders = assetManager.GetShaders();
+            auto& samplers = assetManager.GetSamplers();
+            auto& textures = assetManager.GetTextures();
+
+            ImGui::Text("Type: Material");
+            ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetMeta().uuid));
+            ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
+
+            bool changed = false;
+            std::string shaderLabel = GetShaderLabel(shaders, meta.shader);
+            if (ImGui::BeginCombo("Shader", shaderLabel.c_str()))
+            {
+                bool selected = meta.shader == UUID(-1);
+                if (ImGui::Selectable("None", selected))
+                {
+                    meta.shader = UUID(-1);
+                    changed = true;
+                }
+                if (selected)
+                    ImGui::SetItemDefaultFocus();
+
+                for (const auto& [shaderUUID, shaderAsset] : shaders)
+                {
+                    selected = meta.shader == shaderUUID;
+                    const auto label = shaderAsset.GetFilePath().filename().string();
+                    if (ImGui::Selectable(label.c_str(), selected))
+                    {
+                        meta.shader = shaderUUID;
+                        changed = true;
+                    }
+                    if (selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+
+            if (changed)
+            {
+                meta.UpdateForShader(&assetManager);
+                WriteMetaFile(*asset);
+                asset->Recreate();
+            }
+
+            for (auto& property : meta.properties)
+            {
+                bool propertyChanged = false;
+
+                switch (property.type)
+                {
+                    case MaterialAssetPropertyType::Int:
+                    {
+                        propertyChanged |= ImGui::DragInt(property.name.c_str(), reinterpret_cast<int*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::UInt:
+                    {
+                        propertyChanged |= ImGui::DragScalar(property.name.c_str(),
+                                                             ImGuiDataType_U32,
+                                                             reinterpret_cast<uint32_t*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Float:
+                    {
+                        propertyChanged |= ImGui::DragFloat(property.name.c_str(),
+                                                            reinterpret_cast<float*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Vec2:
+                    {
+                        propertyChanged |= ImGui::DragFloat2(property.name.c_str(),
+                                                             reinterpret_cast<float*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Vec3:
+                    {
+                        propertyChanged |= ImGui::DragFloat3(property.name.c_str(),
+                                                             reinterpret_cast<float*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Vec4:
+                    {
+                        propertyChanged |= ImGui::DragFloat4(property.name.c_str(),
+                                                             reinterpret_cast<float*>(property.data));
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Mat3:
+                    {
+                        float* data = reinterpret_cast<float*>(property.data);
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 0").c_str(), data + 0);
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 1").c_str(), data + 3);
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 2").c_str(), data + 6);
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Mat4:
+                    {
+                        float* data = reinterpret_cast<float*>(property.data);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 0").c_str(), data + 0);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 1").c_str(), data + 4);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 2").c_str(), data + 8);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 3").c_str(), data + 12);
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Sampler:
+                    {
+                        std::string samplerLabel = GetSamplerLabel(samplers, property.sampler);
+                        if (ImGui::BeginCombo(property.name.c_str(), samplerLabel.c_str()))
+                        {
+                            bool selected = property.sampler == UUID(-1);
+                            if (ImGui::Selectable("None", selected))
+                            {
+                                property.sampler = UUID(-1);
+                                propertyChanged = true;
+                            }
+                            if (selected)
+                                ImGui::SetItemDefaultFocus();
+
+                            for (const auto& [samplerUUID, samplerAsset] : samplers)
+                            {
+                                selected = property.sampler == samplerUUID;
+                                const auto label = samplerAsset.GetFilePath().filename().string();
+                                if (ImGui::Selectable(label.c_str(), selected))
+                                {
+                                    property.sampler = samplerUUID;
+                                    propertyChanged = true;
+                                }
+                                if (selected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+
+                            ImGui::EndCombo();
+                        }
+                        break;
+                    }
+                    case MaterialAssetPropertyType::Texture:
+                    {
+                        std::string textureLabel = GetTextureLabel(textures, property.texture);
+                        if (ImGui::BeginCombo(property.name.c_str(), textureLabel.c_str()))
+                        {
+                            bool selected = property.texture == UUID(-1);
+                            if (ImGui::Selectable("None", selected))
+                            {
+                                property.texture = UUID(-1);
+                                propertyChanged = true;
+                            }
+                            if (selected)
+                                ImGui::SetItemDefaultFocus();
+
+                            for (const auto& [textureUUID, textureAsset] : textures)
+                            {
+                                selected = property.texture == textureUUID;
+                                const auto label = textureAsset.GetFilePath().filename().string();
+                                if (ImGui::Selectable(label.c_str(), selected))
+                                {
+                                    property.texture = textureUUID;
+                                    propertyChanged = true;
+                                }
+                                if (selected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+
+                            ImGui::EndCombo();
+                        }
+                        break;
+                    }
+                    case MaterialAssetPropertyType::SamplerWithTexture:
+                    {
+                        const auto samplerName = property.name + " Sampler";
+                        const auto textureName = property.name + " Texture";
+                        std::string samplerLabel = GetSamplerLabel(samplers, property.sampler);
+                        std::string textureLabel = GetTextureLabel(textures, property.texture);
+
+                        if (ImGui::BeginCombo(samplerName.c_str(), samplerLabel.c_str()))
+                        {
+                            bool selected = property.sampler == UUID(-1);
+                            if (ImGui::Selectable("None", selected))
+                            {
+                                property.sampler = UUID(-1);
+                                propertyChanged = true;
+                            }
+                            if (selected)
+                                ImGui::SetItemDefaultFocus();
+
+                            for (const auto& [samplerUUID, samplerAsset] : samplers)
+                            {
+                                selected = property.sampler == samplerUUID;
+                                const auto label = samplerAsset.GetFilePath().filename().string();
+                                if (ImGui::Selectable(label.c_str(), selected))
+                                {
+                                    property.sampler = samplerUUID;
+                                    propertyChanged = true;
+                                }
+                                if (selected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+
+                            ImGui::EndCombo();
+                        }
+
+                        if (ImGui::BeginCombo(textureName.c_str(), textureLabel.c_str()))
+                        {
+                            bool selected = property.texture == UUID(-1);
+                            if (ImGui::Selectable("None", selected))
+                            {
+                                property.texture = UUID(-1);
+                                propertyChanged = true;
+                            }
+                            if (selected)
+                                ImGui::SetItemDefaultFocus();
+
+                            for (const auto& [textureUUID, textureAsset] : textures)
+                            {
+                                selected = property.texture == textureUUID;
+                                const auto label = textureAsset.GetFilePath().filename().string();
+                                if (ImGui::Selectable(label.c_str(), selected))
+                                {
+                                    property.texture = textureUUID;
+                                    propertyChanged = true;
+                                }
+                                if (selected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+
+                            ImGui::EndCombo();
+                        }
+                        break;
+                    }
+                }
+
+                if (propertyChanged)
+                {
+                    WriteMetaFile(*asset);
+                    asset->Recreate();
+                }
             }
         }
     }

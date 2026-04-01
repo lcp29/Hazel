@@ -42,11 +42,6 @@ namespace Hazel
         void Load();
         void Unload();
 
-        bool IsValid() const
-        {
-            return m_Shader && m_Shader->IsValid();
-        }
-
         UUID GetUUID() const
         {
             return m_Meta.uuid;

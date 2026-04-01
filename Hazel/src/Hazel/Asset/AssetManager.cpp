@@ -173,6 +173,26 @@ namespace Hazel
                         m_Samplers.emplace(meta.uuid, std::move(asset));
                         m_AssetTypes.emplace(meta.uuid, AssetType::Sampler);
                     }
+                    else if (stemExtension == ".mat")
+                    {
+                        YAML::Node metaNode = YAML::LoadFile(path.string());
+                        auto meta = MaterialAssetMeta::Deserialize(metaNode);
+                        // new meta file
+                        if (!metaNode["UUID"])
+                        {
+                            metaNode = meta.Serialize();
+                            std::ofstream output(path.string());
+                            output << metaNode;
+                            output.close();
+                        }
+                        if (m_Materials.contains(meta.uuid))
+                        {
+                            continue;
+                        }
+                        MaterialAsset asset(meta.uuid, this, m_Renderer, path, meta);
+                        m_Materials.emplace(meta.uuid, std::move(asset));
+                        m_AssetTypes.emplace(meta.uuid, AssetType::Material);
+                    }
                 }
             }
         }
@@ -218,6 +238,24 @@ namespace Hazel
 
         // samplers
         for (const auto& asset : m_Samplers | std::views::values)
+        {
+            auto metaNode = asset.GetMeta().Serialize();
+            std::ofstream output(asset.GetFilePath().string());
+            output << metaNode;
+            output.close();
+        }
+
+        // meshes
+        for (const auto& asset : m_Meshes | std::views::values)
+        {
+            auto metaNode = asset.GetMeta().Serialize();
+            std::ofstream output(asset.GetFilePath().string() + ".meta");
+            output << metaNode;
+            output.close();
+        }
+
+        // materials
+        for (const auto& asset : m_Materials | std::views::values)
         {
             auto metaNode = asset.GetMeta().Serialize();
             std::ofstream output(asset.GetFilePath().string());

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Material.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/RHI/RHI.h"
 
@@ -14,8 +15,7 @@ namespace Hazel
     public:
         Shader() = delete;
 
-        Shader(UUID uuid, RHIShader* vertexShader, RHIShader* fragmentShader)
-            : m_IsValid(true), m_UUID(uuid), m_VertexShader(vertexShader), m_FragmentShader(fragmentShader) {};
+        Shader(UUID uuid, RHIShader* vertexShader, RHIShader* fragmentShader);;
         Shader(const Shader&) = delete;
         Shader& operator=(const Shader&) = delete;
         Shader(Shader&& other) noexcept;
@@ -37,6 +37,18 @@ namespace Hazel
             return m_FragmentShader;
         }
 
+        Material* GetMaterial(uint32_t materialID) const
+        {
+            if (materialID >= m_Materials.size())
+            {
+                return nullptr;
+            }
+            return m_Materials[materialID].get();
+        }
+
+        uint32_t RegisterMaterial(std::unique_ptr<Material> material);
+        void UnregisterMaterial(uint32_t materialID);
+
         void Release();
         void ReleaseImmediate();
 
@@ -45,5 +57,7 @@ namespace Hazel
         UUID m_UUID = 0;
         RHIShader* m_VertexShader = nullptr;
         RHIShader* m_FragmentShader = nullptr;
+        std::vector<std::unique_ptr<Material>> m_Materials;
+        std::vector<uint32_t> m_MaterialListFreeList;
     };
 } // namespace Hazel

@@ -9,6 +9,7 @@
 #include "ComputeShaderAsset.h"
 #include "ShaderAsset.h"
 #include "TextureAsset.h"
+#include "MaterialAsset.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Mesh.h"
 
@@ -28,7 +29,8 @@ namespace Hazel
         Sampler,
         RenderTexture,
         ComputeShader,
-        Mesh
+        Mesh,
+        Material
     };
 
     class AssetManager
@@ -74,6 +76,11 @@ namespace Hazel
                 auto it = m_Meshes.find(uuid);
                 return it == m_Meshes.end() ? nullptr : &it->second;
             }
+            else if constexpr (std::is_same_v<T, MaterialAsset>)
+            {
+                auto it = m_Materials.find(uuid);
+                return it == m_Materials.end() ? nullptr : &it->second;
+            }
 
             return nullptr;
         }
@@ -113,6 +120,16 @@ namespace Hazel
             return m_Samplers;
         }
 
+        const std::unordered_map<UUID, MeshAsset>& GetMeshes() const
+        {
+            return m_Meshes;
+        }
+
+         const std::unordered_map<UUID, MaterialAsset>& GetMaterials() const
+        {
+            return m_Materials;
+        }
+
     private:
         Project* m_Project = nullptr;
         Renderer* m_Renderer = nullptr;
@@ -123,5 +140,6 @@ namespace Hazel
         std::unordered_map<UUID, SamplerAsset> m_Samplers;
         std::unordered_map<UUID, TextureAsset> m_Textures;
         std::unordered_map<UUID, MeshAsset> m_Meshes;
+        std::unordered_map<UUID, MaterialAsset> m_Materials;
     };
 } // namespace Hazel

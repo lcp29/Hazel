@@ -8,7 +8,6 @@
 #include "Hazel/Renderer/RenderTexture.h"
 
 #include <filesystem>
-#include <optional>
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel

@@ -164,6 +164,7 @@ namespace Hazel
 
     SamplerAsset::SamplerAsset(SamplerAsset&& other) noexcept
         : m_UUID(other.m_UUID)
+          , m_IsLoaded(other.m_IsLoaded)
           , m_FilePath(std::move(other.m_FilePath))
           , m_Renderer(other.m_Renderer)
           , m_Meta(other.m_Meta)
@@ -171,6 +172,7 @@ namespace Hazel
     {
         other.m_Renderer = nullptr;
         other.m_Sampler = nullptr;
+        other.m_IsLoaded = false;
     }
 
     SamplerAsset& SamplerAsset::operator=(SamplerAsset&& other) noexcept
@@ -183,6 +185,7 @@ namespace Hazel
         Release();
 
         m_UUID = other.m_UUID;
+        m_IsLoaded = other.m_IsLoaded;
         m_FilePath = std::move(other.m_FilePath);
         m_Renderer = other.m_Renderer;
         m_Meta = other.m_Meta;
@@ -190,6 +193,7 @@ namespace Hazel
 
         other.m_Renderer = nullptr;
         other.m_Sampler = nullptr;
+        other.m_IsLoaded = false;
         return *this;
     }
 
