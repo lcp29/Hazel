@@ -93,10 +93,12 @@ namespace Hazel
                 prop.type = propertyNode["Type"]
                                 ? StringToMaterialAssetPropertyType(propertyNode["Type"].as<std::string>())
                                 : MaterialAssetPropertyType::Int;
-                const auto data = propertyNode["Data"]
-                                      ? propertyNode["Data"].as<std::vector<uint8_t>>()
-                                      : std::vector<uint8_t>(64);
-                std::copy_n(data.data(), 64, prop.data);
+                if (propertyNode["Data"])
+                {
+                    auto data = propertyNode["Data"].as<YAML::Binary>();
+                    auto dataSize = data.size();
+                    std::copy_n(data.data(), std::min(dataSize, static_cast<size_t>(64)), prop.data);
+                }
                 prop.sampler = propertyNode["Sampler"] ? UUID(propertyNode["Sampler"].as<uint64_t>()) : UUID(-1);
                 prop.texture = propertyNode["Texture"] ? UUID(propertyNode["Texture"].as<uint64_t>()) : UUID(-1);
 
@@ -110,6 +112,7 @@ namespace Hazel
     {
         if (shader == UUID(-1))
         {
+            properties.clear();
             return;
         }
 

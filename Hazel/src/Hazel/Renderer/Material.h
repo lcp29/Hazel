@@ -6,6 +6,7 @@
 #include "Hazel/RHI/RHI.h"
 #include "Hazel/Core/UUID.h"
 #include <string>
+#include <unordered_map>
 
 namespace Hazel
 {
@@ -17,12 +18,12 @@ namespace Hazel
     struct MaterialProperty
     {
         std::string name;
-        uint32_t slot;
-        bool isInBuffer;
-        uint8_t data[64];
-        RHIShaderBufferMemberReflection member;
-        Texture* texture;
-        Sampler* sampler;
+        uint32_t slot = 0;
+        bool isInBuffer = false;
+        uint8_t data[64] = {};
+        RHIShaderBufferMemberReflection member{};
+        Texture* texture = nullptr;
+        Sampler* sampler = nullptr;
     };
 
     class Material
@@ -52,6 +53,11 @@ namespace Hazel
         auto GetAsset() const
         {
             return m_Asset;
+        }
+
+        const std::unordered_map<std::string, MaterialProperty>& GetProperties() const
+        {
+            return m_Properties;
         }
 
         void Release() {}

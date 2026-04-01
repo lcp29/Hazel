@@ -2,6 +2,7 @@
 
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/Renderer/ResourceHeapAllocator.h"
 #include "Hazel/Renderer/Sampler.h"
 #include "Hazel/Renderer/Texture.h"
 #include "Hazel/RHI/RHI.h"
@@ -29,9 +30,12 @@ namespace Hazel
 
         CreateSwapchainResources();
         CreatePerFrameData();
+        m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
     }
+
+    Renderer::~Renderer() = default;
 
     Mesh* Renderer::AddMesh(std::unique_ptr<Mesh> mesh)
     {
@@ -335,6 +339,15 @@ namespace Hazel
         {
             m_Swapchain->ReleaseImmediate();
             m_Swapchain = nullptr;
+        }
+    }
+
+    void Renderer::Release()
+    {
+        if (m_ResourceHeapAllocator)
+        {
+            m_ResourceHeapAllocator->Release();
+            m_ResourceHeapAllocator.reset();
         }
     }
 } // namespace Hazel

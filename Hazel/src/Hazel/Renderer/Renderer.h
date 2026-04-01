@@ -15,6 +15,8 @@
 
 namespace Hazel
 {
+    class ResourceHeapAllocator;
+
     class Renderer
     {
     public:
@@ -33,6 +35,7 @@ namespace Hazel
         };
 
         Renderer(GraphicsContext* graphicsContext, Window* window);
+        ~Renderer();
 
         void BeginSwapchainTargetRendering();
         void EndSwapchainTargetRendering();
@@ -126,9 +129,19 @@ namespace Hazel
         RenderBuffer* AddRenderBuffer(std::unique_ptr<RenderBuffer> renderBuffer);
         void RemoveRenderBuffer(RenderBuffer* renderBuffer);
 
+        ResourceHeapAllocator* GetResourceHeapAllocator() const
+        {
+            return m_ResourceHeapAllocator.get();
+        }
+
         Texture* GetErrorTexture()
         {
             return m_ErrorTexture.get();
+        }
+
+        Texture* GetWhiteTexture()
+        {
+            return m_WhiteTexture.get();
         }
 
         Sampler* GetDefaultSampler()
@@ -140,6 +153,8 @@ namespace Hazel
         {
             m_CurrentFrame++;
         }
+
+        void Release();
 
     private:
         void CreatePerFrameData();
@@ -174,6 +189,7 @@ namespace Hazel
         RHIOwnerSet<ComputeShader> m_ComputeShaders;
         RHIOwnerSet<Mesh> m_Meshes;
         RHIOwnerSet<RenderBuffer> m_RenderBuffers;
+        std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();

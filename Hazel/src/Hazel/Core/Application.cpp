@@ -43,6 +43,8 @@ namespace Hazel
 
         m_LayerStack.Clear();
 
+        m_Renderer->Release();
+
         m_GraphicsContext->GetInstance()->Release();
         m_GraphicsContext->GetInstance()->FlushDeletionQueue();
     }

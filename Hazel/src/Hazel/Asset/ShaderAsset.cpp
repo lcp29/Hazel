@@ -69,7 +69,7 @@ namespace Hazel
         fragmentShaderDesc.binary.assign(m_FragmentCompileResult.cbegin(), m_FragmentCompileResult.cend());
         auto fragmentShader = m_Renderer->GetDevice()->CreateShader(fragmentShaderDesc);
 
-        m_Shader = m_Renderer->AddShader(std::make_unique<Shader>(m_UUID, vertexShader, fragmentShader));
+        m_Shader = m_Renderer->AddShader(std::make_unique<Shader>(m_UUID, m_Renderer, vertexShader, fragmentShader));
         m_IsLoaded = true;
     }
 
