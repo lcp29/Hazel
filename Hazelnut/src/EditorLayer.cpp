@@ -257,6 +257,16 @@ namespace Hazel
             m_CheckerboardSampler->Release();
             m_CheckerboardSampler = nullptr;
         }
+        if (m_ObjectIDRenderTextureBuffer)
+        {
+            m_Renderer->RemoveRenderBuffer(m_ObjectIDRenderTextureBuffer);
+            m_ObjectIDRenderTextureBuffer = nullptr;
+        }
+        if (m_ObjectIDRenderTexture)
+        {
+            m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
+            m_ObjectIDRenderTexture = nullptr;
+        }
     }
 
     void EditorLayer::OnUpdate(Timestep ts)
@@ -331,8 +341,9 @@ namespace Hazel
             m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);
             size_t pixelIndex = (mouseY * static_cast<size_t>(viewportSize.x) + mouseX);
             int pixelData =
-                *(static_cast<uint32_t*>(m_ObjectIDRenderTextureBuffer[(currentFrameIndex - 1) % m_Renderer->
-                                                                       GetMaxFramesInFlight()]->Map()) + pixelIndex);
+                *(static_cast<uint32_t*>(m_ObjectIDRenderTextureBuffer->GetAllBuffers()[
+                      (currentFrameIndex - 1) % m_Renderer->
+                      GetMaxFramesInFlight()]->Map()) + pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
@@ -367,6 +378,7 @@ namespace Hazel
     void EditorLayer::RecreateObjectIDRenderData()
     {
         m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
+        m_Renderer->RemoveRenderBuffer(m_ObjectIDRenderTextureBuffer);
 
         RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
@@ -382,23 +394,16 @@ namespace Hazel
 
         m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(std::move(objectIDRenderTexture));
 
-        RHIBufferDesc objectIDBufferDesc{};
-        objectIDBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
-        objectIDBufferDesc.usages = RHIBufferUsageFlagBits::TransferDestination;
-        objectIDBufferDesc.allowGpuAddress = false;
-        objectIDBufferDesc.cpuAccess = RHIBufferCpuAccess::Read;
-        objectIDBufferDesc.mapOnCreate = true;
-
-        int maxFramesInFlight = m_Renderer->GetMaxFramesInFlight();
-        m_ObjectIDRenderTextureBuffer.resize(maxFramesInFlight, nullptr);
-        for (auto*& buffer : m_ObjectIDRenderTextureBuffer)
-        {
-            if (buffer)
-            {
-                buffer->ReleaseImmediate();
-            }
-            buffer = m_Renderer->GetDevice()->CreateBuffer(objectIDBufferDesc);
-        }
+        RenderBufferDesc objectIDRenderBufferDesc{};
+        objectIDRenderBufferDesc.perFrame = true;
+        objectIDRenderBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
+        objectIDRenderBufferDesc.usages = RHIBufferUsageFlagBits::TransferDestination;
+        objectIDRenderBufferDesc.cpuAccess = RHIBufferCpuAccess::Read;
+        objectIDRenderBufferDesc.mapOnCreate = true;
+        objectIDRenderBufferDesc.hostCoherent = true;
+        objectIDRenderBufferDesc.allowGpuAddress = false;
+        auto objectIDBuffer = std::make_unique<RenderBuffer>(m_Renderer, objectIDRenderBufferDesc);
+        m_ObjectIDRenderTextureBuffer = m_Renderer->AddRenderBuffer(std::move(objectIDBuffer));
     }
 
     void EditorLayer::OnObjectIDMapRender()
@@ -406,7 +411,7 @@ namespace Hazel
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
         auto* objectIDImage = m_ObjectIDRenderTexture->GetImage();
         auto* objectIDImageView = m_ObjectIDRenderTexture->GetImageView();
-        auto* objectIDImageBuffer = m_ObjectIDRenderTextureBuffer[m_Renderer->GetCurrentFrameInFlightIndex()];
+        auto* objectIDImageBuffer = m_ObjectIDRenderTextureBuffer->GetBuffer();
 
         RHIRenderingAttachmentDesc objectIDAttachmentDesc{};
         objectIDAttachmentDesc.imageView = objectIDImageView;

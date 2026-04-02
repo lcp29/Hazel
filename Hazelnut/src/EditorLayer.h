@@ -84,7 +84,7 @@ namespace Hazel
         Renderer* m_Renderer = nullptr;
         UUID m_ObjectIDRenderTextureUUID = UUID();
         RenderTexture* m_ObjectIDRenderTexture = nullptr;
-        std::vector<RHIBuffer*> m_ObjectIDRenderTextureBuffer;
+        RenderBuffer* m_ObjectIDRenderTextureBuffer = nullptr;
 
         // viewport related
         bool m_ViewportFocused = false, m_ViewportHovered = false;
