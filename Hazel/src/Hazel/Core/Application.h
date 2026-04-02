@@ -52,6 +52,11 @@ namespace Hazel
             return m_GraphicsContext.get();
         }
 
+        Renderer* GetRenderer() const
+        {
+            return m_Renderer.get();
+        }
+
         ImGuiLayer* GetImGuiLayer()
         {
             return m_ImGuiLayer;

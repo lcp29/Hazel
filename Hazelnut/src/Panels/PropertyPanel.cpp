@@ -876,12 +876,22 @@ namespace Hazel
             if (!asset)
                 return;
 
-            asset->Load();
-
-            auto& meta = asset->GetMeta();
             auto& shaders = assetManager->GetShaders();
             auto& samplers = assetManager->GetSamplers();
             auto& textures = assetManager->GetTextures();
+
+            if (!asset->IsLoaded())
+            {
+                asset->Load();
+                auto shaderUUID = asset->GetMeta().shader;
+                if (shaders.contains(shaderUUID))
+                {
+                    auto& shader = shaders.at(asset->GetMeta().shader);
+                    shader.GetShader()->RecreateMaterialResourceGroup();
+                }
+            }
+
+            auto& meta = asset->GetMeta();
 
             ImGui::Text("Type: Material");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetMeta().uuid));

@@ -1,5 +1,11 @@
 #pragma once
 
+#include "Hazel/Asset/MaterialAsset.h"
+#include "Hazel/Asset/RenderTextureAsset.h"
+#include "Hazel/Asset/SamplerAsset.h"
+#include "Hazel/Asset/ShaderAsset.h"
+#include "Hazel/Asset/ComputeShaderAsset.h"
+
 #include <filesystem>
 
 namespace Hazel
@@ -15,6 +21,14 @@ namespace Hazel
         uint64_t GetSelectionVersion() const { return m_SelectionVersion; }
 
     private:
+        std::filesystem::path GetUniquePath(const std::string& baseName, const std::string& extension) const;
+        void SelectPath(const std::filesystem::path& path);
+        void CreateMaterialAsset();
+        void CreateRenderTextureAsset();
+        void CreateSamplerAsset();
+        void CreateShaderAsset();
+        void CreateComputeShaderAsset();
+
         std::filesystem::path m_BaseDirectory;
         std::filesystem::path m_CurrentDirectory;
         std::filesystem::path m_SelectedPath;

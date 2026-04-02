@@ -13,6 +13,8 @@
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Mesh.h"
 
+#include <filesystem>
+#include <fstream>
 #include <type_traits>
 #include <unordered_map>
 
@@ -94,6 +96,43 @@ namespace Hazel
             return nullptr;
         }
 
+        template <typename T, typename... Args>
+        T* AddAsset(UUID uuid, Args&&... args)
+        {
+            if constexpr (std::is_same_v<T, ComputeShaderAsset>)
+            {
+                auto [it, inserted] = m_ComputeShaders.emplace(uuid, T(std::forward<Args>(args)...));
+                m_AssetTypes[uuid] = AssetType::ComputeShader;
+                return &it->second;
+            }
+            else if constexpr (std::is_same_v<T, ShaderAsset>)
+            {
+                auto [it, inserted] = m_Shaders.emplace(uuid, T(std::forward<Args>(args)...));
+                m_AssetTypes[uuid] = AssetType::Shader;
+                return &it->second;
+            }
+            else if constexpr (std::is_same_v<T, RenderTextureAsset>)
+            {
+                auto [it, inserted] = m_RenderTextures.emplace(uuid, T(std::forward<Args>(args)...));
+                m_AssetTypes[uuid] = AssetType::RenderTexture;
+                return &it->second;
+            }
+            else if constexpr (std::is_same_v<T, SamplerAsset>)
+            {
+                auto [it, inserted] = m_Samplers.emplace(uuid, T(std::forward<Args>(args)...));
+                m_AssetTypes[uuid] = AssetType::Sampler;
+                return &it->second;
+            }
+            else if constexpr (std::is_same_v<T, MaterialAsset>)
+            {
+                auto [it, inserted] = m_Materials.emplace(uuid, T(std::forward<Args>(args)...));
+                m_AssetTypes[uuid] = AssetType::Material;
+                return &it->second;
+            }
+
+            return nullptr;
+        }
+
         AssetType GetAssetType(UUID uuid) const
         {
             const auto it = m_AssetTypes.find(uuid);
@@ -104,37 +143,37 @@ namespace Hazel
             return it->second;
         }
 
-        const std::unordered_map<UUID, ComputeShaderAsset>& GetComputeShaders() const
+        std::unordered_map<UUID, ComputeShaderAsset>& GetComputeShaders()
         {
             return m_ComputeShaders;
         }
 
-        const std::unordered_map<UUID, ShaderAsset>& GetShaders() const
+        std::unordered_map<UUID, ShaderAsset>& GetShaders()
         {
             return m_Shaders;
         }
 
-        const std::unordered_map<UUID, RenderTextureAsset>& GetRenderTextures() const
+        std::unordered_map<UUID, RenderTextureAsset>& GetRenderTextures()
         {
             return m_RenderTextures;
         }
 
-        const std::unordered_map<UUID, TextureAsset>& GetTextures() const
+        std::unordered_map<UUID, TextureAsset>& GetTextures()
         {
             return m_Textures;
         }
 
-        const std::unordered_map<UUID, SamplerAsset>& GetSamplers() const
+        std::unordered_map<UUID, SamplerAsset>& GetSamplers()
         {
             return m_Samplers;
         }
 
-        const std::unordered_map<UUID, MeshAsset>& GetMeshes() const
+        std::unordered_map<UUID, MeshAsset>& GetMeshes()
         {
             return m_Meshes;
         }
 
-        const std::unordered_map<UUID, MaterialAsset>& GetMaterials() const
+        std::unordered_map<UUID, MaterialAsset>& GetMaterials()
         {
             return m_Materials;
         }

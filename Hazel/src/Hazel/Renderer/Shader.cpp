@@ -256,7 +256,6 @@ namespace Hazel
             material->SetMaterialID(materialID);
             m_Materials.push_back(std::move(material));
         }
-        RecreateMaterialResourceGroup();
         return materialID;
     }
 
@@ -264,10 +263,6 @@ namespace Hazel
     {
         m_Materials[materialID].reset();
         m_MaterialListFreeList.push_back(materialID);
-        if (m_IsValid)
-        {
-            RecreateMaterialResourceGroup();
-        }
     }
 
     void Shader::RecreateMaterialResourceGroup()

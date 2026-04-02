@@ -385,7 +385,14 @@ namespace Hazel
                 case AssetType::Material:
                     if (m_Materials.contains(uuid))
                     {
-                        m_Materials.at(uuid).Load();
+                        auto& mat = m_Materials.at(uuid);
+                        mat.Load();
+                        auto shaderUUID = mat.GetMeta().shader;
+                        if (m_Shaders.contains(shaderUUID))
+                        {
+                            auto& shader = m_Shaders.at(mat.GetMeta().shader);
+                            shader.GetShader()->RecreateMaterialResourceGroup();
+                        }
                     }
                     break;
                 default:

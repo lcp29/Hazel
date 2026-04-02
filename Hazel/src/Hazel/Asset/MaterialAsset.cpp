@@ -490,6 +490,12 @@ namespace Hazel
             m_Renderer->GetDevice()->WaitIdle();
             Unload();
             Load();
+            auto shaderUUID = m_Meta.shader;
+            if (m_AssetManager->GetShaders().contains(shaderUUID))
+            {
+                auto& shader = m_AssetManager->GetShaders().at(m_Meta.shader);
+                shader.GetShader()->RecreateMaterialResourceGroup();
+            }
         }
     }
 } // Hazel
