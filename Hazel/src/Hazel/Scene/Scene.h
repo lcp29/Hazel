@@ -37,6 +37,8 @@ namespace Hazel
         Entity FindEntityByName(std::string_view name);
         Entity GetEntityByUUID(UUID uuid);
 
+        std::vector<UUID> GetInitialAssetUUIDs() const;
+
         auto& GetMapUUIDToEntity()
         {
             return m_EntityMap;

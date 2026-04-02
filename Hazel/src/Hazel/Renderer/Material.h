@@ -31,8 +31,8 @@ namespace Hazel
     public:
         Material() = delete;
 
-        Material(UUID uuid, Shader* shader, MaterialAsset* asset, const std::vector<MaterialProperty>& properties)
-            : m_UUID(uuid), m_Asset(asset), m_Shader(shader)
+        Material(UUID uuid, Shader* shader, const std::vector<MaterialProperty>& properties)
+            : m_UUID(uuid), m_Shader(shader)
         {
             for (const auto& property : properties)
             {
@@ -50,14 +50,14 @@ namespace Hazel
             return m_MaterialID;
         }
 
-        auto GetAsset() const
-        {
-            return m_Asset;
-        }
-
         const std::unordered_map<std::string, MaterialProperty>& GetProperties() const
         {
             return m_Properties;
+        }
+
+        UUID GetUUID() const
+        {
+            return m_UUID;
         }
 
         void Release() {}
@@ -67,7 +67,6 @@ namespace Hazel
         UUID m_UUID = 0;
         uint32_t m_MaterialID = 0;
         Shader* m_Shader = nullptr;
-        MaterialAsset* m_Asset = nullptr;
         std::unordered_map<std::string, MaterialProperty> m_Properties;
     };
 } // Hazel

@@ -638,9 +638,9 @@ namespace Hazel
         DrawComponent<MeshRendererComponent>("Mesh Renderer",
                                              entity,
                                              [](auto& component) {
-                                                 auto& assetManager = Project::GetActive()->GetAssetManager();
-                                                 auto& meshes = assetManager.GetMeshes();
-                                                 auto& materials = assetManager.GetMaterials();
+                                                 auto* assetManager = Project::GetActive()->GetAssetManager();
+                                                 auto& meshes = assetManager->GetMeshes();
+                                                 auto& materials = assetManager->GetMaterials();
 
                                                  bool changed = false;
                                                  if (ImGui::BeginCombo("Mesh",
@@ -703,9 +703,9 @@ namespace Hazel
 
                                                  if (changed)
                                                  {
-                                                     auto* meshAsset = assetManager.GetAsset<MeshAsset>(
+                                                     auto* meshAsset = assetManager->GetAsset<MeshAsset>(
                                                          component.meshUUID);
-                                                     auto* materialAsset = assetManager.GetAsset<MaterialAsset>(
+                                                     auto* materialAsset = assetManager->GetAsset<MaterialAsset>(
                                                          component.materialUUID);
                                                      if (meshAsset)
                                                      {
@@ -732,14 +732,16 @@ namespace Hazel
             return;
 
         UUID uuid = UUID(metaNode["UUID"].as<uint64_t>());
-        auto& assetManager = Project::GetActive()->GetAssetManager();
-        auto assetType = assetManager.GetAssetType(uuid);
+        auto* assetManager = Project::GetActive()->GetAssetManager();
+        auto assetType = assetManager->GetAssetType(uuid);
 
         if (assetType == AssetType::Texture)
         {
-            auto* asset = assetManager.GetAsset<TextureAsset>(uuid);
+            auto* asset = assetManager->GetAsset<TextureAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             auto& meta = asset->GetMeta();
             bool changed = false;
@@ -755,9 +757,11 @@ namespace Hazel
 
         if (assetType == AssetType::ComputeShader)
         {
-            auto* asset = assetManager.GetAsset<ComputeShaderAsset>(uuid);
+            auto* asset = assetManager->GetAsset<ComputeShaderAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             ImGui::Text("Type: Compute Shader");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
@@ -767,9 +771,11 @@ namespace Hazel
 
         if (assetType == AssetType::Shader)
         {
-            auto* asset = assetManager.GetAsset<ShaderAsset>(uuid);
+            auto* asset = assetManager->GetAsset<ShaderAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             ImGui::Text("Type: Shader");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
@@ -779,9 +785,11 @@ namespace Hazel
 
         if (assetType == AssetType::RenderTexture)
         {
-            auto* asset = assetManager.GetAsset<RenderTextureAsset>(uuid);
+            auto* asset = assetManager->GetAsset<RenderTextureAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             auto& desc = asset->GetMeta().desc;
             bool changed = false;
@@ -813,9 +821,11 @@ namespace Hazel
 
         if (assetType == AssetType::Sampler)
         {
-            auto* asset = assetManager.GetAsset<SamplerAsset>(uuid);
+            auto* asset = assetManager->GetAsset<SamplerAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             auto& desc = asset->GetMeta().desc;
             bool changed = false;
@@ -841,9 +851,11 @@ namespace Hazel
 
         if (assetType == AssetType::Mesh)
         {
-            auto* asset = assetManager.GetAsset<MeshAsset>(uuid);
+            auto* asset = assetManager->GetAsset<MeshAsset>(uuid);
             if (!asset)
                 return;
+
+            asset->Load();
 
             ImGui::Text("Type: Mesh");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
@@ -860,14 +872,16 @@ namespace Hazel
 
         if (assetType == AssetType::Material)
         {
-            auto* asset = assetManager.GetAsset<MaterialAsset>(uuid);
+            auto* asset = assetManager->GetAsset<MaterialAsset>(uuid);
             if (!asset)
                 return;
 
+            asset->Load();
+
             auto& meta = asset->GetMeta();
-            auto& shaders = assetManager.GetShaders();
-            auto& samplers = assetManager.GetSamplers();
-            auto& textures = assetManager.GetTextures();
+            auto& shaders = assetManager->GetShaders();
+            auto& samplers = assetManager->GetSamplers();
+            auto& textures = assetManager->GetTextures();
 
             ImGui::Text("Type: Material");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetMeta().uuid));
@@ -904,7 +918,7 @@ namespace Hazel
 
             if (changed)
             {
-                meta.UpdateForShader(&assetManager);
+                meta.UpdateForShader(assetManager);
                 WriteMetaFile(*asset);
                 asset->Recreate();
             }

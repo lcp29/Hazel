@@ -4,6 +4,7 @@
 #include "Hazel/Core/Base.h"
 
 #include <filesystem>
+#include <memory>
 #include <string>
 
 namespace Hazel
@@ -56,14 +57,14 @@ namespace Hazel
             return m_Config;
         }
 
-        AssetManager& GetAssetManager()
+        AssetManager* GetAssetManager()
         {
-            return m_AssetManager;
+            return m_AssetManager.get();
         }
 
-        const AssetManager& GetAssetManager() const
+        const AssetManager* GetAssetManager() const
         {
-            return m_AssetManager;
+            return m_AssetManager.get();
         }
 
         static Ref<Project> GetActive()
@@ -84,7 +85,7 @@ namespace Hazel
         ProjectConfig m_Config;
         std::filesystem::path m_ProjectDirectory;
         std::filesystem::path m_ProjectFilePath;
-        AssetManager m_AssetManager;
+        std::unique_ptr<AssetManager> m_AssetManager;
 
         inline static Ref<Project> s_ActiveProject;
     };

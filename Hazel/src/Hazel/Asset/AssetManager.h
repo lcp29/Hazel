@@ -37,7 +37,16 @@ namespace Hazel
     {
     public:
         AssetManager() = default;
+
         AssetManager(Project* project, Renderer* renderer);
+
+        AssetManager(AssetManager&& other) noexcept;
+        AssetManager& operator=(AssetManager&& other) noexcept;
+
+        ~AssetManager()
+        {
+            UnloadAllAssets();
+        }
 
         void ScanAll();
 
@@ -125,10 +134,13 @@ namespace Hazel
             return m_Meshes;
         }
 
-         const std::unordered_map<UUID, MaterialAsset>& GetMaterials() const
+        const std::unordered_map<UUID, MaterialAsset>& GetMaterials() const
         {
             return m_Materials;
         }
+
+        void UnloadAllAssets();
+        void LoadAssetUUIDs(const std::vector<UUID>& uuids);
 
     private:
         Project* m_Project = nullptr;

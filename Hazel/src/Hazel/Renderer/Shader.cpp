@@ -478,17 +478,6 @@ namespace Hazel
         m_FragmentShader->Release();
         m_VertexShader = nullptr;
         m_FragmentShader = nullptr;
-
-        for (auto& material : m_Materials)
-        {
-            if (material)
-            {
-                if (auto* asset = material->GetAsset())
-                {
-                    asset->Unload();
-                }
-            }
-        }
     }
 
     void Shader::ReleaseImmediate()
@@ -532,16 +521,5 @@ namespace Hazel
         m_FragmentShader->ReleaseImmediate();
         m_VertexShader = nullptr;
         m_FragmentShader = nullptr;
-
-        for (auto& material : m_Materials)
-        {
-            if (material)
-            {
-                if (auto* asset = material->GetAsset())
-                {
-                    asset->Unload();
-                }
-            }
-        }
     }
 } // namespace Hazel

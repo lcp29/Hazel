@@ -438,7 +438,7 @@ namespace Hazel
             }
         }
 
-        auto material = std::make_unique<Material>(m_UUID, shaderAsset->GetShader(), this, properties);
+        auto material = std::make_unique<Material>(m_UUID, shaderAsset->GetShader(), properties);
 
         m_MaterialID = shaderAsset->GetShader()->RegisterMaterial(std::move(material));
         m_Material = shaderAsset->GetShader()->GetMaterial(m_MaterialID);

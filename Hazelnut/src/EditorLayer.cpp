@@ -235,6 +235,7 @@ namespace Hazel
             {
                 OnSceneStop();
             }
+            Project::GetActive()->GetAssetManager()->UnloadAllAssets();
             ScriptEngine::Shutdown();
             Project::CloseActive();
         }
@@ -1091,6 +1092,8 @@ namespace Hazel
             OnSceneStop();
         }
 
+        Project::GetActive()->GetAssetManager()->UnloadAllAssets();
+
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
@@ -1127,6 +1130,8 @@ namespace Hazel
             return;
         }
 
+        Project::GetActive()->GetAssetManager()->UnloadAllAssets();
+
         Ref<Scene> newScene = CreateRef<Scene>();
         SceneSerializer serializer(newScene);
         if (serializer.Deserialize(path.string()))
@@ -1138,6 +1143,9 @@ namespace Hazel
             m_EditorScenePath = path;
             m_HoveredEntity = {};
         }
+
+        auto initAssetUUIDs = newScene->GetInitialAssetUUIDs();
+        Project::GetActive()->GetAssetManager()->LoadAssetUUIDs(initAssetUUIDs);
     }
 
     void EditorLayer::SaveScene()

@@ -65,6 +65,11 @@ namespace Hazel
             return m_MaterialResourceGroup;
         }
 
+        std::vector<std::unique_ptr<Material>>& GetMaterials()
+        {
+            return m_Materials;
+        }
+
         void Release();
         void ReleaseImmediate();
 

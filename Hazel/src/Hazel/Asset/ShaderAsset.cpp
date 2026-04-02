@@ -4,6 +4,7 @@
 
 #include "ShaderAsset.h"
 
+#include "Hazel/Project/Project.h"
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Renderer/ShaderCommon.h"
 
@@ -55,6 +56,11 @@ namespace Hazel
 
     void ShaderAsset::Load()
     {
+        if (m_IsLoaded)
+        {
+            return;
+        }
+
         RHIShaderDesc vertexShaderDesc{};
         vertexShaderDesc.stage = RHIShaderStageFlagBits::Vertex;
         vertexShaderDesc.entryPoint = "main";
@@ -78,6 +84,19 @@ namespace Hazel
         if (!m_IsLoaded)
         {
             return;
+        }
+
+        auto& materials = m_Shader->GetMaterials();
+        for (auto& material : materials)
+        {
+            if (!material)
+            {
+                continue;
+            }
+
+            auto uuid = material->GetUUID();
+            auto* materialAsset = Project::GetActive()->GetAssetManager()->GetAsset<MaterialAsset>(uuid);
+            materialAsset->Unload();
         }
 
         m_Renderer->RemoveShader(m_Shader);

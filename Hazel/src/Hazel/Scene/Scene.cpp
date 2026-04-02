@@ -272,6 +272,25 @@ namespace Hazel
         return {};
     }
 
+    std::vector<UUID> Scene::GetInitialAssetUUIDs() const
+    {
+        auto meshRendererEntities = m_Registry.view<MeshRendererComponent>();
+        std::vector<UUID> uuids;
+        for (auto entity : meshRendererEntities)
+        {
+            const auto& comp = meshRendererEntities.get<MeshRendererComponent>(entity);
+            if (comp.meshUUID != UUID(-1))
+            {
+                uuids.push_back(comp.meshUUID);
+            }
+            if (comp.materialUUID != UUID(-1))
+            {
+                uuids.push_back(comp.materialUUID);
+            }
+        }
+        return uuids;
+    }
+
     template <typename T>
     void Scene::OnComponentAdded(Entity entity, T& component)
     {

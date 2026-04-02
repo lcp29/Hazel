@@ -30,6 +30,11 @@ namespace Hazel
 
     void TextureAsset::Load()
     {
+        if (m_IsLoaded)
+        {
+            return;
+        }
+
         RHIImageUsages imageUsages = RHIImageUsageFlagBits::Sampled;
         if (m_Meta.useMipmap)
         {
@@ -78,9 +83,10 @@ namespace Hazel
         m_Texture = m_Renderer->AddTexture(std::move(texture));
         if (m_Meta.useMipmap)
         {
-            texture->GenerateMipmap(cmd);
+            m_Texture->GenerateMipmap(cmd);
         }
 
+        cmd->End();
         submitDesc.commandBuffers = {cmd};
         syncPoint = queue->Submit(submitDesc);
         m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);

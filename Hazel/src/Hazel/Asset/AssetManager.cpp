@@ -15,6 +15,44 @@ namespace Hazel
         : m_Project(project),
           m_Renderer(renderer) {}
 
+    AssetManager::AssetManager(AssetManager&& other) noexcept
+    {
+        m_Project = other.m_Project;
+        m_Renderer = other.m_Renderer;
+        m_Textures = std::move(other.m_Textures);
+        m_ComputeShaders = std::move(other.m_ComputeShaders);
+        m_Meshes = std::move(other.m_Meshes);
+        m_Shaders = std::move(other.m_Shaders);
+        m_RenderTextures = std::move(other.m_RenderTextures);
+        m_Samplers = std::move(other.m_Samplers);
+        m_AssetTypes = std::move(other.m_AssetTypes);
+
+        other.m_Project = nullptr;
+        other.m_Renderer = nullptr;
+    }
+
+    AssetManager& AssetManager::operator=(AssetManager&& other) noexcept
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        m_Project = other.m_Project;
+        m_Renderer = other.m_Renderer;
+        m_Textures = std::move(other.m_Textures);
+        m_ComputeShaders = std::move(other.m_ComputeShaders);
+        m_Meshes = std::move(other.m_Meshes);
+        m_Shaders = std::move(other.m_Shaders);
+        m_RenderTextures = std::move(other.m_RenderTextures);
+        m_Samplers = std::move(other.m_Samplers);
+        m_AssetTypes = std::move(other.m_AssetTypes);
+
+        other.m_Project = nullptr;
+        other.m_Renderer = nullptr;
+        return *this;
+    }
+
     void AssetManager::ScanAll()
     {
         auto assetDirectory = m_Project->GetAssetDirectory();
@@ -261,6 +299,98 @@ namespace Hazel
             std::ofstream output(asset.GetFilePath().string());
             output << metaNode;
             output.close();
+        }
+    }
+
+    void AssetManager::UnloadAllAssets()
+    {
+        for (auto& asset : m_Textures | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_ComputeShaders | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_Shaders | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_RenderTextures | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_Samplers | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_Meshes | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_Materials | std::views::values)
+        {
+            asset.Unload();
+        }
+    }
+
+    void AssetManager::LoadAssetUUIDs(const std::vector<UUID>& uuids)
+    {
+        for (auto& uuid : uuids)
+        {
+            if (uuid == UUID(-1))
+            {
+                continue;
+            }
+
+            auto type = m_AssetTypes[uuid];
+            switch (type)
+            {
+                case AssetType::Texture:
+                    if (m_Textures.contains(uuid))
+                    {
+                        m_Textures.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::ComputeShader:
+                    if (m_ComputeShaders.contains(uuid))
+                    {
+                        m_ComputeShaders.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::Shader:
+                    if (m_Shaders.contains(uuid))
+                    {
+                        m_Shaders.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::RenderTexture:
+                    if (m_RenderTextures.contains(uuid))
+                    {
+                        m_RenderTextures.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::Sampler:
+                    if (m_Samplers.contains(uuid))
+                    {
+                        m_Samplers.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::Mesh:
+                    if (m_Meshes.contains(uuid))
+                    {
+                        m_Meshes.at(uuid).Load();
+                    }
+                    break;
+                case AssetType::Material:
+                    if (m_Materials.contains(uuid))
+                    {
+                        m_Materials.at(uuid).Load();
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 } // namespace Hazel

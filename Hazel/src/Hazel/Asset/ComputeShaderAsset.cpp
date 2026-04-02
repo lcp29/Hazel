@@ -41,6 +41,11 @@ namespace Hazel
 
     void ComputeShaderAsset::Load()
     {
+        if (m_IsLoaded)
+        {
+            return;
+        }
+
         RHIShaderDesc shaderDesc{};
         shaderDesc.stage = RHIShaderStageFlagBits::Compute;
         shaderDesc.entryPoint = "main";

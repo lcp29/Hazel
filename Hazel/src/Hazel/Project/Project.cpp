@@ -25,8 +25,8 @@ namespace Hazel
             project->m_ProjectDirectory = path.parent_path();
             project->m_ProjectFilePath = path;
             s_ActiveProject = project;
-            project->m_AssetManager = AssetManager(project.get(), renderer);
-            project->m_AssetManager.ScanAll();
+            project->m_AssetManager = std::make_unique<AssetManager>(project.get(), renderer);
+            project->m_AssetManager->ScanAll();
             return s_ActiveProject;
         }
 
@@ -40,7 +40,7 @@ namespace Hazel
         {
             s_ActiveProject->m_ProjectDirectory = path.parent_path();
             s_ActiveProject->m_ProjectFilePath = path;
-            s_ActiveProject->m_AssetManager.WriteAllMetaFiles();
+            s_ActiveProject->m_AssetManager->WriteAllMetaFiles();
             return true;
         }
 
