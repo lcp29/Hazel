@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hazel/Asset/AssetManager.h"
 #include "Hazel/Asset/MaterialAsset.h"
 #include "Hazel/Asset/RenderTextureAsset.h"
 #include "Hazel/Asset/SamplerAsset.h"
@@ -23,11 +24,13 @@ namespace Hazel
     private:
         std::filesystem::path GetUniquePath(const std::string& baseName, const std::string& extension) const;
         void SelectPath(const std::filesystem::path& path);
-        void CreateMaterialAsset();
-        void CreateRenderTextureAsset();
-        void CreateSamplerAsset();
-        void CreateShaderAsset();
-        void CreateComputeShaderAsset();
+        void OpenCreateAssetPopup(AssetType assetType, const char* defaultName);
+        void DrawCreateAssetPopup();
+        void CreateMaterialAsset(const std::string& name);
+        void CreateRenderTextureAsset(const std::string& name);
+        void CreateSamplerAsset(const std::string& name);
+        void CreateShaderAsset(const std::string& name);
+        void CreateComputeShaderAsset(const std::string& name);
 
         std::filesystem::path m_BaseDirectory;
         std::filesystem::path m_CurrentDirectory;
@@ -36,5 +39,8 @@ namespace Hazel
         void* m_DirectoryIcon = nullptr;
         void* m_FileIcon = nullptr;
         uint64_t m_SelectionVersion = 0;
+        AssetType m_PendingAssetType = AssetType::Unknown;
+        char m_CreateAssetNameBuffer[256] = {};
+        bool m_OpenCreateAssetPopup = false;
     };
 }

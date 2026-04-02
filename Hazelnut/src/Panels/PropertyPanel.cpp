@@ -201,7 +201,7 @@ namespace Hazel
         bool DrawFormatCombo(const char* label, RHIFormat& format)
         {
             static const RHIFormat formats[] = {
-                RHIFormat::Undefined, RHIFormat::R8UNorm, RHIFormat::R32SInt, RHIFormat::RG8UNorm,
+                RHIFormat::R8UNorm, RHIFormat::R32SInt, RHIFormat::RG8UNorm,
                 RHIFormat::R32SFloat, RHIFormat::RG32SFloat, RHIFormat::RGB32SFloat, RHIFormat::RG16UNorm,
                 RHIFormat::BGRA8UNorm, RHIFormat::BGRA8SRGB, RHIFormat::RGBA8UNorm, RHIFormat::RGBA8SRGB,
                 RHIFormat::RGB10A2UNorm, RHIFormat::RGBA16SFloat, RHIFormat::D32SFloat,

@@ -347,7 +347,7 @@ namespace Hazel
         {
             m_MaterialID = 0;
             m_Material = nullptr;
-            m_IsLoaded = true;
+            m_IsLoaded = false;
             return;
         }
 

@@ -6,6 +6,7 @@
 #include "Hazel/Project/Project.h"
 
 #include <imgui.h>
+#include <cstring>
 #include <fstream>
 
 namespace Hazel
@@ -124,28 +125,30 @@ namespace Hazel
             {
                 if (ImGui::MenuItem("Material"))
                 {
-                    CreateMaterialAsset();
+                    OpenCreateAssetPopup(AssetType::Material, "New Material");
                 }
                 if (ImGui::MenuItem("Render Texture"))
                 {
-                    CreateRenderTextureAsset();
+                    OpenCreateAssetPopup(AssetType::RenderTexture, "New Render Texture");
                 }
                 if (ImGui::MenuItem("Sampler"))
                 {
-                    CreateSamplerAsset();
+                    OpenCreateAssetPopup(AssetType::Sampler, "New Sampler");
                 }
                 if (ImGui::MenuItem("Shader"))
                 {
-                    CreateShaderAsset();
+                    OpenCreateAssetPopup(AssetType::Shader, "New Shader");
                 }
                 if (ImGui::MenuItem("Compute Shader"))
                 {
-                    CreateComputeShaderAsset();
+                    OpenCreateAssetPopup(AssetType::ComputeShader, "New Compute Shader");
                 }
                 ImGui::EndMenu();
             }
             ImGui::EndPopup();
         }
+
+        DrawCreateAssetPopup();
 
         ImGui::End();
     }
@@ -181,9 +184,101 @@ namespace Hazel
         m_SelectionVersion++;
     }
 
-    void ContentBrowserPanel::CreateMaterialAsset()
+    void ContentBrowserPanel::OpenCreateAssetPopup(AssetType assetType, const char* defaultName)
     {
-        auto metaPath = GetUniquePath("New Material", ".mat.meta");
+
+        m_PendingAssetType = assetType;
+        std::memset(m_CreateAssetNameBuffer, 0, sizeof(m_CreateAssetNameBuffer));
+        std::strncpy(m_CreateAssetNameBuffer, defaultName, sizeof(m_CreateAssetNameBuffer) - 1);
+        m_OpenCreateAssetPopup = true;
+    }
+
+    void ContentBrowserPanel::DrawCreateAssetPopup()
+    {
+        if (m_OpenCreateAssetPopup)
+        {
+            ImGui::OpenPopup("Create Asset");
+            m_OpenCreateAssetPopup = false;
+        }
+
+        if (ImGui::BeginPopupModal("Create Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            const char* assetTypeName = "";
+            switch (m_PendingAssetType)
+            {
+                case AssetType::Material:
+                    assetTypeName = "Material";
+                    break;
+                case AssetType::RenderTexture:
+                    assetTypeName = "Render Texture";
+                    break;
+                case AssetType::Sampler:
+                    assetTypeName = "Sampler";
+                    break;
+                case AssetType::Shader:
+                    assetTypeName = "Shader";
+                    break;
+                case AssetType::ComputeShader:
+                    assetTypeName = "Compute Shader";
+                    break;
+                default:
+                    break;
+            }
+
+            ImGui::Text("Type: %s", assetTypeName);
+            ImGui::SetNextItemWidth(280.0f);
+            bool create = ImGui::InputText("Name", m_CreateAssetNameBuffer, sizeof(m_CreateAssetNameBuffer),
+                                           ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::SetItemDefaultFocus();
+
+            if (ImGui::Button("Create") || create)
+            {
+                const std::string name = m_CreateAssetNameBuffer;
+                switch (m_PendingAssetType)
+                {
+                    case AssetType::Material:
+                        CreateMaterialAsset(name);
+                        break;
+                    case AssetType::RenderTexture:
+                        CreateRenderTextureAsset(name);
+                        break;
+                    case AssetType::Sampler:
+                        CreateSamplerAsset(name);
+                        break;
+                    case AssetType::Shader:
+                        CreateShaderAsset(name);
+                        break;
+                    case AssetType::ComputeShader:
+                        CreateComputeShaderAsset(name);
+                        break;
+                    default:
+                        break;
+                }
+
+                m_PendingAssetType = AssetType::Unknown;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel"))
+            {
+                m_PendingAssetType = AssetType::Unknown;
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+            {
+                m_PendingAssetType = AssetType::Unknown;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    void ContentBrowserPanel::CreateMaterialAsset(const std::string& name)
+    {
+        auto metaPath = GetUniquePath(name, ".mat.meta");
         MaterialAssetMeta meta{};
         meta.uuid = UUID();
         meta.shader = UUID(-1);
@@ -200,9 +295,9 @@ namespace Hazel
         SelectPath(metaPath);
     }
 
-    void ContentBrowserPanel::CreateRenderTextureAsset()
+    void ContentBrowserPanel::CreateRenderTextureAsset(const std::string& name)
     {
-        auto metaPath = GetUniquePath("New Render Texture", ".rt.meta");
+        auto metaPath = GetUniquePath(name, ".rt.meta");
         RenderTextureAssetMeta meta{};
         meta.uuid = UUID();
         WriteMetaFile(metaPath, meta);
@@ -216,9 +311,9 @@ namespace Hazel
         SelectPath(metaPath);
     }
 
-    void ContentBrowserPanel::CreateSamplerAsset()
+    void ContentBrowserPanel::CreateSamplerAsset(const std::string& name)
     {
-        auto metaPath = GetUniquePath("New Sampler", ".sampler.meta");
+        auto metaPath = GetUniquePath(name, ".sampler.meta");
         SamplerAssetMeta meta{};
         meta.uuid = UUID();
         WriteMetaFile(metaPath, meta);
@@ -232,9 +327,9 @@ namespace Hazel
         SelectPath(metaPath);
     }
 
-    void ContentBrowserPanel::CreateShaderAsset()
+    void ContentBrowserPanel::CreateShaderAsset(const std::string& name)
     {
-        auto sourcePath = GetUniquePath("New Shader", ".shader");
+        auto sourcePath = GetUniquePath(name, ".shader");
         auto metaPath = sourcePath;
         metaPath += ".meta";
 
@@ -258,6 +353,7 @@ namespace Hazel
                         "    o_Color = vec4(v_UV, 0.0, 1.0);\n"
                         "}\n"
                         "#endif\n";
+        sourceOutput.close();
 
         ShaderAssetMeta meta{};
         meta.uuid = UUID();
@@ -268,9 +364,9 @@ namespace Hazel
         SelectPath(sourcePath);
     }
 
-    void ContentBrowserPanel::CreateComputeShaderAsset()
+    void ContentBrowserPanel::CreateComputeShaderAsset(const std::string& name)
     {
-        auto sourcePath = GetUniquePath("New Compute Shader", ".comp");
+        auto sourcePath = GetUniquePath(name, ".comp");
         auto metaPath = sourcePath;
         metaPath += ".meta";
 

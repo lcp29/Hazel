@@ -343,9 +343,12 @@ namespace Hazel
         bufferDesc.hostCoherent = true;
         m_MaterialBuffer = m_Renderer->AddRenderBuffer(std::make_unique<RenderBuffer>(m_Renderer, bufferDesc));
 
-        m_MaterialResourceGroup = m_Renderer->GetResourceHeapAllocator()->AllocateGroup(
-            m_MaterialResourceLayout,
-            &m_MaterialResourceHeap);
+        if (m_MaterialResourceLayout)
+        {
+            m_MaterialResourceGroup = m_Renderer->GetResourceHeapAllocator()->AllocateGroup(
+                m_MaterialResourceLayout,
+                &m_MaterialResourceHeap);
+        }
 
         m_MaterialCapacity = materialCapacity;
         m_MaterialBufferStride = materialBufferStride;
@@ -355,6 +358,11 @@ namespace Hazel
 
     void Shader::WriteMaterialResourceGroup()
     {
+        if (!m_MaterialResourceLayout || m_MaterialCapacity == 1)
+        {
+            return;
+        }
+
         auto* buffer = m_MaterialBuffer->GetBuffer();
         auto* mappedData = static_cast<uint8_t*>(buffer->Map());
         std::memset(mappedData, 0, static_cast<size_t>(m_MaterialCapacity) * m_MaterialBufferStride);

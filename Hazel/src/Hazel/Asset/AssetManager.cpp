@@ -304,15 +304,21 @@ namespace Hazel
 
     void AssetManager::UnloadAllAssets()
     {
+        // materials 'go' before shaders
+        for (auto& asset : m_Materials | std::views::values)
+        {
+            asset.Unload();
+        }
+        for (auto& asset : m_Shaders | std::views::values)
+        {
+            asset.Unload();
+        }
+
         for (auto& asset : m_Textures | std::views::values)
         {
             asset.Unload();
         }
         for (auto& asset : m_ComputeShaders | std::views::values)
-        {
-            asset.Unload();
-        }
-        for (auto& asset : m_Shaders | std::views::values)
         {
             asset.Unload();
         }
@@ -325,10 +331,6 @@ namespace Hazel
             asset.Unload();
         }
         for (auto& asset : m_Meshes | std::views::values)
-        {
-            asset.Unload();
-        }
-        for (auto& asset : m_Materials | std::views::values)
         {
             asset.Unload();
         }
