@@ -119,6 +119,8 @@ namespace Hazel
         ShaderAsset* shaderAsset = assetManager->GetAsset<ShaderAsset>(shader);
         shaderAsset->Load();
 
+        std::vector<MaterialAssetMetaProperty> newProperties;
+
         auto reflection = shaderAsset->GetShader()->GetVertexShader()->GetReflection();
         for (auto& set : reflection.resourceGroups)
         {
@@ -139,6 +141,7 @@ namespace Hazel
                             if (metaProperty.name == member.name)
                             {
                                 propertyExists = true;
+                                newProperties.push_back(metaProperty);
                             }
                         }
                         if (!propertyExists)
@@ -197,7 +200,7 @@ namespace Hazel
                                 default:
                                     break;
                             }
-                            properties.push_back(prop);
+                            newProperties.push_back(prop);
                         }
                     }
                 }
@@ -213,6 +216,7 @@ namespace Hazel
                                 if (metaProperty.name == slot.variableName)
                                 {
                                     propertyExists = true;
+                                    newProperties.push_back(metaProperty);
                                 }
                             }
                             if (propertyExists)
@@ -225,7 +229,7 @@ namespace Hazel
                             std::ranges::fill(prop.data, 0);
                             prop.sampler = UUID(-1);
                             prop.texture = UUID(-1);
-                            properties.push_back(prop);
+                            newProperties.push_back(prop);
                             break;
                         }
                         case RHIResourceBindingType::SampledImage:
@@ -236,6 +240,7 @@ namespace Hazel
                                 if (metaProperty.name == slot.variableName)
                                 {
                                     propertyExists = true;
+                                    newProperties.push_back(metaProperty);
                                 }
                             }
                             if (propertyExists)
@@ -248,7 +253,7 @@ namespace Hazel
                             std::ranges::fill(prop.data, 0);
                             prop.sampler = UUID(-1);
                             prop.texture = UUID(-1);
-                            properties.push_back(prop);
+                            newProperties.push_back(prop);
                             break;
                         }
                         case RHIResourceBindingType::SamplerWithImage:
@@ -259,6 +264,7 @@ namespace Hazel
                                 if (metaProperty.name == slot.variableName)
                                 {
                                     propertyExists = true;
+                                    newProperties.push_back(metaProperty);
                                 }
                             }
                             if (propertyExists)
@@ -271,7 +277,7 @@ namespace Hazel
                             std::ranges::fill(prop.data, 0);
                             prop.sampler = UUID(-1);
                             prop.texture = UUID(-1);
-                            properties.push_back(prop);
+                            newProperties.push_back(prop);
                             break;
                         }
                         default:
@@ -280,6 +286,8 @@ namespace Hazel
                 }
             }
         }
+
+        properties = std::move(newProperties);
     }
 
     MaterialAsset::MaterialAsset(UUID uuid,
