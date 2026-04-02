@@ -57,6 +57,11 @@ Entities:
       PrevSibling:
         - 3788340662652755114
       ChildCount: 0
+    MeshRenderer:
+      MeshUUID:
+        - 10086467548157331674
+      MaterialUUID:
+        - 1856475893048179180
   - ID:
       ID:
         - 3788340662652755114
@@ -97,7 +102,7 @@ Entities:
       ChildCount: 0
 ViewportCamera:
   ProjectionType: Perspective
-  FovX: 1.0728503
-  AspectRatio: 1.8950617
+  FovX: 0.8615474
+  AspectRatio: 1.4647137
   NearClip: 0.01
   FarClip: 1000

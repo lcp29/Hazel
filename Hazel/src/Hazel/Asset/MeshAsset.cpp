@@ -446,7 +446,10 @@ namespace Hazel
                     {
                         corner.vertex.texCoord = ReadVec2(attrib.texcoords, index.texcoord_index);
                     }
-                    corner.vertex.normal = ReadVec3(attrib.normals, index.normal_index);
+                    if (index.normal_index >= 0)
+                    {
+                        corner.vertex.normal = ReadVec3(attrib.normals, index.normal_index);
+                    }
                     corner.vertex.tangent = glm::vec3(0.0f);
                     corner.triangleIndex = triangleIndex;
                     corner.localCornerIndex = localCorner;

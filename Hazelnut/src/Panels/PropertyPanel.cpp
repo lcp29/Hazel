@@ -419,47 +419,16 @@ namespace Hazel
             return false;
         }
 
-        std::string GetShaderLabel(const std::unordered_map<UUID, ShaderAsset>& shaders, UUID uuid)
+        template <typename T>
+        std::string GetAssetLabel(const std::unordered_map<UUID, T>& assets, UUID uuid)
         {
             if (uuid == UUID(-1))
             {
                 return "None";
             }
 
-            auto it = shaders.find(uuid);
-            if (it == shaders.end())
-            {
-                return "None";
-            }
-
-            return it->second.GetFilePath().filename().string();
-        }
-
-        std::string GetSamplerLabel(const std::unordered_map<UUID, SamplerAsset>& samplers, UUID uuid)
-        {
-            if (uuid == UUID(-1))
-            {
-                return "None";
-            }
-
-            auto it = samplers.find(uuid);
-            if (it == samplers.end())
-            {
-                return "None";
-            }
-
-            return it->second.GetFilePath().filename().string();
-        }
-
-        std::string GetTextureLabel(const std::unordered_map<UUID, TextureAsset>& textures, UUID uuid)
-        {
-            if (uuid == UUID(-1))
-            {
-                return "None";
-            }
-
-            auto it = textures.find(uuid);
-            if (it == textures.end())
+            auto it = assets.find(uuid);
+            if (it == assets.end())
             {
                 return "None";
             }
@@ -669,7 +638,86 @@ namespace Hazel
         DrawComponent<MeshRendererComponent>("Mesh Renderer",
                                              entity,
                                              [](auto& component) {
-                                                 ImGui::Text("TODO");
+                                                 auto& assetManager = Project::GetActive()->GetAssetManager();
+                                                 auto& meshes = assetManager.GetMeshes();
+                                                 auto& materials = assetManager.GetMaterials();
+
+                                                 bool changed = false;
+                                                 if (ImGui::BeginCombo("Mesh",
+                                                                       GetAssetLabel(meshes, component.meshUUID).
+                                                                       c_str()))
+                                                 {
+                                                     bool selected = component.meshUUID == UUID(-1);
+                                                     if (ImGui::Selectable("None", selected))
+                                                     {
+                                                         component.meshUUID = UUID(-1);
+                                                         changed = true;
+                                                     }
+                                                     if (selected)
+                                                         ImGui::SetItemDefaultFocus();
+
+                                                     for (const auto& [uuid, meshAsset] : meshes)
+                                                     {
+                                                         selected = component.meshUUID == uuid;
+                                                         if (ImGui::Selectable(
+                                                             meshAsset.GetFilePath().filename().string().c_str(),
+                                                             selected))
+                                                         {
+                                                             component.meshUUID = uuid;
+                                                             changed = true;
+                                                         }
+                                                         if (selected)
+                                                             ImGui::SetItemDefaultFocus();
+                                                     }
+                                                     ImGui::EndCombo();
+                                                 }
+
+                                                 if (ImGui::BeginCombo("Material",
+                                                                       GetAssetLabel(materials, component.materialUUID).
+                                                                       c_str()))
+                                                 {
+                                                     bool selected = component.materialUUID == UUID(-1);
+                                                     if (ImGui::Selectable("None", selected))
+                                                     {
+                                                         component.materialUUID = UUID(-1);
+                                                         changed = true;
+                                                     }
+                                                     if (selected)
+                                                         ImGui::SetItemDefaultFocus();
+
+                                                     for (const auto& [uuid, materialAsset] : materials)
+                                                     {
+                                                         selected = component.materialUUID == uuid;
+                                                         if (ImGui::Selectable(
+                                                             materialAsset.GetFilePath().filename().string().c_str(),
+                                                             selected))
+                                                         {
+                                                             component.materialUUID = uuid;
+                                                             changed = true;
+                                                         }
+                                                         if (selected)
+                                                             ImGui::SetItemDefaultFocus();
+                                                     }
+                                                     ImGui::EndCombo();
+                                                 }
+
+                                                 if (changed)
+                                                 {
+                                                     auto* meshAsset = assetManager.GetAsset<MeshAsset>(
+                                                         component.meshUUID);
+                                                     auto* materialAsset = assetManager.GetAsset<MaterialAsset>(
+                                                         component.materialUUID);
+                                                     if (meshAsset)
+                                                     {
+                                                         component.meshAsset = meshAsset;
+                                                         meshAsset->Load();
+                                                     }
+                                                     if (materialAsset)
+                                                     {
+                                                         component.materialAsset = materialAsset;
+                                                         materialAsset->Load();
+                                                     }
+                                                 }
                                              });
     }
 
@@ -826,7 +874,7 @@ namespace Hazel
             ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
 
             bool changed = false;
-            std::string shaderLabel = GetShaderLabel(shaders, meta.shader);
+            std::string shaderLabel = GetAssetLabel(shaders, meta.shader);
             if (ImGui::BeginCombo("Shader", shaderLabel.c_str()))
             {
                 bool selected = meta.shader == UUID(-1);
@@ -922,7 +970,7 @@ namespace Hazel
                     }
                     case MaterialAssetPropertyType::Sampler:
                     {
-                        std::string samplerLabel = GetSamplerLabel(samplers, property.sampler);
+                        std::string samplerLabel = GetAssetLabel(samplers, property.sampler);
                         if (ImGui::BeginCombo(property.name.c_str(), samplerLabel.c_str()))
                         {
                             bool selected = property.sampler == UUID(-1);
@@ -953,7 +1001,7 @@ namespace Hazel
                     }
                     case MaterialAssetPropertyType::Texture:
                     {
-                        std::string textureLabel = GetTextureLabel(textures, property.texture);
+                        std::string textureLabel = GetAssetLabel(textures, property.texture);
                         if (ImGui::BeginCombo(property.name.c_str(), textureLabel.c_str()))
                         {
                             bool selected = property.texture == UUID(-1);
@@ -986,8 +1034,8 @@ namespace Hazel
                     {
                         const auto samplerName = property.name + " Sampler";
                         const auto textureName = property.name + " Texture";
-                        std::string samplerLabel = GetSamplerLabel(samplers, property.sampler);
-                        std::string textureLabel = GetTextureLabel(textures, property.texture);
+                        std::string samplerLabel = GetAssetLabel(samplers, property.sampler);
+                        std::string textureLabel = GetAssetLabel(textures, property.texture);
 
                         if (ImGui::BeginCombo(samplerName.c_str(), samplerLabel.c_str()))
                         {

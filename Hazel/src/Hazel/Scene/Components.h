@@ -3,6 +3,8 @@
 #include <entt.hpp>
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
+#include "Hazel/Renderer/Mesh.h"
+#include "Hazel/Renderer/Material.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 
 #include <glm/glm.hpp>
@@ -10,6 +12,9 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include "Hazel/Asset/AssetManager.h"
+#include "Hazel/Project/Project.h"
+
 #include <glm/gtx/quaternion.hpp>
 #include <yaml-cpp/yaml.h>
 
@@ -282,16 +287,34 @@ namespace Hazel
 
     struct MeshRendererComponent
     {
-        int dummyInt;
+        UUID meshUUID = UUID(-1);
+        UUID materialUUID = UUID(-1);
+        MeshAsset* meshAsset = nullptr;
+        MaterialAsset* materialAsset = nullptr;
 
         YAML::Node Serialize() const
         {
-            return YAML::Node();
+            YAML::Node rootNode;
+            rootNode["MeshUUID"] = meshUUID;
+            rootNode["MaterialUUID"] = materialUUID;
+            return rootNode;
         }
 
         static MeshRendererComponent Deserialize(const YAML::Node& node)
         {
-            return MeshRendererComponent();
+            AssetManager& assetManager = Project::GetActive()->GetAssetManager();
+            MeshRendererComponent component;
+            component.meshUUID = node["MeshUUID"][0] ? node["MeshUUID"][0].as<UUID>() : UUID(-1);
+            component.materialUUID = node["MaterialUUID"][0] ? node["MaterialUUID"][0].as<UUID>() : UUID(-1);
+            if (component.meshUUID != UUID(-1))
+            {
+                component.meshAsset = assetManager.GetAsset<MeshAsset>(component.meshUUID);
+            }
+            if (component.materialUUID != UUID(-1))
+            {
+                component.materialAsset = assetManager.GetAsset<MaterialAsset>(component.materialUUID);
+            }
+            return component;
         }
     };
 
