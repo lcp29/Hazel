@@ -12,13 +12,16 @@
 #include "Hazel/Core/Window.h"
 #include "Hazel/RHI/RHI.h"
 
+#include <mutex>
+#include <vector>
+
 namespace Hazel
 {
     class GraphicsContext
     {
     public:
         GraphicsContext(const std::string& appName, Window* window);
-        ~GraphicsContext() = default;
+        ~GraphicsContext();
 
         void Init(Window* window);
 
@@ -44,13 +47,18 @@ namespace Hazel
 
         static Scope<GraphicsContext> Create(std::string appName, Window* window);
 
-        RHICommandBuffer* GetDefaultCommandBuffer() const
-        {
-            m_DefaultCommandBuffer->Reset();
-            return m_DefaultCommandBuffer;
-        }
+        RHICommandBuffer* AcquireDefaultCommandBuffer();
+        void ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer);
+        void ReleaseDefaultCommandBuffers();
 
     private:
+        struct PooledCommandBuffer
+        {
+            RHICommandPool* pool = nullptr;
+            RHICommandBuffer* commandBuffer = nullptr;
+            bool inUse = false;
+        };
+
         bool m_Initialized = false;
         std::string m_AppName;
         Window* m_Window = nullptr;
@@ -60,8 +68,7 @@ namespace Hazel
         RHIAdapter m_Adapter;
         RHIDevice* m_Device = nullptr;
 
-        RHICommandPool* m_DefaultCommandPool;
-        // Do not use with multiple threads!!!
-        RHICommandBuffer* m_DefaultCommandBuffer;
+        mutable std::mutex m_DefaultCommandBufferPoolMutex;
+        std::vector<PooledCommandBuffer> m_DefaultCommandBuffers;
     };
 } // namespace Hazel

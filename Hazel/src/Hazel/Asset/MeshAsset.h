@@ -3,11 +3,12 @@
 //
 
 #pragma once
-#include "Hazel/Core/UUID.h"
+#include "Asset.h"
 
-#include <yaml-cpp/yaml.h>
 #include <filesystem>
 #include <glm/glm.hpp>
+#include <vector>
+#include <yaml-cpp/yaml.h>
 
 namespace Hazel
 {
@@ -29,44 +30,71 @@ namespace Hazel
 
     struct MeshAssetMeta
     {
-        UUID uuid = 0;
-        bool generateMeshlets = false;
-
         YAML::Node Serialize() const;
         static MeshAssetMeta Deserialize(const YAML::Node& node);
-    };
-
-    class Mesh;
-    class Renderer;
-
-    class MeshAsset
-    {
-    public:
-        MeshAsset() = delete;
-
-        MeshAsset(UUID uuid, Renderer* renderer, std::filesystem::path filePath, MeshAssetMeta meta)
-            : m_UUID(uuid), m_Renderer(renderer), m_FilePath(std::move(filePath)), m_Meta(meta)
-        {
-            LoadMeshFromFile();
-        }
-
-        MeshAsset(const MeshAsset&) = delete;
-        MeshAsset& operator=(const MeshAsset&) = delete;
-        MeshAsset(MeshAsset&& other) noexcept;
-        MeshAsset& operator=(MeshAsset&& other) noexcept;
-        ~MeshAsset();
-
-        void Load();
-        void Unload();
+        static MeshAssetMeta CreateDefault();
 
         UUID GetUUID() const
         {
             return m_UUID;
         }
 
-        std::filesystem::path GetFilePath() const
+        uint64_t GetVersion() const
         {
-            return m_FilePath;
+            return m_Version;
+        }
+
+        void VersionUp()
+        {
+            m_Version++;
+        }
+
+        bool GenerateMeshlets() const
+        {
+            return m_GenerateMeshlets;
+        }
+
+        void SetGenerateMeshlets(bool generateMeshlets)
+        {
+            if (m_GenerateMeshlets == generateMeshlets)
+            {
+                return;
+            }
+            m_GenerateMeshlets = generateMeshlets;
+            VersionUp();
+        }
+
+    private:
+        UUID m_UUID = 0;
+        bool m_GenerateMeshlets = false;
+        uint64_t m_Version = 0;
+    };
+
+    struct MeshAssetData
+    {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+        std::vector<MeshletInfo> meshlets;
+    };
+
+    class MeshAsset : public Asset
+    {
+    public:
+        MeshAsset() = delete;
+
+        MeshAsset(AssetRegistryTerm* registryTerm,
+                  const MeshAssetMeta& meta,
+                  MeshAssetData data)
+            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data)) {}
+
+        uint64_t GetVersion() const final
+        {
+            return m_Meta.GetVersion();
+        }
+
+        void VersionUp() final
+        {
+            m_Meta.VersionUp();
         }
 
         const MeshAssetMeta& GetMeta() const
@@ -79,19 +107,18 @@ namespace Hazel
             return m_Meta;
         }
 
-        void Recreate();
+        const MeshAssetData& GetData() const
+        {
+            return m_Data;
+        }
+
+        MeshAssetData& GetData()
+        {
+            return m_Data;
+        }
 
     private:
-        void LoadMeshFromFile();
-
-        UUID m_UUID = 0;
-        Renderer* m_Renderer = nullptr;
-        bool m_IsLoaded = false;
-        std::filesystem::path m_FilePath;
-        MeshAssetMeta m_Meta;
-        std::vector<Vertex> m_Vertices;
-        std::vector<uint32_t> m_Indices;
-        std::vector<MeshletInfo> m_Meshlets;
-        Mesh* m_Mesh = nullptr;
+        MeshAssetMeta m_Meta{};
+        MeshAssetData m_Data{};
     };
 } // Hazel

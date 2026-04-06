@@ -123,20 +123,21 @@ namespace Hazel
     YAML::Node RenderTextureAssetMeta::Serialize() const
     {
         YAML::Node rootNode;
-        rootNode["UUID"] = static_cast<uint64_t>(uuid);
+        rootNode["UUID"] = static_cast<uint64_t>(m_UUID);
+        rootNode["Version"] = m_Version;
 
         YAML::Node descNode;
         rootNode["Desc"] = descNode;
 
-        descNode["Width"] = desc.width;
-        descNode["Height"] = desc.height;
-        descNode["Depth"] = desc.depth;
-        descNode["ArrayLayers"] = desc.arrayLayers;
-        descNode["ViewType"] = static_cast<int>(desc.viewType);
-        descNode["UseMipmap"] = desc.useMipmap;
-        descNode["PerFrame"] = desc.perFrame;
-        descNode["Format"] = FormatToString(desc.format);
-        descNode["Usages"] = SerializeUsages(desc.usages);
+        descNode["Width"] = m_Desc.width;
+        descNode["Height"] = m_Desc.height;
+        descNode["Depth"] = m_Desc.depth;
+        descNode["ArrayLayers"] = m_Desc.arrayLayers;
+        descNode["ViewType"] = static_cast<int>(m_Desc.viewType);
+        descNode["UseMipmap"] = m_Desc.useMipmap;
+        descNode["PerFrame"] = m_Desc.perFrame;
+        descNode["Format"] = FormatToString(m_Desc.format);
+        descNode["Usages"] = SerializeUsages(m_Desc.usages);
 
         return rootNode;
     }
@@ -145,103 +146,40 @@ namespace Hazel
     {
         RenderTextureAssetMeta meta;
 
-        meta.uuid = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
         if (node["Desc"])
         {
             const auto& descNode = node["Desc"];
-            meta.desc.width = descNode["Width"] ? descNode["Width"].as<uint32_t>() : 256;
-            meta.desc.height = descNode["Height"] ? descNode["Height"].as<uint32_t>() : 256;
-            meta.desc.depth = descNode["Depth"] ? descNode["Depth"].as<uint32_t>() : 1;
-            meta.desc.arrayLayers = descNode["ArrayLayers"] ? descNode["ArrayLayers"].as<uint32_t>() : 1;
-            meta.desc.viewType = descNode["ViewType"]
+            meta.m_Desc.width = descNode["Width"] ? descNode["Width"].as<uint32_t>() : 256;
+            meta.m_Desc.height = descNode["Height"] ? descNode["Height"].as<uint32_t>() : 256;
+            meta.m_Desc.depth = descNode["Depth"] ? descNode["Depth"].as<uint32_t>() : 1;
+            meta.m_Desc.arrayLayers = descNode["ArrayLayers"] ? descNode["ArrayLayers"].as<uint32_t>() : 1;
+            meta.m_Desc.viewType = descNode["ViewType"]
                                      ? static_cast<RHIImageViewType>(descNode["ViewType"].as<int>())
                                      : Image2D;
-            meta.desc.useMipmap = descNode["UseMipmap"] ? descNode["UseMipmap"].as<bool>() : false;
-            meta.desc.perFrame = descNode["PerFrame"] ? descNode["PerFrame"].as<bool>() : true;
-            meta.desc.format = descNode["Format"] ? TryParseFormat(descNode["Format"]) : RHIFormat::BGRA8UNorm;
-            meta.desc.usages = descNode["Usages"] ? DeserializeUsages(descNode["Usages"]) : RHIImageUsages{};
+            meta.m_Desc.useMipmap = descNode["UseMipmap"] ? descNode["UseMipmap"].as<bool>() : false;
+            meta.m_Desc.perFrame = descNode["PerFrame"] ? descNode["PerFrame"].as<bool>() : true;
+            meta.m_Desc.format = descNode["Format"] ? TryParseFormat(descNode["Format"]) : RHIFormat::BGRA8UNorm;
+            meta.m_Desc.usages = descNode["Usages"] ? DeserializeUsages(descNode["Usages"]) : RHIImageUsages{};
         }
         return meta;
     }
 
-    void RenderTextureAsset::Load()
+    RenderTextureAssetMeta RenderTextureAssetMeta::CreateDefault()
     {
-        if (m_IsLoaded)
-        {
-            return;
-        }
-
-        auto renderTexture = std::make_unique<RenderTexture>(m_UUID, m_Renderer, m_Meta.desc);
-        m_RenderTexture = m_Renderer->AddRenderTexture(std::move(renderTexture));
-
-        m_IsLoaded = true;
-    }
-
-    void RenderTextureAsset::Unload()
-    {
-        if (!m_IsLoaded)
-        {
-            return;
-        }
-
-        m_Renderer->RemoveRenderTexture(m_RenderTexture);
-        m_RenderTexture = nullptr;
-
-        m_IsLoaded = false;
-    }
-
-    RenderTextureAsset::RenderTextureAsset(RenderTextureAsset&& other) noexcept
-        : m_UUID(other.m_UUID)
-          , m_IsLoaded(other.m_IsLoaded)
-          , m_MetaPath(std::move(other.m_MetaPath))
-          , m_Renderer(other.m_Renderer)
-          , m_Meta(other.m_Meta)
-          , m_RenderTexture(other.m_RenderTexture)
-    {
-        other.m_IsLoaded = false;
-        other.m_Renderer = nullptr;
-        other.m_RenderTexture = nullptr;
-    }
-
-    RenderTextureAsset& RenderTextureAsset::operator=(RenderTextureAsset&& other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        Release();
-
-        m_UUID = other.m_UUID;
-        m_IsLoaded = other.m_IsLoaded;
-        m_MetaPath = std::move(other.m_MetaPath);
-        m_Renderer = other.m_Renderer;
-        m_Meta = other.m_Meta;
-        m_RenderTexture = other.m_RenderTexture;
-
-        other.m_IsLoaded = false;
-        other.m_Renderer = nullptr;
-        other.m_RenderTexture = nullptr;
-        return *this;
-    }
-
-    RenderTextureAsset::~RenderTextureAsset()
-    {
-        Release();
-    }
-
-    void RenderTextureAsset::Release()
-    {
-        Unload();
-    }
-
-    void RenderTextureAsset::Recreate()
-    {
-        if (m_IsLoaded)
-        {
-            m_Renderer->GetDevice()->WaitIdle();
-            Unload();
-            Load();
-        }
+        RenderTextureAssetMeta meta;
+        meta.m_UUID = UUID();
+        meta.m_Version = 0;
+        meta.m_Desc.width = 1;
+        meta.m_Desc.height = 1;
+        meta.m_Desc.depth = 1;
+        meta.m_Desc.arrayLayers = 1;
+        meta.m_Desc.viewType = RHIImageViewType::Image2D;
+        meta.m_Desc.useMipmap = false;
+        meta.m_Desc.perFrame = false;
+        meta.m_Desc.format = RHIFormat::BGRA8UNorm;
+        meta.m_Desc.usages = {};
+        return meta;
     }
 } // namespace Hazel

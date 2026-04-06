@@ -3,7 +3,10 @@
 //
 
 #pragma once
+#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 #include "Hazel/RHI/RHI.h"
+
+#include <memory>
 #include <vector>
 
 namespace Hazel
@@ -21,15 +24,20 @@ namespace Hazel
         bool hostCoherent = false;
     };
 
-    class RenderBuffer
+    class GPURenderBufferAsset : public GPUAsset
     {
     public:
-        RenderBuffer() = delete;
-        RenderBuffer(Renderer* renderer, const RenderBufferDesc& desc);
-        ~RenderBuffer();
+        GPURenderBufferAsset() = delete;
 
-        void Release();
-        void ReleaseImmediate();
+        GPURenderBufferAsset(UUID uuid,
+                             uint64_t sourceVersion,
+                             Renderer* renderer,
+                             const RenderBufferDesc& desc,
+                             std::vector<RHIBuffer*> buffers,
+                             uint64_t lastReferencedFrame = 0);
+
+        void Release() override;
+        void ReleaseImmediate() override;
 
         RHIBuffer* GetBuffer() const;
 
@@ -56,4 +64,10 @@ namespace Hazel
         Renderer* m_Renderer = nullptr;
         std::vector<RHIBuffer*> m_Buffers;
     };
+
+    std::unique_ptr<GPURenderBufferAsset> CreateGPURenderBufferAsset(Renderer* renderer,
+                                                                     UUID uuid,
+                                                                     uint64_t sourceVersion,
+                                                                     const RenderBufferDesc& desc,
+                                                                     uint64_t lastReferencedFrame = 0);
 } // Hazel

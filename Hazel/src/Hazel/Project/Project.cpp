@@ -26,7 +26,7 @@ namespace Hazel
             project->m_ProjectFilePath = path;
             s_ActiveProject = project;
             project->m_AssetManager = std::make_unique<AssetManager>(project.get(), renderer);
-            project->m_AssetManager->ScanAll();
+            project->m_AssetManager->InitializeAssetRegistry();
             return s_ActiveProject;
         }
 

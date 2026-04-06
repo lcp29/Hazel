@@ -1,21 +1,26 @@
 #pragma once
 
-#include "Hazel/Renderer/ComputeShader.h"
+#include "BindlessRegistry.h"
+#include "MaterialShaderRegistry.h"
+#include "GPUAsset/GPUAssetResolveResult.h"
+#include "Hazel/Asset/MaterialAsset.h"
+#include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
 #include "Hazel/Renderer/Camera.h"
 #include "Hazel/Renderer/GraphicsContext.h"
-#include "Hazel/Renderer/RenderTexture.h"
-#include "Hazel/Renderer/Sampler.h"
-#include "Hazel/Renderer/Shader.h"
-#include "Hazel/Renderer/Texture.h"
+#include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
+#include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
+#include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
 #include "Hazel/Renderer/RendererAPI.h"
-#include "Hazel/Renderer/RenderBuffer.h"
-#include "Hazel/Renderer/Mesh.h"
 
 #include <memory>
+#include <vector>
 
 namespace Hazel
 {
+    struct RenderBufferDesc;
+    class MaterialAsset;
     class ResourceHeapAllocator;
+    class MaterialShaderRegistry;
 
     class Renderer
     {
@@ -28,7 +33,7 @@ namespace Hazel
             RHICommandPool* commandPool = nullptr;
             RHICommandBuffer* commandBuffer = nullptr;
 
-            // updated runtime no need create at first
+            // updated at runtime no need create at first
             uint32_t frameNumber = 0;
             RHISyncPoint renderCompleteSyncPoint;
             RHISyncPoint imageAvailableSyncPoint;
@@ -42,10 +47,7 @@ namespace Hazel
         // void Render(RenderScene* renderScene, Camera& camera);
         void Render(Camera& camera);
 
-        static RendererAPI::API GetAPI()
-        {
-            return RendererAPI::GetAPI();
-        }
+        static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
         void OnResize();
         void OnViewportResize(uint32_t width, uint32_t height);
@@ -53,106 +55,62 @@ namespace Hazel
         void BeginFrame();
         void EndFrame();
 
-        GraphicsContext* GetGraphicsContext() const
+        GraphicsContext* GetGraphicsContext() const { return m_GraphicsContext; }
+        RHIAdapter GetAdapter() const { return m_GraphicsContext->GetAdapter(); }
+        RHIDevice* GetDevice() const { return m_Device; }
+        RHIInstance* GetInstance() const { return m_Instance; }
+        RHISwapchain* GetSwapchain() const { return m_Swapchain; }
+
+        FrameData& GetFrameData(uint64_t frameIndex) { return m_Frames[frameIndex % m_MaxFramesInFlight]; }
+        uint64_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+        uint64_t GetCurrentFrameInFlightIndex() const { return m_CurrentFrame % m_MaxFramesInFlight; }
+        FrameData& GetCurrentFrameData() { return m_Frames[GetCurrentFrameInFlightIndex()]; }
+        int GetMaxFramesInFlight() const { return m_MaxFramesInFlight; }
+
+        GPUAsset* GetDefaultGPUAsset(AssetType type);
+        GPURenderTextureAsset* GetDefaultRenderTexture() const { return m_DefaultRenderTexture.get(); }
+
+        GPUTextureAsset* GetErrorTexture() const { return m_ErrorTexture.get(); }
+        uint32_t GetErrorTextureBindingSlot() const { return m_ErrorTextureBindingSlot; }
+        GPUTextureAsset* GetWhiteTexture() const { return m_WhiteTexture.get(); }
+        uint32_t GetWhiteTextureBindingSlot() const { return m_WhiteTextureBindingSlot; }
+        GPUSamplerAsset* GetDefaultSampler() const { return m_DefaultSampler.get(); }
+        uint32_t GetDefaultSamplerBindingSlot() const { return m_DefaultSamplerBindingSlot; }
+
+        uint32_t GetWhiteTextureWithDefaultSamplerBindingSlot() const
         {
-            return m_GraphicsContext;
+            return m_WhiteTextureWithDefaultSamplerBindingSlot;
         }
 
-        RHIAdapter GetAdapter() const
-        {
-            return m_GraphicsContext->GetAdapter();
-        }
+        uint32_t RegisterBindlessTexture(GPUAssetResolveResult texture);
+        uint32_t RegisterBindlessSampler(GPUAssetResolveResult sampler);
+        uint32_t RegisterBindlessSamplerWithImage(GPUAssetResolveResult sampler, GPUAssetResolveResult image);
 
-        RHIDevice* GetDevice() const
-        {
-            return m_Device;
-        }
+        GPUAssetResolveResult ResolveGPUAsset(UUID uuid, AssetType type);
+        GPUAssetResolveResult ResolveGPUAssetBlocked(UUID uuid, AssetType type);
 
-        RHIInstance* GetInstance() const
-        {
-            return m_Instance;
-        }
+        GPUAssetResolveResult ResolveGPUGraphicsPipeline(UUID material,
+                                                         const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                         RHIFormat depthStencilFormat);
+        GPUAssetResolveResult ResolveGPUGraphicsPipelineBlocked(UUID material,
+                                                                const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                                RHIFormat depthStencilFormat);
+        GPUAssetResolveResult ResolveGPURenderTexture(const RenderTextureDesc& desc,
+                                                      uint64_t lastReferencedFrame = -1);
+        GPUAssetResolveResult ResolveGPURenderBuffer(const RenderBufferDesc& desc,
+                                                     uint64_t lastReferencedFrame = -1);
+        GPUAssetResolveResult ResolveGPUSampler(const RHISamplerDesc& desc,
+                                                uint64_t lastReferencedFrame = -1);
 
-        RHISwapchain* GetSwapchain() const
-        {
-            return m_Swapchain;
-        }
+        uint32_t RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material);
+        void UnregisterMaterial(UUID shader, uint64_t shaderSourceVersion, uint32_t materialID);
+        void RegisterShader(UUID uuid, uint64_t sourceVersion, const RHIShaderReflection& reflection);
+        void UnregisterShader(UUID uuid, uint64_t sourceVersion);
 
-        FrameData& GetFrameData(uint64_t frameIndex)
-        {
-            return m_Frames[frameIndex % m_MaxFramesInFlight];
-        }
+        MaterialShaderRegistry* GetMaterialShaderRegistry() const { return m_MaterialShaderRegistry.get(); }
+        ResourceHeapAllocator* GetResourceHeapAllocator() const { return m_ResourceHeapAllocator.get(); }
 
-        uint64_t GetCurrentFrameIndex() const
-        {
-            return m_CurrentFrame;
-        }
-
-        uint64_t GetCurrentFrameInFlightIndex() const
-        {
-            return m_CurrentFrame % m_MaxFramesInFlight;
-        }
-
-        FrameData& GetCurrentFrameData()
-        {
-            return m_Frames[GetCurrentFrameInFlightIndex()];
-        }
-
-        int GetMaxFramesInFlight() const
-        {
-            return m_MaxFramesInFlight;
-        }
-
-        RenderTexture* GetDefaultRenderTexture() const
-        {
-            return m_DefaultRenderTexture.get();
-        }
-
-        Mesh* AddMesh(std::unique_ptr<Mesh> mesh);
-        void RemoveMesh(Mesh* mesh);
-
-        RenderTexture* AddRenderTexture(std::unique_ptr<RenderTexture> renderTexture);
-        void RemoveRenderTexture(RenderTexture* renderTexture);
-
-        Sampler* AddSampler(std::unique_ptr<Sampler> sampler);
-        void RemoveSampler(Sampler* sampler);
-
-        Texture* AddTexture(std::unique_ptr<Texture> texture);
-        void RemoveTexture(Texture* texture);
-
-        Shader* AddShader(std::unique_ptr<Shader> shader);
-        void RemoveShader(Shader* shader);
-
-        ComputeShader* AddComputeShader(std::unique_ptr<ComputeShader> computeShader);
-        void RemoveComputeShader(ComputeShader* computeShader);
-
-        RenderBuffer* AddRenderBuffer(std::unique_ptr<RenderBuffer> renderBuffer);
-        void RemoveRenderBuffer(RenderBuffer* renderBuffer);
-
-        ResourceHeapAllocator* GetResourceHeapAllocator() const
-        {
-            return m_ResourceHeapAllocator.get();
-        }
-
-        Texture* GetErrorTexture()
-        {
-            return m_ErrorTexture.get();
-        }
-
-        Texture* GetWhiteTexture()
-        {
-            return m_WhiteTexture.get();
-        }
-
-        Sampler* GetDefaultSampler()
-        {
-            return m_DefaultSampler.get();
-        }
-
-        void Step()
-        {
-            m_CurrentFrame++;
-        }
+        void Step() { m_CurrentFrame++; }
 
         void Release();
 
@@ -163,6 +121,12 @@ namespace Hazel
         void DestroySwapchainResources();
         void RecreateDefaultRenderTexture();
         void CreateDefaultResources();
+        GPUAssetResolveResult ResolveGPUAssetWhileLoading(Asset* asset, AssetType type);
+        template <typename TAsset, typename... Args>
+        GPUAssetResolveResult ResolveDirectGPUAsset(Args&&... args);
+        template <typename TAsset, typename... Args>
+        GPUAssetResolveResult ResolveDirectGPUAssetBlocked(Args&&... args);
+        std::unique_ptr<GPUAsset> LoadGPUAsset(Asset* asset);
 
         // synchronized from global setting
         uint32_t m_MaxFramesInFlight = 3;
@@ -173,7 +137,7 @@ namespace Hazel
         RHIInstance* m_Instance = nullptr;
         RHIDevice* m_Device = nullptr;
 
-        // swapchain, final render target and views
+        // swapchain, final render target
         uint64_t m_CurrentFrame = 0;
         Window* m_Window = nullptr;
         RHISurface* m_WindowSurface = nullptr;
@@ -181,22 +145,26 @@ namespace Hazel
         uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
         std::vector<FrameData> m_Frames;
         UUID m_DefaultRenderTextureUUID = UUID();
-        std::unique_ptr<RenderTexture> m_DefaultRenderTexture;
-        RHIOwnerSet<RenderTexture> m_OffscreenRenderTextures;
-        RHIOwnerSet<Sampler> m_Samplers;
-        RHIOwnerSet<Texture> m_Textures;
-        RHIOwnerSet<Shader> m_Shaders;
-        RHIOwnerSet<ComputeShader> m_ComputeShaders;
-        RHIOwnerSet<Mesh> m_Meshes;
-        RHIOwnerSet<RenderBuffer> m_RenderBuffers;
+        std::unique_ptr<GPURenderTextureAsset> m_DefaultRenderTexture;
+
+        // TODO: refactored gpu asset management below
+        GPUAssetRegistry m_GPUAssetRegistry;
         std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator;
+        std::unique_ptr<MaterialShaderRegistry> m_MaterialShaderRegistry;
+        std::unique_ptr<BindlessRegistry> m_BindlessRegistry;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();
-        std::unique_ptr<Texture> m_ErrorTexture;
+        uint32_t m_ErrorTextureBindingSlot = 0;
+        std::unique_ptr<GPUTextureAsset> m_ErrorTexture;
         UUID m_WhiteTextureUUID = UUID();
-        std::unique_ptr<Texture> m_WhiteTexture;
+        uint32_t m_WhiteTextureBindingSlot = 0;
+        std::unique_ptr<GPUTextureAsset> m_WhiteTexture;
         UUID m_DefaultSamplerUUID = UUID();
-        std::unique_ptr<Sampler> m_DefaultSampler;
+        uint32_t m_DefaultSamplerBindingSlot = 0;
+        std::unique_ptr<GPUSamplerAsset> m_DefaultSampler;
+        uint32_t m_WhiteTextureWithDefaultSamplerBindingSlot = 0;
     };
 } // namespace Hazel
+
+#include "RendererDirectGPUAsset.inl"

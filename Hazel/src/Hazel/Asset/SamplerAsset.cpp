@@ -78,23 +78,24 @@ namespace Hazel
     YAML::Node SamplerAssetMeta::Serialize() const
     {
         YAML::Node rootNode;
-        rootNode["UUID"] = static_cast<uint64_t>(uuid);
+        rootNode["UUID"] = static_cast<uint64_t>(m_UUID);
+        rootNode["Version"] = m_Version;
 
         YAML::Node samplerDescNode;
         rootNode["Desc"] = samplerDescNode;
-        samplerDescNode["MinFilter"] = EnumToString(desc.minFilter, GetFilterMap());
-        samplerDescNode["MagFilter"] = EnumToString(desc.magFilter, GetFilterMap());
-        samplerDescNode["MipFilter"] = EnumToString(desc.mipFilter, GetFilterMap());
-        samplerDescNode["AddressModeU"] = EnumToString(desc.addressModeU, GetAddressModeMap());
-        samplerDescNode["AddressModeV"] = EnumToString(desc.addressModeV, GetAddressModeMap());
-        samplerDescNode["AddressModeW"] = EnumToString(desc.addressModeW, GetAddressModeMap());
-        samplerDescNode["MipLodBias"] = desc.mipLodBias;
-        samplerDescNode["MinLod"] = desc.minLod;
-        samplerDescNode["MaxLod"] = desc.maxLod;
-        samplerDescNode["MaxAnisotropy"] = desc.maxAnisotropy;
-        samplerDescNode["EnableAnisotropy"] = desc.enableAnisotropy;
-        samplerDescNode["CompareEnable"] = desc.compareEnable;
-        samplerDescNode["CompareOp"] = EnumToString(desc.compareOp, GetCompareOpMap());
+        samplerDescNode["MinFilter"] = EnumToString(m_Desc.minFilter, GetFilterMap());
+        samplerDescNode["MagFilter"] = EnumToString(m_Desc.magFilter, GetFilterMap());
+        samplerDescNode["MipFilter"] = EnumToString(m_Desc.mipFilter, GetFilterMap());
+        samplerDescNode["AddressModeU"] = EnumToString(m_Desc.addressModeU, GetAddressModeMap());
+        samplerDescNode["AddressModeV"] = EnumToString(m_Desc.addressModeV, GetAddressModeMap());
+        samplerDescNode["AddressModeW"] = EnumToString(m_Desc.addressModeW, GetAddressModeMap());
+        samplerDescNode["MipLodBias"] = m_Desc.mipLodBias;
+        samplerDescNode["MinLod"] = m_Desc.minLod;
+        samplerDescNode["MaxLod"] = m_Desc.maxLod;
+        samplerDescNode["MaxAnisotropy"] = m_Desc.maxAnisotropy;
+        samplerDescNode["EnableAnisotropy"] = m_Desc.enableAnisotropy;
+        samplerDescNode["CompareEnable"] = m_Desc.compareEnable;
+        samplerDescNode["CompareOp"] = EnumToString(m_Desc.compareOp, GetCompareOpMap());
 
         return rootNode;
     }
@@ -102,9 +103,10 @@ namespace Hazel
     SamplerAssetMeta SamplerAssetMeta::Deserialize(const YAML::Node& node)
     {
         SamplerAssetMeta meta;
-        meta.uuid = UUID(node["UUID"].as<uint64_t>());
+        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
 
-        auto& desc = meta.desc;
+        auto& desc = meta.m_Desc;
         auto descNode = node["Desc"];
         desc.minFilter = descNode["MinFilter"]
                              ? TryParseEnum(descNode["MinFilter"], GetFilterMap())
@@ -137,83 +139,24 @@ namespace Hazel
         return meta;
     }
 
-    void SamplerAsset::Load()
+    SamplerAssetMeta SamplerAssetMeta::CreateDefault()
     {
-        if (m_IsLoaded)
-        {
-            return;
-        }
-
-        auto sampler = m_Renderer->GetDevice()->CreateSampler(m_Meta.desc);
-        m_Sampler = m_Renderer->AddSampler(std::make_unique<Sampler>(m_UUID, m_Renderer, m_Meta.desc, sampler));
-
-        m_IsLoaded = true;
-    }
-
-    void SamplerAsset::Unload()
-    {
-        if (!m_IsLoaded)
-        {
-            return;
-        }
-
-        m_Renderer->RemoveSampler(m_Sampler);
-        m_Sampler = nullptr;
-        m_IsLoaded = false;
-    }
-
-    SamplerAsset::SamplerAsset(SamplerAsset&& other) noexcept
-        : m_UUID(other.m_UUID)
-          , m_IsLoaded(other.m_IsLoaded)
-          , m_FilePath(std::move(other.m_FilePath))
-          , m_Renderer(other.m_Renderer)
-          , m_Meta(other.m_Meta)
-          , m_Sampler(other.m_Sampler)
-    {
-        other.m_Renderer = nullptr;
-        other.m_Sampler = nullptr;
-        other.m_IsLoaded = false;
-    }
-
-    SamplerAsset& SamplerAsset::operator=(SamplerAsset&& other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        Release();
-
-        m_UUID = other.m_UUID;
-        m_IsLoaded = other.m_IsLoaded;
-        m_FilePath = std::move(other.m_FilePath);
-        m_Renderer = other.m_Renderer;
-        m_Meta = other.m_Meta;
-        m_Sampler = other.m_Sampler;
-
-        other.m_Renderer = nullptr;
-        other.m_Sampler = nullptr;
-        other.m_IsLoaded = false;
-        return *this;
-    }
-
-    SamplerAsset::~SamplerAsset()
-    {
-        Release();
-    }
-
-    void SamplerAsset::Release()
-    {
-        Unload();
-    }
-
-    void SamplerAsset::Recreate()
-    {
-        if (m_IsLoaded)
-        {
-            m_Renderer->GetDevice()->WaitIdle();
-            Unload();
-            Load();
-        }
+        SamplerAssetMeta meta;
+        meta.m_UUID = UUID();
+        meta.m_Version = 0;
+        meta.m_Desc.minFilter = RHISamplerFilter::Linear;
+        meta.m_Desc.magFilter = RHISamplerFilter::Linear;
+        meta.m_Desc.mipFilter = RHISamplerFilter::Linear;
+        meta.m_Desc.addressModeU = RHISamplerAddressMode::Repeat;
+        meta.m_Desc.addressModeV = RHISamplerAddressMode::Repeat;
+        meta.m_Desc.addressModeW = RHISamplerAddressMode::Repeat;
+        meta.m_Desc.mipLodBias = 0.0f;
+        meta.m_Desc.minLod = 0.0f;
+        meta.m_Desc.maxLod = 0.0f;
+        meta.m_Desc.maxAnisotropy = 0.0f;
+        meta.m_Desc.enableAnisotropy = false;
+        meta.m_Desc.compareEnable = false;
+        meta.m_Desc.compareOp = RHICompareOp::Never;
+        return meta;
     }
 } // namespace Hazel

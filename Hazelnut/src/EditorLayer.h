@@ -10,6 +10,8 @@
 
 namespace Hazel
 {
+    class GPURenderBufferAsset;
+
     class EditorLayer : public Layer
     {
     public:
@@ -83,8 +85,8 @@ namespace Hazel
         // rendering
         Renderer* m_Renderer = nullptr;
         UUID m_ObjectIDRenderTextureUUID = UUID();
-        RenderTexture* m_ObjectIDRenderTexture = nullptr;
-        RenderBuffer* m_ObjectIDRenderTextureBuffer = nullptr;
+        GPUAssetResolveResult m_ObjectIDRenderTexture = {nullptr, false};
+        GPUAssetResolveResult m_ObjectIDRenderTextureBuffer = {nullptr, false};
 
         // viewport related
         bool m_ViewportFocused = false, m_ViewportHovered = false;

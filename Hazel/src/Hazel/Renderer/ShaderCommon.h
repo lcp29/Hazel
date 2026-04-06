@@ -6,6 +6,7 @@
 #include "Hazel/RHI/RHIFactory.h"
 
 #include <shaderc/shaderc.hpp>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -106,5 +107,77 @@ namespace Hazel
             options);
 
         return result;
+    }
+
+    inline bool ReflectShaderSPIRV(const std::vector<uint32_t>& spirvBinary, RHIShaderReflection& reflection)
+    {
+        return RHIShader::Reflect(spirvBinary, reflection);
+    }
+
+    inline RHIShaderReflection MergeShaderReflections(const RHIShaderReflection& vertexReflection,
+                                                      const RHIShaderReflection& fragmentReflection)
+    {
+        RHIShaderReflection mergedReflection = vertexReflection;
+
+        for (const auto& fragmentGroup : fragmentReflection.resourceGroups)
+        {
+            auto groupIt = std::ranges::find_if(mergedReflection.resourceGroups,
+                                                [&fragmentGroup](const RHIShaderResourceGroupReflection& group) {
+                                                    return group.set == fragmentGroup.set;
+                                                });
+
+            if (groupIt == mergedReflection.resourceGroups.end())
+            {
+                mergedReflection.resourceGroups.push_back(fragmentGroup);
+                continue;
+            }
+
+            for (const auto& fragmentSlot : fragmentGroup.slots)
+            {
+                auto slotIt = std::ranges::find_if(groupIt->slots,
+                                                   [&fragmentSlot](const RHIShaderSlotReflection& slot) {
+                                                       return slot.slot == fragmentSlot.slot;
+                                                   });
+
+                if (slotIt == groupIt->slots.end())
+                {
+                    groupIt->slots.push_back(fragmentSlot);
+                }
+            }
+        }
+
+        for (const auto& fragmentPushConstant : fragmentReflection.pushConstants)
+        {
+            auto pushConstantIt = std::ranges::find_if(mergedReflection.pushConstants,
+                                                       [&fragmentPushConstant](const RHIShaderPushConstantReflection& pushConstant) {
+                                                           return pushConstant.offset == fragmentPushConstant.offset &&
+                                                                  pushConstant.size == fragmentPushConstant.size;
+                                                       });
+
+            if (pushConstantIt == mergedReflection.pushConstants.end())
+            {
+                mergedReflection.pushConstants.push_back(fragmentPushConstant);
+            }
+        }
+
+        std::ranges::sort(mergedReflection.resourceGroups,
+                          [](const RHIShaderResourceGroupReflection& lhs, const RHIShaderResourceGroupReflection& rhs) {
+                              return lhs.set < rhs.set;
+                          });
+
+        for (auto& group : mergedReflection.resourceGroups)
+        {
+            std::ranges::sort(group.slots,
+                              [](const RHIShaderSlotReflection& lhs, const RHIShaderSlotReflection& rhs) {
+                                  return lhs.slot < rhs.slot;
+                              });
+        }
+
+        std::ranges::sort(mergedReflection.pushConstants,
+                          [](const RHIShaderPushConstantReflection& lhs, const RHIShaderPushConstantReflection& rhs) {
+                              return lhs.offset < rhs.offset;
+                          });
+
+        return mergedReflection;
     }
 }

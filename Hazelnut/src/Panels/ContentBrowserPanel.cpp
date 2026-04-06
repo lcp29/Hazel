@@ -2,6 +2,7 @@
 #include "ContentBrowserPanel.h"
 
 #include "Hazel/Asset/AssetManager.h"
+#include "Hazel/Asset/AssetUtils.h"
 #include "Hazel/Core/Application.h"
 #include "Hazel/Project/Project.h"
 
@@ -11,16 +12,6 @@
 
 namespace Hazel
 {
-    namespace
-    {
-        template <typename T>
-        void WriteMetaFile(const std::filesystem::path& path, const T& meta)
-        {
-            std::ofstream output(path);
-            output << meta.Serialize();
-        }
-    }
-
     ContentBrowserPanel::ContentBrowserPanel(void* directoryIcon, void* fileIcon)
         : m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
     {
@@ -155,10 +146,16 @@ namespace Hazel
 
     std::filesystem::path ContentBrowserPanel::GetSelectedMetaPath() const
     {
-        return m_SelectedPath.extension() == ".meta" ? m_SelectedPath : std::filesystem::path{};
+        if (m_SelectedPath.empty())
+        {
+            return {};
+        }
+
+        return GetMetaPathFromAssetPath(m_SelectedPath);
     }
 
-    std::filesystem::path ContentBrowserPanel::GetUniquePath(const std::string& baseName, const std::string& extension) const
+    std::filesystem::path ContentBrowserPanel::GetUniquePath(const std::string& baseName,
+                                                             const std::string& extension) const
     {
         auto path = m_CurrentDirectory / (baseName + extension);
         if (!std::filesystem::exists(path))
@@ -186,7 +183,6 @@ namespace Hazel
 
     void ContentBrowserPanel::OpenCreateAssetPopup(AssetType assetType, const char* defaultName)
     {
-
         m_PendingAssetType = assetType;
         std::memset(m_CreateAssetNameBuffer, 0, sizeof(m_CreateAssetNameBuffer));
         std::strncpy(m_CreateAssetNameBuffer, defaultName, sizeof(m_CreateAssetNameBuffer) - 1);
@@ -227,7 +223,9 @@ namespace Hazel
 
             ImGui::Text("Type: %s", assetTypeName);
             ImGui::SetNextItemWidth(280.0f);
-            bool create = ImGui::InputText("Name", m_CreateAssetNameBuffer, sizeof(m_CreateAssetNameBuffer),
+            bool create = ImGui::InputText("Name",
+                                           m_CreateAssetNameBuffer,
+                                           sizeof(m_CreateAssetNameBuffer),
                                            ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SetItemDefaultFocus();
 
@@ -279,51 +277,42 @@ namespace Hazel
     void ContentBrowserPanel::CreateMaterialAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".mat.meta");
-        MaterialAssetMeta meta{};
-        meta.uuid = UUID();
-        meta.shader = UUID(-1);
-        WriteMetaFile(metaPath, meta);
+        auto meta = MaterialAssetMeta::CreateDefault();
+        WriteMetaToFile(meta, metaPath);
+
+        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Material, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
-        assetManager->AddAsset<MaterialAsset>(
-            meta.uuid,
-            meta.uuid,
-            assetManager,
-            Application::Get().GetRenderer(),
-            metaPath,
-            meta);
+        assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
     }
 
     void ContentBrowserPanel::CreateRenderTextureAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".rt.meta");
-        RenderTextureAssetMeta meta{};
-        meta.uuid = UUID();
-        WriteMetaFile(metaPath, meta);
+        auto meta = RenderTextureAssetMeta::CreateDefault();
+        WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
-        assetManager->AddAsset<RenderTextureAsset>(meta.uuid,
-                                                   meta.uuid,
-                                                   metaPath,
-                                                   Application::Get().GetRenderer(),
-                                                   meta);
+
+        auto assetRegistryTerm = std::make_unique<
+            AssetRegistryTerm>(meta.GetUUID(), AssetType::RenderTexture, metaPath);
+
+        assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
     }
 
     void ContentBrowserPanel::CreateSamplerAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".sampler.meta");
-        SamplerAssetMeta meta{};
-        meta.uuid = UUID();
-        WriteMetaFile(metaPath, meta);
+        auto meta = SamplerAssetMeta::CreateDefault();
+        WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
-        assetManager->AddAsset<SamplerAsset>(meta.uuid,
-                                             meta.uuid,
-                                             metaPath,
-                                             Application::Get().GetRenderer(),
-                                             meta);
+
+        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Sampler, metaPath);
+
+        assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
     }
 
@@ -335,32 +324,34 @@ namespace Hazel
 
         std::ofstream sourceOutput(sourcePath);
         sourceOutput << "#version 450 core\n\n"
-                        "#ifdef VERTEX_SHADER\n"
-                        "layout(location = 0) out vec2 v_UV;\n"
-                        "vec2 positions[3] = vec2[](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));\n"
-                        "vec2 uvs[3] = vec2[](vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0));\n"
-                        "void main()\n"
-                        "{\n"
-                        "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
-                        "    v_UV = uvs[gl_VertexIndex];\n"
-                        "}\n"
-                        "#endif\n\n"
-                        "#ifdef FRAGMENT_SHADER\n"
-                        "layout(location = 0) in vec2 v_UV;\n"
-                        "layout(location = 0) out vec4 o_Color;\n"
-                        "void main()\n"
-                        "{\n"
-                        "    o_Color = vec4(v_UV, 0.0, 1.0);\n"
-                        "}\n"
-                        "#endif\n";
+            "#ifdef VERTEX_SHADER\n"
+            "layout(location = 0) out vec2 v_UV;\n"
+            "vec2 positions[3] = vec2[](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));\n"
+            "vec2 uvs[3] = vec2[](vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0));\n"
+            "void main()\n"
+            "{\n"
+            "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
+            "    v_UV = uvs[gl_VertexIndex];\n"
+            "}\n"
+            "#endif\n\n"
+            "#ifdef FRAGMENT_SHADER\n"
+            "layout(location = 0) in vec2 v_UV;\n"
+            "layout(location = 0) out vec4 o_Color;\n"
+            "void main()\n"
+            "{\n"
+            "    o_Color = vec4(v_UV, 0.0, 1.0);\n"
+            "}\n"
+            "#endif\n";
         sourceOutput.close();
 
-        ShaderAssetMeta meta{};
-        meta.uuid = UUID();
-        WriteMetaFile(metaPath, meta);
+        auto meta = ShaderAssetMeta::CreateDefault();
+        WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
-        assetManager->AddAsset<ShaderAsset>(meta.uuid, Application::Get().GetRenderer(), sourcePath, meta);
+
+        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Shader, sourcePath);
+
+        assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(sourcePath);
     }
 
@@ -372,17 +363,21 @@ namespace Hazel
 
         std::ofstream sourceOutput(sourcePath);
         sourceOutput << "#version 450 core\n\n"
-                        "layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n\n"
-                        "void main()\n"
-                        "{\n"
-                        "}\n";
+            "layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n\n"
+            "void main()\n"
+            "{\n"
+            "}\n";
 
-        ComputeShaderAssetMeta meta{};
-        meta.uuid = UUID();
-        WriteMetaFile(metaPath, meta);
+        auto meta = ComputeShaderAssetMeta::CreateDefault();
+        WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
-        assetManager->AddAsset<ComputeShaderAsset>(meta.uuid, Application::Get().GetRenderer(), sourcePath, meta);
+
+        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(),
+                                                                     AssetType::ComputeShader,
+                                                                     sourcePath);
+
+        assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(sourcePath);
     }
 }

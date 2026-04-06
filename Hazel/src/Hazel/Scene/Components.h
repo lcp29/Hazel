@@ -3,8 +3,8 @@
 #include <entt.hpp>
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
-#include "Hazel/Renderer/Mesh.h"
-#include "Hazel/Renderer/Material.h"
+#include "../Renderer/GPUAsset/GPUMeshAsset.h"
+#include "../Renderer/GPUAsset/CachedMaterial.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 
 #include <glm/glm.hpp>
@@ -289,8 +289,6 @@ namespace Hazel
     {
         UUID meshUUID = UUID(-1);
         UUID materialUUID = UUID(-1);
-        MeshAsset* meshAsset = nullptr;
-        MaterialAsset* materialAsset = nullptr;
 
         YAML::Node Serialize() const
         {
@@ -302,18 +300,9 @@ namespace Hazel
 
         static MeshRendererComponent Deserialize(const YAML::Node& node)
         {
-            auto* assetManager = Project::GetActive()->GetAssetManager();
             MeshRendererComponent component;
             component.meshUUID = node["MeshUUID"][0] ? node["MeshUUID"][0].as<UUID>() : UUID(-1);
             component.materialUUID = node["MaterialUUID"][0] ? node["MaterialUUID"][0].as<UUID>() : UUID(-1);
-            if (component.meshUUID != UUID(-1))
-            {
-                component.meshAsset = assetManager->GetAsset<MeshAsset>(component.meshUUID);
-            }
-            if (component.materialUUID != UUID(-1))
-            {
-                component.materialAsset = assetManager->GetAsset<MaterialAsset>(component.materialUUID);
-            }
             return component;
         }
     };

@@ -178,6 +178,8 @@ namespace Hazel
         RHIBlendOp alphaBlendOp = RHIBlendOp::Add;
         RHIColorComponentFlags colorWriteMask = RHIColorComponentFlagBits::R | RHIColorComponentFlagBits::G
             | RHIColorComponentFlagBits::B | RHIColorComponentFlagBits::A;
+
+        bool operator==(const RHIColorBlendAttachmentDesc&) const = default;
     };
 
     struct RHIGraphicsPipelineDesc

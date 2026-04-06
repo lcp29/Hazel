@@ -1,5 +1,6 @@
 #include "PropertyPanel.h"
 
+#include "Hazel/Asset/AssetUtils.h"
 #include "Hazel/Asset/ComputeShaderAsset.h"
 #include "Hazel/Asset/MaterialAsset.h"
 #include "Hazel/Asset/MeshAsset.h"
@@ -12,6 +13,7 @@
 #include "Hazel/Scene/Components.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "Hazel/UI/UI.h"
+#include "PropertyPanelHelpers.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -20,80 +22,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <fstream>
 #include <unordered_set>
 
 namespace Hazel
 {
     namespace
     {
-        void DrawVec3Control(const std::string& label,
-                             glm::vec3& values,
-                             float resetValue = 0.0f,
-                             float columnWidth = 100.0f)
-        {
-            ImGuiIO& io = ImGui::GetIO();
-            auto boldFont = io.Fonts->Fonts[0];
-
-            ImGui::PushID(label.c_str());
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text(label.c_str());
-            ImGui::NextColumn();
-
-            ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-            float lineHeight = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
-            ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("X", buttonSize))
-                values.x = resetValue;
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("Y", buttonSize))
-                values.y = resetValue;
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-            ImGui::PushFont(boldFont);
-            if (ImGui::Button("Z", buttonSize))
-                values.z = resetValue;
-            ImGui::PopFont();
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
-            ImGui::PopItemWidth();
-
-            ImGui::PopStyleVar();
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
         template <typename T, typename UIFunction>
         void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
         {
@@ -134,307 +68,6 @@ namespace Hazel
                     entity.RemoveComponent<T>();
             }
         }
-
-        template <typename T>
-        void WriteMetaFile(const T& asset)
-        {
-            using decayed = std::decay_t<T>;
-
-            if constexpr (std::is_same_v<decayed, TextureAsset> ||
-                          std::is_same_v<decayed, ComputeShaderAsset> ||
-                          std::is_same_v<decayed, ShaderAsset> ||
-                          std::is_same_v<decayed, MeshAsset>)
-            {
-                std::ofstream output(asset.GetFilePath().string() + ".meta");
-                output << asset.GetMeta().Serialize();
-            }
-            else
-            {
-                std::ofstream output(asset.GetFilePath().string());
-                output << asset.GetMeta().Serialize();
-            }
-        }
-
-        const char* GetFormatName(RHIFormat format)
-        {
-            switch (format)
-            {
-                case RHIFormat::Undefined:
-                    return "Undefined";
-                case RHIFormat::R8UNorm:
-                    return "R8UNorm";
-                case RHIFormat::R32SInt:
-                    return "R32SInt";
-                case RHIFormat::RG8UNorm:
-                    return "RG8UNorm";
-                case RHIFormat::R32SFloat:
-                    return "R32SFloat";
-                case RHIFormat::RG32SFloat:
-                    return "RG32SFloat";
-                case RHIFormat::RGB32SFloat:
-                    return "RGB32SFloat";
-                case RHIFormat::RG16UNorm:
-                    return "RG16UNorm";
-                case RHIFormat::BGRA8UNorm:
-                    return "BGRA8UNorm";
-                case RHIFormat::BGRA8SRGB:
-                    return "BGRA8SRGB";
-                case RHIFormat::RGBA8UNorm:
-                    return "RGBA8UNorm";
-                case RHIFormat::RGBA8SRGB:
-                    return "RGBA8SRGB";
-                case RHIFormat::RGB10A2UNorm:
-                    return "RGB10A2UNorm";
-                case RHIFormat::RGBA16SFloat:
-                    return "RGBA16SFloat";
-                case RHIFormat::D32SFloat:
-                    return "D32SFloat";
-                case RHIFormat::D32SFloatS8Uint:
-                    return "D32SFloatS8Uint";
-                case RHIFormat::S8Uint:
-                    return "S8Uint";
-            }
-
-            return "Undefined";
-        }
-
-        bool DrawFormatCombo(const char* label, RHIFormat& format)
-        {
-            static const RHIFormat formats[] = {
-                RHIFormat::R8UNorm, RHIFormat::R32SInt, RHIFormat::RG8UNorm,
-                RHIFormat::R32SFloat, RHIFormat::RG32SFloat, RHIFormat::RGB32SFloat, RHIFormat::RG16UNorm,
-                RHIFormat::BGRA8UNorm, RHIFormat::BGRA8SRGB, RHIFormat::RGBA8UNorm, RHIFormat::RGBA8SRGB,
-                RHIFormat::RGB10A2UNorm, RHIFormat::RGBA16SFloat, RHIFormat::D32SFloat,
-                RHIFormat::D32SFloatS8Uint, RHIFormat::S8Uint
-            };
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, GetFormatName(format)))
-            {
-                for (auto value : formats)
-                {
-                    bool selected = value == format;
-                    if (ImGui::Selectable(GetFormatName(value), selected))
-                    {
-                        format = value;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            return changed;
-        }
-
-        const char* GetViewTypeName(RHIImageViewType viewType)
-        {
-            switch (viewType)
-            {
-                case Image1D:
-                    return "Image1D";
-                case Image2D:
-                    return "Image2D";
-                case Image3D:
-                    return "Image3D";
-                case Cube:
-                    return "Cube";
-                case Image1DArray:
-                    return "Image1DArray";
-                case Image2DArray:
-                    return "Image2DArray";
-                case CubeArray:
-                    return "CubeArray";
-            }
-
-            return "Image2D";
-        }
-
-        bool DrawViewTypeCombo(const char* label, RHIImageViewType& viewType)
-        {
-            static const RHIImageViewType viewTypes[] = {
-                Image1D, Image2D, Image3D, Cube, Image1DArray, Image2DArray, CubeArray
-            };
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, GetViewTypeName(viewType)))
-            {
-                for (auto value : viewTypes)
-                {
-                    bool selected = value == viewType;
-                    if (ImGui::Selectable(GetViewTypeName(value), selected))
-                    {
-                        viewType = value;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            return changed;
-        }
-
-        const char* GetFilterName(RHISamplerFilter filter)
-        {
-            return filter == RHISamplerFilter::Nearest ? "Nearest" : "Linear";
-        }
-
-        bool DrawFilterCombo(const char* label, RHISamplerFilter& filter)
-        {
-            static const RHISamplerFilter filters[] = {RHISamplerFilter::Nearest, RHISamplerFilter::Linear};
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, GetFilterName(filter)))
-            {
-                for (auto value : filters)
-                {
-                    bool selected = value == filter;
-                    if (ImGui::Selectable(GetFilterName(value), selected))
-                    {
-                        filter = value;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            return changed;
-        }
-
-        const char* GetAddressModeName(RHISamplerAddressMode addressMode)
-        {
-            switch (addressMode)
-            {
-                case RHISamplerAddressMode::Repeat:
-                    return "Repeat";
-                case RHISamplerAddressMode::MirroredRepeat:
-                    return "MirroredRepeat";
-                case RHISamplerAddressMode::ClampToEdge:
-                    return "ClampToEdge";
-                case RHISamplerAddressMode::ClampToBorder:
-                    return "ClampToBorder";
-            }
-
-            return "Repeat";
-        }
-
-        bool DrawAddressModeCombo(const char* label, RHISamplerAddressMode& addressMode)
-        {
-            static const RHISamplerAddressMode modes[] = {
-                RHISamplerAddressMode::Repeat,
-                RHISamplerAddressMode::MirroredRepeat,
-                RHISamplerAddressMode::ClampToEdge,
-                RHISamplerAddressMode::ClampToBorder
-            };
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, GetAddressModeName(addressMode)))
-            {
-                for (auto value : modes)
-                {
-                    bool selected = value == addressMode;
-                    if (ImGui::Selectable(GetAddressModeName(value), selected))
-                    {
-                        addressMode = value;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            return changed;
-        }
-
-        const char* GetCompareOpName(RHICompareOp compareOp)
-        {
-            switch (compareOp)
-            {
-                case RHICompareOp::Never:
-                    return "Never";
-                case RHICompareOp::Less:
-                    return "Less";
-                case RHICompareOp::Equal:
-                    return "Equal";
-                case RHICompareOp::LessOrEqual:
-                    return "LessOrEqual";
-                case RHICompareOp::Greater:
-                    return "Greater";
-                case RHICompareOp::NotEqual:
-                    return "NotEqual";
-                case RHICompareOp::GreaterOrEqual:
-                    return "GreaterOrEqual";
-                case RHICompareOp::Always:
-                    return "Always";
-            }
-
-            return "LessOrEqual";
-        }
-
-        bool DrawCompareOpCombo(const char* label, RHICompareOp& compareOp)
-        {
-            static const RHICompareOp compareOps[] = {
-                RHICompareOp::Never, RHICompareOp::Less, RHICompareOp::Equal, RHICompareOp::LessOrEqual,
-                RHICompareOp::Greater, RHICompareOp::NotEqual, RHICompareOp::GreaterOrEqual, RHICompareOp::Always
-            };
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, GetCompareOpName(compareOp)))
-            {
-                for (auto value : compareOps)
-                {
-                    bool selected = value == compareOp;
-                    if (ImGui::Selectable(GetCompareOpName(value), selected))
-                    {
-                        compareOp = value;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            return changed;
-        }
-
-        bool DrawImageUsageCheckbox(const char* label, RHIImageUsages& usages, RHIImageUsageFlagBits flag)
-        {
-            bool enabled = static_cast<bool>(usages & flag);
-            if (ImGui::Checkbox(label, &enabled))
-            {
-                if (enabled)
-                    usages |= flag;
-                else
-                    usages &= ~flag;
-                return true;
-            }
-
-            return false;
-        }
-
-        template <typename T>
-        std::string GetAssetLabel(const std::unordered_map<UUID, T>& assets, UUID uuid)
-        {
-            if (uuid == UUID(-1))
-            {
-                return "None";
-            }
-
-            auto it = assets.find(uuid);
-            if (it == assets.end())
-            {
-                return "None";
-            }
-
-            return it->second.GetFilePath().filename().string();
-        }
     } // namespace
 
     void PropertyPanel::SetContext(const Ref<Scene>& scene)
@@ -454,7 +87,15 @@ namespace Hazel
     void PropertyPanel::SetSelectedMetaPath(const std::filesystem::path& metaPath)
     {
         m_SelectedMetaPath = metaPath;
-        m_SelectionType = metaPath.empty() ? SelectionType::None : SelectionType::Meta;
+        if (std::filesystem::exists(metaPath) && std::filesystem::is_regular_file(metaPath) && metaPath.extension() ==
+            ".meta")
+        {
+            m_SelectionType = SelectionType::Meta;
+        }
+        else
+        {
+            m_SelectionType = SelectionType::None;
+        }
     }
 
     void PropertyPanel::OnImGuiRender()
@@ -499,11 +140,14 @@ namespace Hazel
         DrawComponent<TransformComponent>("Transform",
                                           entity,
                                           [](auto& component) {
-                                              DrawVec3Control("Translation", component.translation);
+                                              PropertyPanelHelpers::DrawVec3Control("Translation",
+                                                  component.translation);
                                               glm::vec3 rotation = glm::degrees(component.rotation);
-                                              DrawVec3Control("Rotation", rotation);
+                                              PropertyPanelHelpers::DrawVec3Control("Rotation", rotation);
                                               component.rotation = glm::radians(rotation);
-                                              DrawVec3Control("Scale", component.scale, 1.0f);
+                                              PropertyPanelHelpers::DrawVec3Control("Scale",
+                                                  component.scale,
+                                                  1.0f);
                                           });
 
         DrawComponent<CameraComponent>("Camera",
@@ -639,85 +283,15 @@ namespace Hazel
                                              entity,
                                              [](auto& component) {
                                                  auto* assetManager = Project::GetActive()->GetAssetManager();
-                                                 auto& meshes = assetManager->GetMeshes();
-                                                 auto& materials = assetManager->GetMaterials();
+                                                 auto meshes = assetManager->GetAssetsByType(AssetType::Mesh);
+                                                 auto materials = assetManager->GetAssetsByType(AssetType::Material);
 
-                                                 bool changed = false;
-                                                 if (ImGui::BeginCombo("Mesh",
-                                                                       GetAssetLabel(meshes, component.meshUUID).
-                                                                       c_str()))
-                                                 {
-                                                     bool selected = component.meshUUID == UUID(-1);
-                                                     if (ImGui::Selectable("None", selected))
-                                                     {
-                                                         component.meshUUID = UUID(-1);
-                                                         changed = true;
-                                                     }
-                                                     if (selected)
-                                                         ImGui::SetItemDefaultFocus();
-
-                                                     for (const auto& [uuid, meshAsset] : meshes)
-                                                     {
-                                                         selected = component.meshUUID == uuid;
-                                                         if (ImGui::Selectable(
-                                                             meshAsset.GetFilePath().filename().string().c_str(),
-                                                             selected))
-                                                         {
-                                                             component.meshUUID = uuid;
-                                                             changed = true;
-                                                         }
-                                                         if (selected)
-                                                             ImGui::SetItemDefaultFocus();
-                                                     }
-                                                     ImGui::EndCombo();
-                                                 }
-
-                                                 if (ImGui::BeginCombo("Material",
-                                                                       GetAssetLabel(materials, component.materialUUID).
-                                                                       c_str()))
-                                                 {
-                                                     bool selected = component.materialUUID == UUID(-1);
-                                                     if (ImGui::Selectable("None", selected))
-                                                     {
-                                                         component.materialUUID = UUID(-1);
-                                                         changed = true;
-                                                     }
-                                                     if (selected)
-                                                         ImGui::SetItemDefaultFocus();
-
-                                                     for (const auto& [uuid, materialAsset] : materials)
-                                                     {
-                                                         selected = component.materialUUID == uuid;
-                                                         if (ImGui::Selectable(
-                                                             materialAsset.GetFilePath().filename().string().c_str(),
-                                                             selected))
-                                                         {
-                                                             component.materialUUID = uuid;
-                                                             changed = true;
-                                                         }
-                                                         if (selected)
-                                                             ImGui::SetItemDefaultFocus();
-                                                     }
-                                                     ImGui::EndCombo();
-                                                 }
-
-                                                 if (changed)
-                                                 {
-                                                     auto* meshAsset = assetManager->GetAsset<MeshAsset>(
-                                                         component.meshUUID);
-                                                     auto* materialAsset = assetManager->GetAsset<MaterialAsset>(
-                                                         component.materialUUID);
-                                                     if (meshAsset)
-                                                     {
-                                                         component.meshAsset = meshAsset;
-                                                         meshAsset->Load();
-                                                     }
-                                                     if (materialAsset)
-                                                     {
-                                                         component.materialAsset = materialAsset;
-                                                         materialAsset->Load();
-                                                     }
-                                                 }
+                                                 PropertyPanelHelpers::DrawAssetRegistryCombo("Mesh",
+                                                     meshes,
+                                                     component.meshUUID);
+                                                 PropertyPanelHelpers::DrawAssetRegistryCombo("Material",
+                                                     materials,
+                                                     component.materialUUID);
                                              });
     }
 
@@ -737,31 +311,36 @@ namespace Hazel
 
         if (assetType == AssetType::Texture)
         {
-            auto* asset = assetManager->GetAsset<TextureAsset>(uuid);
+            auto* asset = static_cast<TextureAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
 
-            asset->Load();
-
             auto& meta = asset->GetMeta();
             bool changed = false;
-            changed |= ImGui::Checkbox("sRGB", &meta.isSRGB);
-            changed |= ImGui::Checkbox("Use Mipmap", &meta.useMipmap);
+            bool isSRGB = meta.IsSRGB();
+            if (ImGui::Checkbox("sRGB", &isSRGB))
+            {
+                meta.SetSRGB(isSRGB);
+                changed = true;
+            }
+            bool useMipmap = meta.UseMipmap();
+            if (ImGui::Checkbox("Use Mipmap", &useMipmap))
+            {
+                meta.SetUseMipmap(useMipmap);
+                changed = true;
+            }
             if (changed)
             {
-                WriteMetaFile(*asset);
-                asset->Recreate();
+                WriteMetaToFile(asset);
             }
             return;
         }
 
         if (assetType == AssetType::ComputeShader)
         {
-            auto* asset = assetManager->GetAsset<ComputeShaderAsset>(uuid);
+            auto* asset = static_cast<ComputeShaderAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
-
-            asset->Load();
 
             ImGui::Text("Type: Compute Shader");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
@@ -771,11 +350,9 @@ namespace Hazel
 
         if (assetType == AssetType::Shader)
         {
-            auto* asset = assetManager->GetAsset<ShaderAsset>(uuid);
+            auto* asset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
-
-            asset->Load();
 
             ImGui::Text("Type: Shader");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
@@ -785,272 +362,352 @@ namespace Hazel
 
         if (assetType == AssetType::RenderTexture)
         {
-            auto* asset = assetManager->GetAsset<RenderTextureAsset>(uuid);
+            auto* asset = static_cast<RenderTextureAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
 
-            asset->Load();
-
-            auto& desc = asset->GetMeta().desc;
+            auto& meta = asset->GetMeta();
+            const auto& desc = meta.GetDesc();
             bool changed = false;
-            changed |= ImGui::DragScalar("Width", ImGuiDataType_U32, &desc.width, 1.0f);
-            changed |= ImGui::DragScalar("Height", ImGuiDataType_U32, &desc.height, 1.0f);
-            changed |= ImGui::DragScalar("Depth", ImGuiDataType_U32, &desc.depth, 1.0f);
-            changed |= ImGui::DragScalar("Array Layers", ImGuiDataType_U32, &desc.arrayLayers, 1.0f);
-            changed |= DrawViewTypeCombo("View Type", desc.viewType);
-            changed |= ImGui::Checkbox("Use Mipmap", &desc.useMipmap);
-            changed |= ImGui::Checkbox("Per Frame", &desc.perFrame);
-            changed |= DrawFormatCombo("Format", desc.format);
-            changed |= DrawImageUsageCheckbox("Transfer Source", desc.usages, RHIImageUsageFlagBits::TransferSource);
-            changed |= DrawImageUsageCheckbox("Transfer Destination",
-                                              desc.usages,
-                                              RHIImageUsageFlagBits::TransferDestination);
-            changed |= DrawImageUsageCheckbox("Sampled", desc.usages, RHIImageUsageFlagBits::Sampled);
-            changed |= DrawImageUsageCheckbox("Storage", desc.usages, RHIImageUsageFlagBits::Storage);
-            changed |= DrawImageUsageCheckbox("Color Attachment", desc.usages, RHIImageUsageFlagBits::ColorAttachment);
-            changed |= DrawImageUsageCheckbox("Depth Stencil Attachment",
-                                              desc.usages,
-                                              RHIImageUsageFlagBits::DepthStencilAttachment);
+            uint32_t width = desc.width;
+            if (ImGui::DragScalar("Width", ImGuiDataType_U32, &width, 1.0f))
+            {
+                meta.SetWidth(width);
+                changed = true;
+            }
+            uint32_t height = desc.height;
+            if (ImGui::DragScalar("Height", ImGuiDataType_U32, &height, 1.0f))
+            {
+                meta.SetHeight(height);
+                changed = true;
+            }
+            uint32_t depth = desc.depth;
+            if (ImGui::DragScalar("Depth", ImGuiDataType_U32, &depth, 1.0f))
+            {
+                meta.SetDepth(depth);
+                changed = true;
+            }
+            uint32_t arrayLayers = desc.arrayLayers;
+            if (ImGui::DragScalar("Array Layers", ImGuiDataType_U32, &arrayLayers, 1.0f))
+            {
+                meta.SetArrayLayers(arrayLayers);
+                changed = true;
+            }
+            auto viewType = desc.viewType;
+            if (PropertyPanelHelpers::DrawViewTypeCombo("View Type", viewType))
+            {
+                meta.SetViewType(viewType);
+                changed = true;
+            }
+            bool useMipmap = desc.useMipmap;
+            if (ImGui::Checkbox("Use Mipmap", &useMipmap))
+            {
+                meta.SetUseMipmap(useMipmap);
+                changed = true;
+            }
+            bool perFrame = desc.perFrame;
+            if (ImGui::Checkbox("Per Frame", &perFrame))
+            {
+                meta.SetPerFrame(perFrame);
+                changed = true;
+            }
+            auto format = desc.format;
+            if (PropertyPanelHelpers::DrawFormatCombo("Format", format))
+            {
+                meta.SetFormat(format);
+                changed = true;
+            }
+            auto usages = desc.usages;
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Transfer Source",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::TransferSource);
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Transfer Destination",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::TransferDestination);
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Sampled",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::Sampled);
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Storage",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::Storage);
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Color Attachment",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::ColorAttachment);
+            changed |= PropertyPanelHelpers::DrawImageUsageCheckbox("Depth Stencil Attachment",
+                                                                    usages,
+                                                                    RHIImageUsageFlagBits::DepthStencilAttachment);
+            meta.SetUsages(usages);
             if (changed)
             {
-                WriteMetaFile(*asset);
-                asset->Recreate();
+                WriteMetaToFile(asset);
             }
             return;
         }
 
         if (assetType == AssetType::Sampler)
         {
-            auto* asset = assetManager->GetAsset<SamplerAsset>(uuid);
+            auto* asset = static_cast<SamplerAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
 
-            asset->Load();
-
-            auto& desc = asset->GetMeta().desc;
+            auto& meta = asset->GetMeta();
+            const auto& desc = meta.GetDesc();
             bool changed = false;
-            changed |= DrawFilterCombo("Min Filter", desc.minFilter);
-            changed |= DrawFilterCombo("Mag Filter", desc.magFilter);
-            changed |= DrawFilterCombo("Mip Filter", desc.mipFilter);
-            changed |= DrawAddressModeCombo("Address Mode U", desc.addressModeU);
-            changed |= DrawAddressModeCombo("Address Mode V", desc.addressModeV);
-            changed |= DrawAddressModeCombo("Address Mode W", desc.addressModeW);
-            changed |= ImGui::DragFloat("Mip LOD Bias", &desc.mipLodBias);
-            changed |= ImGui::DragFloat("Min LOD", &desc.minLod);
-            changed |= ImGui::DragFloat("Max LOD", &desc.maxLod);
-            changed |= ImGui::DragFloat("Max Anisotropy", &desc.maxAnisotropy);
-            changed |= ImGui::Checkbox("Enable Anisotropy", &desc.enableAnisotropy);
-            changed |= ImGui::Checkbox("Compare Enable", &desc.compareEnable);
-            changed |= DrawCompareOpCombo("Compare Op", desc.compareOp);
+            auto minFilter = desc.minFilter;
+            if (PropertyPanelHelpers::DrawFilterCombo("Min Filter", minFilter))
+            {
+                meta.SetMinFilter(minFilter);
+                changed = true;
+            }
+            auto magFilter = desc.magFilter;
+            if (PropertyPanelHelpers::DrawFilterCombo("Mag Filter", magFilter))
+            {
+                meta.SetMagFilter(magFilter);
+                changed = true;
+            }
+            auto mipFilter = desc.mipFilter;
+            if (PropertyPanelHelpers::DrawFilterCombo("Mip Filter", mipFilter))
+            {
+                meta.SetMipFilter(mipFilter);
+                changed = true;
+            }
+            auto addressModeU = desc.addressModeU;
+            if (PropertyPanelHelpers::DrawAddressModeCombo("Address Mode U", addressModeU))
+            {
+                meta.SetAddressModeU(addressModeU);
+                changed = true;
+            }
+            auto addressModeV = desc.addressModeV;
+            if (PropertyPanelHelpers::DrawAddressModeCombo("Address Mode V", addressModeV))
+            {
+                meta.SetAddressModeV(addressModeV);
+                changed = true;
+            }
+            auto addressModeW = desc.addressModeW;
+            if (PropertyPanelHelpers::DrawAddressModeCombo("Address Mode W", addressModeW))
+            {
+                meta.SetAddressModeW(addressModeW);
+                changed = true;
+            }
+            float mipLodBias = desc.mipLodBias;
+            if (ImGui::DragFloat("Mip LOD Bias", &mipLodBias))
+            {
+                meta.SetMipLodBias(mipLodBias);
+                changed = true;
+            }
+            float minLod = desc.minLod;
+            if (ImGui::DragFloat("Min LOD", &minLod))
+            {
+                meta.SetMinLod(minLod);
+                changed = true;
+            }
+            float maxLod = desc.maxLod;
+            if (ImGui::DragFloat("Max LOD", &maxLod))
+            {
+                meta.SetMaxLod(maxLod);
+                changed = true;
+            }
+            float maxAnisotropy = desc.maxAnisotropy;
+            if (ImGui::DragFloat("Max Anisotropy", &maxAnisotropy))
+            {
+                meta.SetMaxAnisotropy(maxAnisotropy);
+                changed = true;
+            }
+            bool enableAnisotropy = desc.enableAnisotropy;
+            if (ImGui::Checkbox("Enable Anisotropy", &enableAnisotropy))
+            {
+                meta.SetEnableAnisotropy(enableAnisotropy);
+                changed = true;
+            }
+            bool compareEnable = desc.compareEnable;
+            if (ImGui::Checkbox("Compare Enable", &compareEnable))
+            {
+                meta.SetCompareEnable(compareEnable);
+                changed = true;
+            }
+            auto compareOp = desc.compareOp;
+            if (PropertyPanelHelpers::DrawCompareOpCombo("Compare Op", compareOp))
+            {
+                meta.SetCompareOp(compareOp);
+                changed = true;
+            }
             if (changed)
             {
-                WriteMetaFile(*asset);
-                asset->Recreate();
+                WriteMetaToFile(asset);
             }
         }
 
         if (assetType == AssetType::Mesh)
         {
-            auto* asset = assetManager->GetAsset<MeshAsset>(uuid);
+            auto* asset = static_cast<MeshAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
-
-            asset->Load();
 
             ImGui::Text("Type: Mesh");
             ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetUUID()));
             ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
             bool changed = false;
-            changed |= ImGui::Checkbox("Generate Meshlets", &asset->GetMeta().generateMeshlets);
+            bool generateMeshlets = asset->GetMeta().GenerateMeshlets();
+            if (ImGui::Checkbox("Generate Meshlets", &generateMeshlets))
+            {
+                asset->GetMeta().SetGenerateMeshlets(generateMeshlets);
+                changed = true;
+            }
             if (changed)
             {
-                WriteMetaFile(*asset);
-                asset->Recreate();
+                WriteMetaToFile(asset);
             }
             return;
         }
 
         if (assetType == AssetType::Material)
         {
-            auto* asset = assetManager->GetAsset<MaterialAsset>(uuid);
+            auto* asset = static_cast<MaterialAsset*>(assetManager->RequestAssetBlocked(uuid));
             if (!asset)
                 return;
-
-            auto& shaders = assetManager->GetShaders();
-            auto& samplers = assetManager->GetSamplers();
-            auto& textures = assetManager->GetTextures();
-
-            if (!asset->IsLoaded())
-            {
-                asset->Load();
-                auto shaderUUID = asset->GetMeta().shader;
-                if (shaders.contains(shaderUUID))
-                {
-                    auto& shader = shaders.at(asset->GetMeta().shader);
-                    shader.GetShader()->RecreateMaterialResourceGroup();
-                }
-            }
+            auto shaders = assetManager->GetAssetsByType(AssetType::Shader);
+            auto samplers = assetManager->GetAssetsByType(AssetType::Sampler);
+            auto textures = assetManager->GetAssetsByType(AssetType::Texture);
 
             auto& meta = asset->GetMeta();
 
             ImGui::Text("Type: Material");
-            ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetMeta().uuid));
+            ImGui::Text("UUID: %llu", static_cast<uint64_t>(asset->GetMeta().GetUUID()));
             ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
 
             bool changed = false;
-            std::string shaderLabel = GetAssetLabel(shaders, meta.shader);
-            if (ImGui::BeginCombo("Shader", shaderLabel.c_str()))
+            UUID shaderUUID = meta.GetShader();
+            if (PropertyPanelHelpers::DrawAssetRegistryCombo("Shader", shaders, shaderUUID))
             {
-                bool selected = meta.shader == UUID(-1);
-                if (ImGui::Selectable("None", selected))
-                {
-                    meta.shader = UUID(-1);
-                    changed = true;
-                }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
-
-                for (const auto& [shaderUUID, shaderAsset] : shaders)
-                {
-                    selected = meta.shader == shaderUUID;
-                    const auto label = shaderAsset.GetFilePath().filename().string();
-                    if (ImGui::Selectable(label.c_str(), selected))
-                    {
-                        meta.shader = shaderUUID;
-                        changed = true;
-                    }
-                    if (selected)
-                        ImGui::SetItemDefaultFocus();
-                }
-
-                ImGui::EndCombo();
+                meta.SetShader(shaderUUID);
+                changed = true;
             }
 
             if (changed)
             {
-                meta.UpdateForShader(assetManager);
-                WriteMetaFile(*asset);
-                asset->Recreate();
+                meta.RefreshShader(assetManager);
+                WriteMetaToFile(asset);
             }
 
-            for (auto& property : meta.properties)
+            const auto& properties = meta.GetProperties();
+            for (size_t propertyIndex = 0; propertyIndex < properties.size(); propertyIndex++)
             {
+                const auto& property = properties[propertyIndex];
                 bool propertyChanged = false;
 
                 switch (property.type)
                 {
                     case MaterialAssetPropertyType::Int:
                     {
-                        propertyChanged |= ImGui::DragInt(property.name.c_str(), reinterpret_cast<int*>(property.data));
+                        int value = *reinterpret_cast<const int*>(property.data);
+                        if (ImGui::DragInt(property.name.c_str(), &value))
+                        {
+                            meta.SetPropertyData(propertyIndex, &value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::UInt:
                     {
-                        propertyChanged |= ImGui::DragScalar(property.name.c_str(),
-                                                             ImGuiDataType_U32,
-                                                             reinterpret_cast<uint32_t*>(property.data));
+                        uint32_t value = *reinterpret_cast<const uint32_t*>(property.data);
+                        if (ImGui::DragScalar(property.name.c_str(), ImGuiDataType_U32, &value))
+                        {
+                            meta.SetPropertyData(propertyIndex, &value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Float:
                     {
-                        propertyChanged |= ImGui::DragFloat(property.name.c_str(),
-                                                            reinterpret_cast<float*>(property.data));
+                        float value = *reinterpret_cast<const float*>(property.data);
+                        if (ImGui::DragFloat(property.name.c_str(), &value))
+                        {
+                            meta.SetPropertyData(propertyIndex, &value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Vec2:
                     {
-                        propertyChanged |= ImGui::DragFloat2(property.name.c_str(),
-                                                             reinterpret_cast<float*>(property.data));
+                        float value[2];
+                        std::memcpy(value, property.data, sizeof(value));
+                        if (ImGui::DragFloat2(property.name.c_str(), value))
+                        {
+                            meta.SetPropertyData(propertyIndex, value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Vec3:
                     {
-                        propertyChanged |= ImGui::DragFloat3(property.name.c_str(),
-                                                             reinterpret_cast<float*>(property.data));
+                        float value[3];
+                        std::memcpy(value, property.data, sizeof(value));
+                        if (ImGui::DragFloat3(property.name.c_str(), value))
+                        {
+                            meta.SetPropertyData(propertyIndex, value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Vec4:
                     {
-                        propertyChanged |= ImGui::DragFloat4(property.name.c_str(),
-                                                             reinterpret_cast<float*>(property.data));
+                        float value[4];
+                        std::memcpy(value, property.data, sizeof(value));
+                        if (ImGui::DragFloat4(property.name.c_str(), value))
+                        {
+                            meta.SetPropertyData(propertyIndex, value, sizeof(value));
+                            propertyChanged = true;
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Mat3:
                     {
-                        float* data = reinterpret_cast<float*>(property.data);
-                        propertyChanged |= ImGui::DragFloat3((property.name + " 0").c_str(), data + 0);
-                        propertyChanged |= ImGui::DragFloat3((property.name + " 1").c_str(), data + 3);
-                        propertyChanged |= ImGui::DragFloat3((property.name + " 2").c_str(), data + 6);
+                        float value[9];
+                        std::memcpy(value, property.data, sizeof(value));
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 0").c_str(), value + 0);
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 1").c_str(), value + 3);
+                        propertyChanged |= ImGui::DragFloat3((property.name + " 2").c_str(), value + 6);
+                        if (propertyChanged)
+                        {
+                            meta.SetPropertyData(propertyIndex, value, sizeof(value));
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Mat4:
                     {
-                        float* data = reinterpret_cast<float*>(property.data);
-                        propertyChanged |= ImGui::DragFloat4((property.name + " 0").c_str(), data + 0);
-                        propertyChanged |= ImGui::DragFloat4((property.name + " 1").c_str(), data + 4);
-                        propertyChanged |= ImGui::DragFloat4((property.name + " 2").c_str(), data + 8);
-                        propertyChanged |= ImGui::DragFloat4((property.name + " 3").c_str(), data + 12);
+                        float value[16];
+                        std::memcpy(value, property.data, sizeof(value));
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 0").c_str(), value + 0);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 1").c_str(), value + 4);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 2").c_str(), value + 8);
+                        propertyChanged |= ImGui::DragFloat4((property.name + " 3").c_str(), value + 12);
+                        if (propertyChanged)
+                        {
+                            meta.SetPropertyData(propertyIndex, value, sizeof(value));
+                        }
                         break;
                     }
                     case MaterialAssetPropertyType::Sampler:
                     {
-                        std::string samplerLabel = GetAssetLabel(samplers, property.sampler);
-                        if (ImGui::BeginCombo(property.name.c_str(), samplerLabel.c_str()))
+                        UUID samplerUUID = property.sampler;
+                        if (PropertyPanelHelpers::DrawAssetRegistryCombo(property.name.c_str(),
+                                                                         samplers,
+                                                                         samplerUUID))
                         {
-                            bool selected = property.sampler == UUID(-1);
-                            if (ImGui::Selectable("None", selected))
-                            {
-                                property.sampler = UUID(-1);
-                                propertyChanged = true;
-                            }
-                            if (selected)
-                                ImGui::SetItemDefaultFocus();
-
-                            for (const auto& [samplerUUID, samplerAsset] : samplers)
-                            {
-                                selected = property.sampler == samplerUUID;
-                                const auto label = samplerAsset.GetFilePath().filename().string();
-                                if (ImGui::Selectable(label.c_str(), selected))
-                                {
-                                    property.sampler = samplerUUID;
-                                    propertyChanged = true;
-                                }
-                                if (selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-
-                            ImGui::EndCombo();
+                            meta.SetPropertySampler(propertyIndex, samplerUUID);
+                            propertyChanged = true;
                         }
                         break;
                     }
                     case MaterialAssetPropertyType::Texture:
                     {
-                        std::string textureLabel = GetAssetLabel(textures, property.texture);
-                        if (ImGui::BeginCombo(property.name.c_str(), textureLabel.c_str()))
+                        UUID textureUUID = property.texture;
+                        if (PropertyPanelHelpers::DrawAssetRegistryCombo(property.name.c_str(),
+                                                                         textures,
+                                                                         textureUUID))
                         {
-                            bool selected = property.texture == UUID(-1);
-                            if (ImGui::Selectable("None", selected))
-                            {
-                                property.texture = UUID(-1);
-                                propertyChanged = true;
-                            }
-                            if (selected)
-                                ImGui::SetItemDefaultFocus();
-
-                            for (const auto& [textureUUID, textureAsset] : textures)
-                            {
-                                selected = property.texture == textureUUID;
-                                const auto label = textureAsset.GetFilePath().filename().string();
-                                if (ImGui::Selectable(label.c_str(), selected))
-                                {
-                                    property.texture = textureUUID;
-                                    propertyChanged = true;
-                                }
-                                if (selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-
-                            ImGui::EndCombo();
+                            meta.SetPropertyTexture(propertyIndex, textureUUID);
+                            propertyChanged = true;
                         }
                         break;
                     }
@@ -1058,61 +715,23 @@ namespace Hazel
                     {
                         const auto samplerName = property.name + " Sampler";
                         const auto textureName = property.name + " Texture";
-                        std::string samplerLabel = GetAssetLabel(samplers, property.sampler);
-                        std::string textureLabel = GetAssetLabel(textures, property.texture);
+                        UUID samplerUUID = property.sampler;
+                        UUID textureUUID = property.texture;
 
-                        if (ImGui::BeginCombo(samplerName.c_str(), samplerLabel.c_str()))
+                        if (PropertyPanelHelpers::DrawAssetRegistryCombo(samplerName.c_str(),
+                                                                         samplers,
+                                                                         samplerUUID))
                         {
-                            bool selected = property.sampler == UUID(-1);
-                            if (ImGui::Selectable("None", selected))
-                            {
-                                property.sampler = UUID(-1);
-                                propertyChanged = true;
-                            }
-                            if (selected)
-                                ImGui::SetItemDefaultFocus();
-
-                            for (const auto& [samplerUUID, samplerAsset] : samplers)
-                            {
-                                selected = property.sampler == samplerUUID;
-                                const auto label = samplerAsset.GetFilePath().filename().string();
-                                if (ImGui::Selectable(label.c_str(), selected))
-                                {
-                                    property.sampler = samplerUUID;
-                                    propertyChanged = true;
-                                }
-                                if (selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-
-                            ImGui::EndCombo();
+                            meta.SetPropertySampler(propertyIndex, samplerUUID);
+                            propertyChanged = true;
                         }
 
-                        if (ImGui::BeginCombo(textureName.c_str(), textureLabel.c_str()))
+                        if (PropertyPanelHelpers::DrawAssetRegistryCombo(textureName.c_str(),
+                                                                         textures,
+                                                                         textureUUID))
                         {
-                            bool selected = property.texture == UUID(-1);
-                            if (ImGui::Selectable("None", selected))
-                            {
-                                property.texture = UUID(-1);
-                                propertyChanged = true;
-                            }
-                            if (selected)
-                                ImGui::SetItemDefaultFocus();
-
-                            for (const auto& [textureUUID, textureAsset] : textures)
-                            {
-                                selected = property.texture == textureUUID;
-                                const auto label = textureAsset.GetFilePath().filename().string();
-                                if (ImGui::Selectable(label.c_str(), selected))
-                                {
-                                    property.texture = textureUUID;
-                                    propertyChanged = true;
-                                }
-                                if (selected)
-                                    ImGui::SetItemDefaultFocus();
-                            }
-
-                            ImGui::EndCombo();
+                            meta.SetPropertyTexture(propertyIndex, textureUUID);
+                            propertyChanged = true;
                         }
                         break;
                     }
@@ -1120,8 +739,7 @@ namespace Hazel
 
                 if (propertyChanged)
                 {
-                    WriteMetaFile(*asset);
-                    asset->Recreate();
+                    WriteMetaToFile(asset);
                 }
             }
         }

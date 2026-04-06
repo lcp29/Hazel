@@ -7,6 +7,7 @@
 #include "VulkanShader.h"
 
 #include "VulkanDevice.h"
+#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporterInternal.h"
 
 #include <algorithm>
 #include <spirv_cross/spirv_cross.hpp>
@@ -186,7 +187,9 @@ namespace Hazel
             }
         }
 
-        RHIShaderBufferReflection ReflectBuffer(spirv_cross::Compiler& compiler, const spirv_cross::Resource& resource)
+        RHIShaderBufferReflection ReflectBuffer(spirv_cross::Compiler& compiler,
+                                                const spirv_cross::Resource& resource,
+                                                bool reflectTheFirstStructArray = false)
         {
             RHIShaderBufferReflection reflection;
             reflection.name = resource.name;
@@ -199,6 +202,34 @@ namespace Hazel
                  memberIndex++)
             {
                 const auto& memberType = compiler.get_type(bufferType.member_types[memberIndex]);
+
+                if (reflectTheFirstStructArray && memberType.basetype == spirv_cross::SPIRType::Struct &&
+                    !memberType.array.empty())
+                {
+                    reflection.size = static_cast<uint32_t>(compiler.get_declared_struct_size(memberType));
+                    reflection.members.clear();
+                    reflection.members.reserve(memberType.member_types.size());
+
+                    for (uint32_t childIndex = 0;
+                         childIndex < static_cast<uint32_t>(memberType.member_types.size());
+                         childIndex++)
+                    {
+                        const auto& childMemberType = compiler.get_type(memberType.member_types[childIndex]);
+
+                        RHIShaderBufferMemberReflection childReflection;
+                        childReflection.name = compiler.get_member_name(memberType.self, childIndex);
+                        childReflection.typeName = GetTypeName(compiler, childMemberType);
+                        childReflection.baseType = VulkanConvertShaderValueBaseType(childMemberType);
+                        childReflection.columns = childMemberType.columns;
+                        childReflection.rows = childMemberType.vecsize;
+                        childReflection.arraySize = GetArraySize(childMemberType);
+                        childReflection.size =
+                            static_cast<uint32_t>(compiler.get_declared_struct_member_size(memberType, childIndex));
+                        childReflection.offset = compiler.type_struct_member_offset(memberType, childIndex);
+                        reflection.members.push_back(std::move(childReflection));
+                    }
+                    return reflection;
+                }
 
                 RHIShaderBufferMemberReflection memberReflection;
                 memberReflection.name = compiler.get_member_name(resource.base_type_id, memberIndex);
@@ -242,9 +273,15 @@ namespace Hazel
                 bindingReflection.variableName = resource.name;
             }
 
-            if (reflectBuffer)
+            if (reflectBuffer && (set != GPUAssetImporterInternal::kMaterialResourceSet || binding != 0))
             {
                 bindingReflection.buffer = ReflectBuffer(compiler, resource);
+            }
+
+            // a special case for material properties
+            if (reflectBuffer && set == GPUAssetImporterInternal::kMaterialResourceSet && binding == 0)
+            {
+                bindingReflection.buffer = ReflectBuffer(compiler, resource, true);
             }
         }
     } // namespace
@@ -273,7 +310,7 @@ namespace Hazel
         }
 
         m_ShaderModule = createResult.value;
-        if (!Reflect())
+        if (!Reflect(m_Desc.binary, m_Reflection))
         {
             m_Device.destroyShaderModule(m_ShaderModule);
             m_ShaderModule = VK_NULL_HANDLE;
@@ -360,31 +397,32 @@ namespace Hazel
         m_IsDetached = false;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHIShader, Reflect)()
+    bool RHI_VK_FUNC_IMPL(RHIShader, Reflect)(const std::vector<uint32_t>& spirvBinary,
+                                              RHIShaderReflection& outReflection)
     {
-        spirv_cross::Compiler compiler(m_Desc.binary);
+        spirv_cross::Compiler compiler(spirvBinary);
         const auto resources = compiler.get_shader_resources();
 
         for (const auto& resource : resources.uniform_buffers)
         {
-            ReflectBoundResource(m_Reflection, compiler, resource, RHIResourceBindingType::UniformBuffer, true);
+            ReflectBoundResource(outReflection, compiler, resource, RHIResourceBindingType::UniformBuffer, true);
         }
 
         for (const auto& resource : resources.storage_buffers)
         {
-            ReflectBoundResource(m_Reflection, compiler, resource, RHIResourceBindingType::StorageBuffer, true);
+            ReflectBoundResource(outReflection, compiler, resource, RHIResourceBindingType::StorageBuffer, true);
         }
 
         for (const auto& resource : resources.separate_samplers)
         {
-            ReflectBoundResource(m_Reflection, compiler, resource, RHIResourceBindingType::Sampler, false);
+            ReflectBoundResource(outReflection, compiler, resource, RHIResourceBindingType::Sampler, false);
         }
 
         for (const auto& resource : resources.sampled_images)
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                m_Reflection,
+                outReflection,
                 compiler,
                 resource,
                 GetBindingType(compiler, resource, type, false),
@@ -395,7 +433,7 @@ namespace Hazel
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                m_Reflection,
+                outReflection,
                 compiler,
                 resource,
                 GetBindingType(compiler, resource, type, false),
@@ -406,7 +444,7 @@ namespace Hazel
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                m_Reflection,
+                outReflection,
                 compiler,
                 resource,
                 GetBindingType(compiler, resource, type, true),
@@ -415,7 +453,7 @@ namespace Hazel
 
         for (const auto& resource : resources.push_constant_buffers)
         {
-            auto& pushConstantReflection = m_Reflection.pushConstants.emplace_back();
+            auto& pushConstantReflection = outReflection.pushConstants.emplace_back();
             pushConstantReflection.name = resource.name;
             auto bufferReflection = ReflectBuffer(compiler, resource);
             pushConstantReflection.size = bufferReflection.size;
@@ -423,7 +461,7 @@ namespace Hazel
             pushConstantReflection.members = std::move(bufferReflection.members);
         }
 
-        SortReflection(m_Reflection);
+        SortReflection(outReflection);
         return true;
     }
 } // namespace Hazel

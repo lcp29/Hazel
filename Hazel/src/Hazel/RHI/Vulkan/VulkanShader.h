@@ -58,6 +58,8 @@ namespace Hazel
             return m_IsDetached;
         }
 
+        static bool Reflect(const std::vector<uint32_t>& spirvBinary, RHIShaderReflection& outReflection);
+
     private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIGraphicsPipelineImpl<RHIBackend::Vulkan>;
@@ -65,7 +67,6 @@ namespace Hazel
 
         RHIShaderImpl(RHIDevice* deviceOwner, vk::Device device, const RHIShaderDesc& desc);
 
-        bool Reflect();
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();
 

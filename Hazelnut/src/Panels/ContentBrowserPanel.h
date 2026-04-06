@@ -2,10 +2,7 @@
 
 #include "Hazel/Asset/AssetManager.h"
 #include "Hazel/Asset/MaterialAsset.h"
-#include "Hazel/Asset/RenderTextureAsset.h"
 #include "Hazel/Asset/SamplerAsset.h"
-#include "Hazel/Asset/ShaderAsset.h"
-#include "Hazel/Asset/ComputeShaderAsset.h"
 
 #include <filesystem>
 

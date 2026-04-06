@@ -350,8 +350,7 @@ namespace Hazel
             fileDesc.mipLevels = useMipmap ? DeduceMipLevelCount(fileDesc.width, fileDesc.height) : 1;
             fileDesc.format = RHIFormat::RGB32SFloat;
 
-            const size_t dataSize = static_cast<size_t>(width) * static_cast<size_t>(height)
-                                    * static_cast<size_t>(GetBytesPerPixel(fileDesc.format));
+            const size_t dataSize = width * height * GetBytesPerPixel(fileDesc.format);
             auto* image = CreateFromRawData(device, cmd, fileDesc, pixels, dataSize, detached);
             stbi_image_free(pixels);
             return image;

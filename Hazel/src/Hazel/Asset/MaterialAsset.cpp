@@ -12,8 +12,6 @@ namespace Hazel
 {
     namespace
     {
-        constexpr int kMaterialPropertyResourceGroup = 2;
-
         const std::unordered_map<MaterialAssetPropertyType, std::string> s_MaterialAssetPropertyTypeToStringMap =
         {
             {MaterialAssetPropertyType::Int, "Int"},
@@ -45,16 +43,132 @@ namespace Hazel
             }
             return MaterialAssetPropertyType::Int;
         }
+
+        YAML::Node SerializeColorBlendAttachment(const RHIColorBlendAttachmentDesc& attachment)
+        {
+            YAML::Node node;
+            node["BlendEnable"] = attachment.blendEnable;
+            node["SrcColorBlendFactor"] = static_cast<uint32_t>(attachment.srcColorBlendFactor);
+            node["DstColorBlendFactor"] = static_cast<uint32_t>(attachment.dstColorBlendFactor);
+            node["ColorBlendOp"] = static_cast<uint32_t>(attachment.colorBlendOp);
+            node["SrcAlphaBlendFactor"] = static_cast<uint32_t>(attachment.srcAlphaBlendFactor);
+            node["DstAlphaBlendFactor"] = static_cast<uint32_t>(attachment.dstAlphaBlendFactor);
+            node["AlphaBlendOp"] = static_cast<uint32_t>(attachment.alphaBlendOp);
+            node["ColorWriteMask"] = static_cast<uint8_t>(attachment.colorWriteMask);
+            return node;
+        }
+
+        RHIColorBlendAttachmentDesc DeserializeColorBlendAttachment(const YAML::Node& node)
+        {
+            RHIColorBlendAttachmentDesc attachment{};
+            if (!node)
+            {
+                return attachment;
+            }
+
+            attachment.blendEnable = node["BlendEnable"] ? node["BlendEnable"].as<bool>() : attachment.blendEnable;
+            attachment.srcColorBlendFactor = node["SrcColorBlendFactor"]
+                                                 ? static_cast<RHIBlendFactor>(node["SrcColorBlendFactor"].as<
+                                                     uint32_t>())
+                                                 : attachment.srcColorBlendFactor;
+            attachment.dstColorBlendFactor = node["DstColorBlendFactor"]
+                                                 ? static_cast<RHIBlendFactor>(node["DstColorBlendFactor"].as<
+                                                     uint32_t>())
+                                                 : attachment.dstColorBlendFactor;
+            attachment.colorBlendOp = node["ColorBlendOp"]
+                                          ? static_cast<RHIBlendOp>(node["ColorBlendOp"].as<uint32_t>())
+                                          : attachment.colorBlendOp;
+            attachment.srcAlphaBlendFactor = node["SrcAlphaBlendFactor"]
+                                                 ? static_cast<RHIBlendFactor>(node["SrcAlphaBlendFactor"].as<
+                                                     uint32_t>())
+                                                 : attachment.srcAlphaBlendFactor;
+            attachment.dstAlphaBlendFactor = node["DstAlphaBlendFactor"]
+                                                 ? static_cast<RHIBlendFactor>(node["DstAlphaBlendFactor"].as<
+                                                     uint32_t>())
+                                                 : attachment.dstAlphaBlendFactor;
+            attachment.alphaBlendOp = node["AlphaBlendOp"]
+                                          ? static_cast<RHIBlendOp>(node["AlphaBlendOp"].as<uint32_t>())
+                                          : attachment.alphaBlendOp;
+            attachment.colorWriteMask = node["ColorWriteMask"]
+                                            ? RHIColorComponentFlags(node["ColorWriteMask"].as<uint8_t>())
+                                            : attachment.colorWriteMask;
+            return attachment;
+        }
+
+        YAML::Node SerializePipelineState(const MaterialPipelineState& state)
+        {
+            YAML::Node node;
+            node["PolygonMode"] = static_cast<uint32_t>(state.polygonMode);
+            node["CullMode"] = static_cast<uint32_t>(state.cullMode);
+            node["DepthClampEnable"] = state.depthClampEnable;
+            node["DepthBiasEnable"] = state.depthBiasEnable;
+            node["DepthTestEnable"] = state.depthTestEnable;
+            node["DepthWriteEnable"] = state.depthWriteEnable;
+            node["DepthCompareOp"] = static_cast<uint32_t>(state.depthCompareOp);
+            node["StencilTestEnable"] = state.stencilTestEnable;
+
+            YAML::Node colorBlendAttachmentsNode;
+            for (const auto& attachment : state.colorBlendAttachments)
+            {
+                colorBlendAttachmentsNode.push_back(SerializeColorBlendAttachment(attachment));
+            }
+            node["ColorBlendAttachments"] = colorBlendAttachmentsNode;
+            return node;
+        }
+
+        MaterialPipelineState DeserializePipelineState(const YAML::Node& node)
+        {
+            MaterialPipelineState state{};
+            if (!node)
+            {
+                return state;
+            }
+
+            state.polygonMode = node["PolygonMode"]
+                                    ? static_cast<RHIPolygonMode>(node["PolygonMode"].as<uint32_t>())
+                                    : state.polygonMode;
+            state.cullMode = node["CullMode"]
+                                 ? static_cast<RHICullMode>(node["CullMode"].as<uint32_t>())
+                                 : state.cullMode;
+            state.depthClampEnable = node["DepthClampEnable"]
+                                         ? node["DepthClampEnable"].as<bool>()
+                                         : state.depthClampEnable;
+            state.depthBiasEnable = node["DepthBiasEnable"]
+                                        ? node["DepthBiasEnable"].as<bool>()
+                                        : state.depthBiasEnable;
+            state.depthTestEnable = node["DepthTestEnable"]
+                                        ? node["DepthTestEnable"].as<bool>()
+                                        : state.depthTestEnable;
+            state.depthWriteEnable = node["DepthWriteEnable"]
+                                         ? node["DepthWriteEnable"].as<bool>()
+                                         : state.depthWriteEnable;
+            state.depthCompareOp = node["DepthCompareOp"]
+                                       ? static_cast<RHICompareOp>(node["DepthCompareOp"].as<uint32_t>())
+                                       : state.depthCompareOp;
+            state.stencilTestEnable = node["StencilTestEnable"]
+                                          ? node["StencilTestEnable"].as<bool>()
+                                          : state.stencilTestEnable;
+            if (node["ColorBlendAttachments"])
+            {
+                for (const auto& attachmentNode : node["ColorBlendAttachments"])
+                {
+                    state.colorBlendAttachments.push_back(DeserializeColorBlendAttachment(attachmentNode));
+                }
+            }
+            return state;
+        }
     }
 
     YAML::Node MaterialAssetMeta::Serialize() const
     {
         YAML::Node rootNode;
-        rootNode["UUID"] = static_cast<uint64_t>(uuid);
-        rootNode["Shader"] = static_cast<uint64_t>(shader);
+        rootNode["UUID"] = static_cast<uint64_t>(m_UUID);
+        rootNode["Shader"] = static_cast<uint64_t>(m_Shader);
+        rootNode["Version"] = m_Version;
+        rootNode["PipelineState"] = SerializePipelineState(m_PipelineState);
 
         YAML::Node propertiesNode;
-        for (const auto& [name, type, data, sampler, texture] : properties)
+        for (const auto& [name, type, data, sampler, texture, slot, member] : m_Properties)
         {
             YAML::Node propertyNode;
             propertyNode["Name"] = name;
@@ -73,21 +187,23 @@ namespace Hazel
     {
         MaterialAssetMeta meta;
 
-        meta.uuid = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
+        meta.m_PipelineState = DeserializePipelineState(node["PipelineState"]);
 
         if (!node["Shader"])
         {
-            meta.shader = UUID(-1);
+            meta.m_Shader = UUID(-1);
             return meta;
         }
 
-        meta.shader = UUID(node["Shader"].as<uint64_t>());
+        meta.m_Shader = UUID(node["Shader"].as<uint64_t>());
 
         if (node["Properties"])
         {
             for (const auto& propertyNode : node["Properties"])
             {
-                MaterialAssetMetaProperty prop;
+                MaterialAssetProperty prop;
 
                 prop.name = propertyNode["Name"] ? propertyNode["Name"].as<std::string>() : "null";
                 prop.type = propertyNode["Type"]
@@ -102,26 +218,37 @@ namespace Hazel
                 prop.sampler = propertyNode["Sampler"] ? UUID(propertyNode["Sampler"].as<uint64_t>()) : UUID(-1);
                 prop.texture = propertyNode["Texture"] ? UUID(propertyNode["Texture"].as<uint64_t>()) : UUID(-1);
 
-                meta.properties.push_back(prop);
+                meta.m_Properties.push_back(prop);
             }
         }
         return meta;
     }
 
-    void MaterialAssetMeta::UpdateForShader(AssetManager* assetManager)
+    MaterialAssetMeta MaterialAssetMeta::CreateDefault()
     {
-        if (shader == UUID(-1))
+        MaterialAssetMeta meta;
+        meta.m_UUID = UUID();
+        meta.m_Shader = UUID(-1);
+        meta.m_PipelineState = {};
+        meta.m_Properties = {};
+        meta.m_Version = 0;
+        return meta;
+    }
+
+    void MaterialAssetMeta::RefreshShader(AssetManager* assetManager)
+    {
+        if (m_Shader == UUID(-1))
         {
-            properties.clear();
+            ClearProperties();
+            VersionUp();
             return;
         }
 
-        ShaderAsset* shaderAsset = assetManager->GetAsset<ShaderAsset>(shader);
-        shaderAsset->Load();
+        ShaderAsset* shaderAsset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(m_Shader));
+        std::vector<MaterialAssetProperty> oldProperties = std::move(m_Properties);
+        ClearProperties();
 
-        std::vector<MaterialAssetMetaProperty> newProperties;
-
-        auto reflection = shaderAsset->GetShader()->GetVertexShader()->GetReflection();
+        auto& reflection = shaderAsset->GetReflection();
         for (auto& set : reflection.resourceGroups)
         {
             // only reflect material property
@@ -131,27 +258,40 @@ namespace Hazel
             }
             for (auto& slot : set.slots)
             {
-                if (slot.slot == 0)
+                if (slot.slot != 0)
                 {
-                    for (auto& member : slot.buffer.members)
-                    {
-                        bool propertyExists = false;
-                        for (auto& metaProperty : properties)
-                        {
-                            if (metaProperty.name == member.name)
-                            {
-                                propertyExists = true;
-                                newProperties.push_back(metaProperty);
-                            }
-                        }
-                        if (!propertyExists)
-                        {
-                            MaterialAssetMetaProperty prop;
-                            prop.name = member.name;
-                            std::ranges::fill(prop.data, 0);
-                            prop.sampler = UUID(-1);
-                            prop.texture = UUID(-1);
+                    continue;
+                }
 
+                for (auto& member : slot.buffer.members)
+                {
+                    bool propertyExists = false;
+                    for (auto& metaProperty : oldProperties)
+                    {
+                        if (metaProperty.name == member.name)
+                        {
+                            propertyExists = true;
+                            AddProperty(metaProperty);
+                            break;
+                        }
+                    }
+                    if (!propertyExists)
+                    {
+                        MaterialAssetProperty prop;
+                        prop.name = member.name;
+                        std::ranges::fill(prop.data, 0);
+                        prop.sampler = UUID(-1);
+                        prop.texture = UUID(-1);
+                        prop.slot = slot.slot;
+                        prop.member = member;
+
+                        bool isSampler = member.name.starts_with("sampler_");
+                        bool isTexture = member.name.starts_with("texture_");
+                        bool isCombined = member.name.starts_with("combined_");
+                        bool isValue = !(isSampler || isTexture || isCombined);
+
+                        if (isValue)
+                        {
                             switch (member.baseType)
                             {
                                 case RHIShaderValueBaseType::SInt:
@@ -200,302 +340,28 @@ namespace Hazel
                                 default:
                                     break;
                             }
-                            newProperties.push_back(prop);
                         }
-                    }
-                }
-                else
-                {
-                    switch (slot.type)
-                    {
-                        case RHIResourceBindingType::Sampler:
+
+                        if (isSampler)
                         {
-                            bool propertyExists = false;
-                            for (auto& metaProperty : properties)
-                            {
-                                if (metaProperty.name == slot.variableName)
-                                {
-                                    propertyExists = true;
-                                    newProperties.push_back(metaProperty);
-                                }
-                            }
-                            if (propertyExists)
-                            {
-                                break;
-                            }
-                            MaterialAssetMetaProperty prop;
-                            prop.name = slot.variableName;
                             prop.type = MaterialAssetPropertyType::Sampler;
-                            std::ranges::fill(prop.data, 0);
-                            prop.sampler = UUID(-1);
-                            prop.texture = UUID(-1);
-                            newProperties.push_back(prop);
-                            break;
                         }
-                        case RHIResourceBindingType::SampledImage:
+
+                        if (isTexture)
                         {
-                            bool propertyExists = false;
-                            for (auto& metaProperty : properties)
-                            {
-                                if (metaProperty.name == slot.variableName)
-                                {
-                                    propertyExists = true;
-                                    newProperties.push_back(metaProperty);
-                                }
-                            }
-                            if (propertyExists)
-                            {
-                                break;
-                            }
-                            MaterialAssetMetaProperty prop;
-                            prop.name = slot.variableName;
                             prop.type = MaterialAssetPropertyType::Texture;
-                            std::ranges::fill(prop.data, 0);
-                            prop.sampler = UUID(-1);
-                            prop.texture = UUID(-1);
-                            newProperties.push_back(prop);
-                            break;
                         }
-                        case RHIResourceBindingType::SamplerWithImage:
+
+                        if (isCombined)
                         {
-                            bool propertyExists = false;
-                            for (auto& metaProperty : properties)
-                            {
-                                if (metaProperty.name == slot.variableName)
-                                {
-                                    propertyExists = true;
-                                    newProperties.push_back(metaProperty);
-                                }
-                            }
-                            if (propertyExists)
-                            {
-                                break;
-                            }
-                            MaterialAssetMetaProperty prop;
-                            prop.name = slot.variableName;
                             prop.type = MaterialAssetPropertyType::SamplerWithTexture;
-                            std::ranges::fill(prop.data, 0);
-                            prop.sampler = UUID(-1);
-                            prop.texture = UUID(-1);
-                            newProperties.push_back(prop);
-                            break;
                         }
-                        default:
-                            break;
+
+                        AddProperty(prop);
                     }
                 }
             }
         }
-
-        properties = std::move(newProperties);
-    }
-
-    MaterialAsset::MaterialAsset(UUID uuid,
-                                 AssetManager* assetManager,
-                                 Renderer* renderer,
-                                 std::filesystem::path filePath,
-                                 MaterialAssetMeta meta)
-        : m_UUID(uuid), m_AssetManager(assetManager), m_Renderer(renderer), m_FilePath(std::move(filePath)),
-          m_Meta(std::move(meta)) {}
-
-    MaterialAsset::MaterialAsset(MaterialAsset&& other) noexcept
-        : m_UUID(other.m_UUID),
-          m_IsLoaded(other.m_IsLoaded),
-          m_AssetManager(other.m_AssetManager),
-          m_Renderer(other.m_Renderer),
-          m_FilePath(std::move(other.m_FilePath)),
-          m_Meta(other.m_Meta)
-    {
-        other.m_Renderer = nullptr;
-        other.m_IsLoaded = false;
-    }
-
-    MaterialAsset& MaterialAsset::operator=(MaterialAsset&& other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        Release();
-
-        m_UUID = other.m_UUID;
-        m_IsLoaded = other.m_IsLoaded;
-        m_AssetManager = other.m_AssetManager;
-        m_FilePath = std::move(other.m_FilePath);
-        m_Renderer = other.m_Renderer;
-        m_Meta = other.m_Meta;
-
-        other.m_Renderer = nullptr;
-        other.m_IsLoaded = false;
-        return *this;
-    }
-
-    MaterialAsset::~MaterialAsset()
-    {
-        Unload();
-    }
-
-    void MaterialAsset::Load()
-    {
-        if (m_IsLoaded)
-        {
-            return;
-        }
-
-        if (m_Meta.shader == UUID(-1))
-        {
-            m_MaterialID = 0;
-            m_Material = nullptr;
-            m_IsLoaded = false;
-            return;
-        }
-
-        ShaderAsset* shaderAsset = m_AssetManager->GetAsset<ShaderAsset>(m_Meta.shader);
-        shaderAsset->Load();
-
-        // make sure the reflections of the two stages are the same!
-        auto reflection = shaderAsset->GetShader()->GetVertexShader()->GetReflection();
-
-        std::vector<MaterialProperty> properties;
-
-        for (auto& metaProperty : m_Meta.properties)
-        {
-            for (auto& group : reflection.resourceGroups)
-            {
-                if (group.set != kMaterialPropertyResourceGroup) // 2
-                {
-                    continue;
-                }
-
-                // non-buffered properties
-                for (auto& slot : group.slots)
-                {
-                    if (slot.variableName == metaProperty.name)
-                    {
-                        MaterialProperty prop;
-                        prop.name = metaProperty.name;
-                        prop.slot = slot.slot;
-                        prop.isInBuffer = false;
-                        switch (slot.type)
-                        {
-                            case RHIResourceBindingType::Sampler:
-                            {
-                                auto* sampler = m_AssetManager->GetAsset<SamplerAsset>(metaProperty.sampler);
-                                if (sampler)
-                                {
-                                    sampler->Load();
-                                    prop.sampler = sampler->GetSampler();
-                                }
-                                break;
-                            }
-                            case RHIResourceBindingType::SampledImage:
-                            {
-                                auto* image = m_AssetManager->GetAsset<TextureAsset>(metaProperty.texture);
-                                if (image)
-                                {
-                                    image->Load();
-                                    prop.texture = image->GetTexture();
-                                }
-                                break;
-                            }
-                            case RHIResourceBindingType::SamplerWithImage:
-                            {
-                                auto* image = m_AssetManager->GetAsset<TextureAsset>(metaProperty.texture);
-                                auto* sampler = m_AssetManager->GetAsset<SamplerAsset>(metaProperty.sampler);
-                                if (image)
-                                {
-                                    image->Load();
-                                    prop.texture = image->GetTexture();
-                                }
-                                if (sampler)
-                                {
-                                    sampler->Load();
-                                    prop.sampler = sampler->GetSampler();
-                                }
-                                break;
-                            }
-                            default:
-                                break;
-                        }
-                        properties.push_back(prop);
-                    }
-                }
-                // buffered properties
-                for (auto& slot : group.slots)
-                {
-                    if (slot.slot != 0)
-                    {
-                        continue;
-                    }
-
-                    for (auto& member : slot.buffer.members)
-                    {
-                        if (metaProperty.name == member.name)
-                        {
-                            MaterialProperty prop;
-                            prop.name = metaProperty.name;
-                            prop.slot = slot.slot;
-                            prop.isInBuffer = true;
-                            std::copy_n(metaProperty.data, 64, prop.data);
-                            prop.member = member;
-                            properties.push_back(prop);
-                        }
-                    }
-                }
-            }
-        }
-
-        auto material = std::make_unique<Material>(m_UUID, shaderAsset->GetShader(), properties);
-
-        m_MaterialID = shaderAsset->GetShader()->RegisterMaterial(std::move(material));
-        m_Material = shaderAsset->GetShader()->GetMaterial(m_MaterialID);
-
-        m_IsLoaded = true;
-    }
-
-    void MaterialAsset::Unload()
-    {
-        if (!m_IsLoaded)
-        {
-            return;
-        }
-
-        if (m_Meta.shader == UUID(-1))
-        {
-            m_MaterialID = 0;
-            m_Material = nullptr;
-            m_IsLoaded = false;
-            return;
-        }
-
-        ShaderAsset* shaderAsset = m_AssetManager->GetAsset<ShaderAsset>(m_Meta.shader);
-        shaderAsset->GetShader()->UnregisterMaterial(m_MaterialID);
-
-        m_MaterialID = 0;
-        m_Material = nullptr;
-
-        m_IsLoaded = false;
-    }
-
-    void MaterialAsset::Release()
-    {
-        Unload();
-    }
-
-    void MaterialAsset::Recreate()
-    {
-        if (m_IsLoaded)
-        {
-            m_Renderer->GetDevice()->WaitIdle();
-            Unload();
-            Load();
-            auto shaderUUID = m_Meta.shader;
-            if (m_AssetManager->GetShaders().contains(shaderUUID))
-            {
-                auto& shader = m_AssetManager->GetShaders().at(m_Meta.shader);
-                shader.GetShader()->RecreateMaterialResourceGroup();
-            }
-        }
+        VersionUp();
     }
 } // Hazel

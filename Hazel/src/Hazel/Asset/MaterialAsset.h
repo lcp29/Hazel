@@ -3,16 +3,21 @@
 //
 
 #pragma once
-#include "Hazel/Core/UUID.h"
-#include "Hazel/Renderer/Material.h"
+#include "Asset.h"
+#include "Hazel/RHI/RHI.h"
 
+#include <algorithm>
+#include <cstring>
+#include <string>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel
 {
-    class Renderer;
-    class AssetManager;
     class ShaderAsset;
+    class SamplerAsset;
+    class TextureAsset;
+    class AssetManager;
 
     enum class MaterialAssetPropertyType
     {
@@ -29,58 +34,224 @@ namespace Hazel
         SamplerWithTexture
     };
 
-    struct MaterialAssetMetaProperty
+    struct MaterialAssetProperty
     {
         std::string name;
         MaterialAssetPropertyType type;
         uint8_t data[64];
         UUID sampler;
         UUID texture;
+        uint32_t slot;
+        RHIShaderBufferMemberReflection member{};
+    };
+
+    struct MaterialPipelineState
+    {
+        RHIPolygonMode polygonMode = RHIPolygonMode::Fill;
+        RHICullMode cullMode = RHICullMode::Back;
+        bool depthClampEnable = false;
+        bool depthBiasEnable = false;
+        bool depthTestEnable = false;
+        bool depthWriteEnable = false;
+        RHICompareOp depthCompareOp = RHICompareOp::LessOrEqual;
+        bool stencilTestEnable = false;
+        std::vector<RHIColorBlendAttachmentDesc> colorBlendAttachments;
+
+        bool operator==(const MaterialPipelineState& other) const
+        {
+            bool equalVector = true;
+            if (colorBlendAttachments.size() != other.colorBlendAttachments.size())
+            {
+                equalVector = false;
+            }
+            else
+            {
+                for (size_t i = 0; i < colorBlendAttachments.size(); i++)
+                {
+                    if (colorBlendAttachments != other.colorBlendAttachments)
+                    {
+                        equalVector = false;
+                        break;
+                    }
+                }
+            }
+            return polygonMode == other.polygonMode &&
+                   cullMode == other.cullMode &&
+                   depthClampEnable == other.depthClampEnable &&
+                   depthBiasEnable == other.depthBiasEnable &&
+                   depthTestEnable == other.depthTestEnable &&
+                   depthWriteEnable == other.depthWriteEnable &&
+                   depthCompareOp == other.depthCompareOp &&
+                   stencilTestEnable == other.stencilTestEnable &&
+                   equalVector;
+        };
     };
 
     struct MaterialAssetMeta
     {
-        UUID uuid;
-        UUID shader;
-        std::vector<MaterialAssetMetaProperty> properties;
-
         YAML::Node Serialize() const;
         static MaterialAssetMeta Deserialize(const YAML::Node& node);
+        static MaterialAssetMeta CreateDefault();
 
-        void UpdateForShader(AssetManager* assetManager);
+        UUID GetUUID() const
+        {
+            return m_UUID;
+        }
+
+        uint64_t GetVersion() const
+        {
+            return m_Version;
+        }
+
+        void VersionUp()
+        {
+            m_Version++;
+        }
+
+        UUID GetShader() const
+        {
+            return m_Shader;
+        }
+
+        void SetShader(UUID shader)
+        {
+            if (m_Shader == shader)
+            {
+                return;
+            }
+            m_Shader = shader;
+            VersionUp();
+        }
+
+        const std::vector<MaterialAssetProperty>& GetProperties() const
+        {
+            return m_Properties;
+        }
+
+        const MaterialPipelineState& GetPipelineState() const
+        {
+            return m_PipelineState;
+        }
+
+        void SetPipelineState(MaterialPipelineState pipelineState)
+        {
+            if (m_PipelineState == pipelineState)
+            {
+                return;
+            }
+            m_PipelineState = std::move(pipelineState);
+            VersionUp();
+        }
+
+        void ClearProperties()
+        {
+            if (m_Properties.empty())
+            {
+                return;
+            }
+            m_Properties.clear();
+            VersionUp();
+        }
+
+        void ReserveProperties(size_t count)
+        {
+            m_Properties.reserve(count);
+        }
+
+        void AddProperty(const MaterialAssetProperty& property)
+        {
+            m_Properties.push_back(property);
+            VersionUp();
+        }
+
+        void SetProperties(std::vector<MaterialAssetProperty> properties)
+        {
+            if (m_Properties.size() == properties.size() &&
+                std::equal(m_Properties.begin(),
+                           m_Properties.end(),
+                           properties.begin(),
+                           [](const MaterialAssetProperty& lhs, const MaterialAssetProperty& rhs) {
+                               return lhs.name == rhs.name &&
+                                      lhs.type == rhs.type &&
+                                      std::memcmp(lhs.data, rhs.data, sizeof(lhs.data)) == 0 &&
+                                      lhs.sampler == rhs.sampler &&
+                                      lhs.texture == rhs.texture;
+                           }))
+            {
+                return;
+            }
+            m_Properties = std::move(properties);
+            VersionUp();
+        }
+
+        void SetPropertyData(size_t index, const void* data, size_t size)
+        {
+            if (index >= m_Properties.size())
+            {
+                return;
+            }
+
+            const auto copySize = std::min(size, sizeof(m_Properties[index].data));
+            if (std::memcmp(m_Properties[index].data, data, copySize) == 0)
+            {
+                return;
+            }
+
+            std::memcpy(m_Properties[index].data, data, copySize);
+            if (copySize < sizeof(m_Properties[index].data))
+            {
+                std::memset(m_Properties[index].data + copySize, 0, sizeof(m_Properties[index].data) - copySize);
+            }
+            VersionUp();
+        }
+
+        void SetPropertySampler(size_t index, UUID sampler)
+        {
+            if (index >= m_Properties.size() || m_Properties[index].sampler == sampler)
+            {
+                return;
+            }
+            m_Properties[index].sampler = sampler;
+            VersionUp();
+        }
+
+        void SetPropertyTexture(size_t index, UUID texture)
+        {
+            if (index >= m_Properties.size() || m_Properties[index].texture == texture)
+            {
+                return;
+            }
+            m_Properties[index].texture = texture;
+            VersionUp();
+        }
+
+        void RefreshShader(AssetManager* assetManager);
+
+    private:
+        UUID m_UUID = 0;
+        UUID m_Shader = UUID(-1);
+        MaterialPipelineState m_PipelineState{};
+        std::vector<MaterialAssetProperty> m_Properties;
+        uint64_t m_Version = 0;
     };
 
-    class MaterialAsset
+    class MaterialAsset : public Asset
     {
     public:
         MaterialAsset() = delete;
 
-        MaterialAsset(UUID uuid,
-                      AssetManager* assetManager,
-                      Renderer* renderer,
-                      std::filesystem::path filePath,
-                      MaterialAssetMeta meta);
+        MaterialAsset(AssetRegistryTerm* registryTerm,
+                      const MaterialAssetMeta& meta)
+            : Asset(registryTerm), m_Meta(meta) {}
 
-        MaterialAsset(const MaterialAsset&) = delete;
-        MaterialAsset& operator=(const MaterialAsset&) = delete;
-        MaterialAsset(MaterialAsset&& other) noexcept;
-        MaterialAsset& operator=(MaterialAsset&& other) noexcept;
-        ~MaterialAsset();
-
-        void Load();
-        void Unload();
-
-        void Release();
-        void Recreate();
-
-        void SetMaterialID(uint32_t id)
+        uint64_t GetVersion() const final
         {
-            m_MaterialID = id;
+            return m_Meta.GetVersion();
         }
 
-        uint32_t GetMaterialID() const
+        void VersionUp() final
         {
-            return m_MaterialID;
+            m_Meta.VersionUp();
         }
 
         const MaterialAssetMeta& GetMeta() const
@@ -93,29 +264,17 @@ namespace Hazel
             return m_Meta;
         }
 
-        Material* GetMaterial() const
+        UUID GetShader() const
         {
-            return m_Material;
+            return m_Meta.GetShader();
         }
 
-        std::filesystem::path GetFilePath() const
+        MaterialPipelineState GetPipelineState() const
         {
-            return m_FilePath;
-        }
-
-        bool IsLoaded() const
-        {
-            return m_IsLoaded;
+            return m_Meta.GetPipelineState();
         }
 
     private:
-        UUID m_UUID = 0;
-        bool m_IsLoaded = false;
-        uint32_t m_MaterialID = 0;
-        AssetManager* m_AssetManager = nullptr;
-        Renderer* m_Renderer = nullptr;
-        Material* m_Material = nullptr;
-        std::filesystem::path m_FilePath;
         MaterialAssetMeta m_Meta{};
     };
 } // Hazel

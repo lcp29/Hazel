@@ -47,11 +47,15 @@ namespace Hazel
         }
 
         // required features supported by almost all devices
-        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing && m_RequiredVulkanFeatures.supportDynamicRendering
-              && m_RequiredVulkanFeatures.supportGpuAddress && m_RequiredVulkanFeatures.supportDescriptorPartiallyBound
-              && m_RequiredVulkanFeatures.supportTimelineSemaphore && m_RequiredVulkanFeatures.supportSynchronization2
-              && m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics
-              && m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics))
+        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing &&
+              m_RequiredVulkanFeatures.supportDynamicRendering &&
+              m_RequiredVulkanFeatures.supportGpuAddress &&
+              m_RequiredVulkanFeatures.supportDescriptorPartiallyBound &&
+              m_RequiredVulkanFeatures.supportTimelineSemaphore &&
+              m_RequiredVulkanFeatures.supportSynchronization2 &&
+              m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics &&
+              m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics &&
+              m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount))
         {
             return false;
         }
@@ -136,5 +140,7 @@ namespace Hazel
         m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics = features2.features.fragmentStoresAndAtomics;
         m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics =
             features2.features.vertexPipelineStoresAndAtomics;
+        m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount =
+            supportsVulkan12 && vulkan12Features.descriptorBindingVariableDescriptorCount;
     }
 } // namespace Hazel

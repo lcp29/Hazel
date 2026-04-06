@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 
 namespace Hazel
 {
@@ -21,17 +23,11 @@ namespace Hazel
     };
 } // namespace Hazel
 
-namespace std
+template <>
+struct std::hash<Hazel::UUID>
 {
-    template <typename T>
-    struct hash;
-
-    template <>
-    struct hash<Hazel::UUID>
+    size_t operator()(const Hazel::UUID& uuid) const noexcept
     {
-        std::size_t operator()(const Hazel::UUID& uuid) const
-        {
-            return (uint64_t)uuid;
-        }
-    };
-} // namespace std
+        return hash<uint64_t>{}(uuid);
+    }
+}; // namespace std

@@ -4,52 +4,63 @@
 
 #pragma once
 
-#include "Hazel/Core/UUID.h"
-#include "Hazel/Renderer/ComputeShader.h"
+#include "Asset.h"
+#include "Hazel/RHI/RHIShader.h"
 
-#include <filesystem>
-#include <optional>
-#include <shaderc/shaderc.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel
 {
-    class Renderer;
-
     struct ComputeShaderAssetMeta
     {
-        UUID uuid = 0;
-
         YAML::Node Serialize() const;
         static ComputeShaderAssetMeta Deserialize(const YAML::Node& node);
+        static ComputeShaderAssetMeta CreateDefault();
+
+        UUID GetUUID() const
+        {
+            return m_UUID;
+        }
+
+        uint64_t GetVersion() const
+        {
+            return m_Version;
+        }
+
+        void VersionUp()
+        {
+            m_Version++;
+        }
+
+    private:
+        UUID m_UUID = 0;
+        uint64_t m_Version = 0;
     };
 
-    class ComputeShaderAsset
+    struct ComputeShaderAssetData
+    {
+        std::vector<uint32_t> binary;
+        RHIShaderReflection reflection;
+    };
+
+    class ComputeShaderAsset : public Asset
     {
     public:
         ComputeShaderAsset() = delete;
 
-        ComputeShaderAsset(Renderer* renderer,
-                           std::filesystem::path filePath,
-                           ComputeShaderAssetMeta meta);
+        ComputeShaderAsset(AssetRegistryTerm* registryTerm,
+                           const ComputeShaderAssetMeta& meta,
+                           ComputeShaderAssetData data)
+            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data)) {}
 
-        ComputeShaderAsset(const ComputeShaderAsset&) = delete;
-        ComputeShaderAsset& operator=(const ComputeShaderAsset&) = delete;
-        ComputeShaderAsset(ComputeShaderAsset&& other) noexcept;
-        ComputeShaderAsset& operator=(ComputeShaderAsset&& other) noexcept;
-        ~ComputeShaderAsset();
-
-        void Load();
-        void Unload();
-
-        bool IsValid() const
+        uint64_t GetVersion() const final
         {
-            return m_ComputeShader && m_ComputeShader->IsValid();
+            return m_Meta.GetVersion();
         }
 
-        UUID GetUUID() const
+        void VersionUp() final
         {
-            return m_Meta.uuid;
+            m_Meta.VersionUp();
         }
 
         const ComputeShaderAssetMeta& GetMeta() const
@@ -62,37 +73,28 @@ namespace Hazel
             return m_Meta;
         }
 
-        const std::filesystem::path& GetFilePath() const
+        const ComputeShaderAssetData& GetData() const
         {
-            return m_FilePath;
+            return m_Data;
         }
 
-        ComputeShader* GetComputeShader()
+        ComputeShaderAssetData& GetData()
         {
-            return m_ComputeShader;
+            return m_Data;
         }
 
-        const ComputeShader* GetComputeShader() const
+        const RHIShaderReflection& GetReflection() const
         {
-            return m_ComputeShader;
+            return m_Data.reflection;
         }
 
-        bool IsLoaded() const
+        RHIShaderReflection& GetReflection()
         {
-            return m_IsLoaded;
+            return m_Data.reflection;
         }
-
-        void Release();
-
-        void Recreate();
 
     private:
-        bool m_IsLoaded = false;
-        UUID m_UUID = 0;
         ComputeShaderAssetMeta m_Meta{};
-        std::filesystem::path m_FilePath;
-        shaderc::SpvCompilationResult m_CompileResult;
-        Renderer* m_Renderer = nullptr;
-        ComputeShader* m_ComputeShader = nullptr;
+        ComputeShaderAssetData m_Data{};
     };
 } // namespace Hazel

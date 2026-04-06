@@ -1,0 +1,14 @@
+UUID: 6531589879330968622
+Shader: 17413239457703166156
+Version: 32
+PipelineState:
+  PolygonMode: 0
+  CullMode: 2
+  DepthClampEnable: false
+  DepthBiasEnable: false
+  DepthTestEnable: false
+  DepthWriteEnable: false
+  DepthCompareOp: 3
+  StencilTestEnable: false
+  ColorBlendAttachments: ~
+Properties: ~

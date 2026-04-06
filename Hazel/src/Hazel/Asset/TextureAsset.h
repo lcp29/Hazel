@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include "Asset.h"
+#include "AssetManager.h"
 #include "Hazel/Core/UUID.h"
-#include "Hazel/Renderer/Texture.h"
+#include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
 
-#include <filesystem>
-#include <optional>
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel
@@ -17,45 +17,104 @@ namespace Hazel
 
     struct TextureAssetMeta
     {
-        UUID uuid = 0;
-        bool isSRGB = true;
-        bool useMipmap = false;
-
         YAML::Node Serialize() const;
         static TextureAssetMeta Deserialize(const YAML::Node& node);
-    };
-
-    class TextureAsset
-    {
-    public:
-        TextureAsset() = delete;
-
-        TextureAsset(UUID uuid,
-                     std::filesystem::path filePath,
-                     Renderer* renderer,
-                     TextureAssetMeta meta)
-            : m_UUID(uuid)
-              , m_FilePath(std::move(filePath))
-              , m_Renderer(renderer)
-              , m_Meta(meta) {}
-
-        TextureAsset(const TextureAsset&) = delete;
-        TextureAsset& operator=(const TextureAsset&) = delete;
-        TextureAsset(TextureAsset&& other) noexcept;
-        TextureAsset& operator=(TextureAsset&& other) noexcept;
-        ~TextureAsset();
-
-        void Load();
-        void Unload();
+        static TextureAssetMeta CreateDefault();
 
         UUID GetUUID() const
         {
             return m_UUID;
         }
 
-        const std::filesystem::path& GetFilePath() const
+        uint64_t GetVersion() const
         {
-            return m_FilePath;
+            return m_Version;
+        }
+
+        void VersionUp()
+        {
+            m_Version++;
+        }
+
+        bool IsSRGB() const
+        {
+            return m_IsSRGB;
+        }
+
+        void SetSRGB(bool isSRGB)
+        {
+            if (m_IsSRGB == isSRGB)
+            {
+                return;
+            }
+            m_IsSRGB = isSRGB;
+            m_Version++;
+        }
+
+        bool UseMipmap() const
+        {
+            return m_UseMipmap;
+        }
+
+        void SetUseMipmap(bool useMipmap)
+        {
+            if (m_UseMipmap == useMipmap)
+            {
+                return;
+            }
+            m_UseMipmap = useMipmap;
+            m_Version++;
+        }
+
+        bool AllowStorageLoad() const
+        {
+            return m_AllowStorageLoad;
+        }
+
+        void SetAllowStorageLoad(bool allowStorageLoad)
+        {
+            if (m_AllowStorageLoad == allowStorageLoad)
+            {
+                return;
+            }
+            m_AllowStorageLoad = allowStorageLoad;
+            m_Version++;
+        }
+
+    private:
+        UUID m_UUID = 0;
+        uint64_t m_Version = 0;
+        bool m_IsSRGB = true;
+        bool m_UseMipmap = false;
+        bool m_AllowStorageLoad = false;
+    };
+
+    struct TextureAssetData
+    {
+        uint32_t width = 0;
+        uint32_t height = 0;
+        RHIFormat format = RHIFormat::RGBA8SRGB;
+        std::vector<uint8_t> rawImageData;
+    };
+
+    class TextureAsset : public Asset
+    {
+    public:
+        TextureAsset() = delete;
+
+        TextureAsset(AssetRegistryTerm* registryTerm,
+                     const TextureAssetMeta& meta,
+                     TextureAssetData textureData)
+            : Asset(registryTerm), m_Meta(meta), m_TextureData(std::move(textureData)) {}
+
+        uint64_t GetVersion() const final
+        {
+            return m_Meta.GetVersion();
+        }
+
+        void VersionUp() final
+        {
+            m_Meta.VersionUp();
         }
 
         const TextureAssetMeta& GetMeta() const
@@ -68,26 +127,18 @@ namespace Hazel
             return m_Meta;
         }
 
-        Texture* GetTexture() const
+        const TextureAssetData& GetTextureData() const
         {
-            return m_Texture;
+            return m_TextureData;
         }
 
-        bool IsLoaded() const
+        TextureAssetData& GetTextureData()
         {
-            return m_IsLoaded;
+            return m_TextureData;
         }
-
-        void Release();
-
-        void Recreate();
 
     private:
-        UUID m_UUID = 0;
-        bool m_IsLoaded = false;
-        std::filesystem::path m_FilePath;
-        Renderer* m_Renderer = nullptr;
         TextureAssetMeta m_Meta{};
-        Texture* m_Texture = nullptr;
+        TextureAssetData m_TextureData{};
     };
 } // namespace Hazel

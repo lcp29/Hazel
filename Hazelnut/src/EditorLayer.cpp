@@ -3,15 +3,12 @@
 #include "Hazel/Utils/PlatformUtils.h"
 #include "Hazel/Math/Math.h"
 #include "Hazel/Scripting/ScriptEngine.h"
-#include "Hazel/Renderer/RenderTexture.h"
+#include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
 #include "Hazel/RHI/RHI.h"
 
 #include <imgui.h>
-
 #include <glm/gtc/type_ptr.hpp>
-
-#include "ImGuizmo.h"
-
+#include <ImGuizmo.h>
 #include <fstream>
 
 namespace Hazel
@@ -235,7 +232,7 @@ namespace Hazel
             {
                 OnSceneStop();
             }
-            Project::GetActive()->GetAssetManager()->UnloadAllAssets();
+            Project::GetActive()->GetAssetManager()->ClearLoadedAssets();
             ScriptEngine::Shutdown();
             Project::CloseActive();
         }
@@ -257,16 +254,6 @@ namespace Hazel
         {
             m_CheckerboardSampler->Release();
             m_CheckerboardSampler = nullptr;
-        }
-        if (m_ObjectIDRenderTextureBuffer)
-        {
-            m_Renderer->RemoveRenderBuffer(m_ObjectIDRenderTextureBuffer);
-            m_ObjectIDRenderTextureBuffer = nullptr;
-        }
-        if (m_ObjectIDRenderTexture)
-        {
-            m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
-            m_ObjectIDRenderTexture = nullptr;
         }
     }
 
@@ -342,9 +329,9 @@ namespace Hazel
             m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);
             size_t pixelIndex = (mouseY * static_cast<size_t>(viewportSize.x) + mouseX);
             int pixelData =
-                *(static_cast<uint32_t*>(m_ObjectIDRenderTextureBuffer->GetAllBuffers()[
-                      (currentFrameIndex - 1) % m_Renderer->
-                      GetMaxFramesInFlight()]->Map()) + pixelIndex);
+                *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer.asset)->
+                      GetAllBuffers()[(currentFrameIndex - 1) % m_Renderer->GetMaxFramesInFlight()]->Map()) +
+                  pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
@@ -363,9 +350,9 @@ namespace Hazel
             }
         }
         m_DefaultRenderTextureUIData.clear();
-        RenderTexture* defaultRenderTexture = m_Renderer->GetDefaultRenderTexture();
+        GPURenderTextureAsset* defaultRenderTexture = m_Renderer->GetDefaultRenderTexture();
         auto images = defaultRenderTexture->GetAllImages();
-        auto imageViews = defaultRenderTexture->GetAllImageViews();
+        auto imageViews = defaultRenderTexture->GetAllDefaultImageViews();
         for (int i = 0; i < images.size(); i++)
         {
             void* texture = Application::Get().GetImGuiLayer()->AddTexture(
@@ -378,9 +365,6 @@ namespace Hazel
 
     void EditorLayer::RecreateObjectIDRenderData()
     {
-        m_Renderer->RemoveRenderTexture(m_ObjectIDRenderTexture);
-        m_Renderer->RemoveRenderBuffer(m_ObjectIDRenderTextureBuffer);
-
         RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
         objectIDRenderTextureDesc.height = static_cast<uint32_t>(m_ViewportSize.y);
@@ -389,11 +373,7 @@ namespace Hazel
         objectIDRenderTextureDesc.useMipmap = false;
         objectIDRenderTextureDesc.usages = RHIImageUsageFlagBits::TransferSource;
 
-        auto objectIDRenderTexture = std::make_unique<RenderTexture>(m_ObjectIDRenderTextureUUID,
-                                                                     m_Renderer,
-                                                                     objectIDRenderTextureDesc);
-
-        m_ObjectIDRenderTexture = m_Renderer->AddRenderTexture(std::move(objectIDRenderTexture));
+        m_ObjectIDRenderTexture = m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc);
 
         RenderBufferDesc objectIDRenderBufferDesc{};
         objectIDRenderBufferDesc.perFrame = true;
@@ -403,16 +383,19 @@ namespace Hazel
         objectIDRenderBufferDesc.mapOnCreate = true;
         objectIDRenderBufferDesc.hostCoherent = true;
         objectIDRenderBufferDesc.allowGpuAddress = false;
-        auto objectIDBuffer = std::make_unique<RenderBuffer>(m_Renderer, objectIDRenderBufferDesc);
-        m_ObjectIDRenderTextureBuffer = m_Renderer->AddRenderBuffer(std::move(objectIDBuffer));
+
+        m_ObjectIDRenderTextureBuffer = m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc);
     }
 
     void EditorLayer::OnObjectIDMapRender()
     {
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
-        auto* objectIDImage = m_ObjectIDRenderTexture->GetImage();
-        auto* objectIDImageView = m_ObjectIDRenderTexture->GetImageView();
-        auto* objectIDImageBuffer = m_ObjectIDRenderTextureBuffer->GetBuffer();
+        auto* objectIDImage =
+            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->GetImage();
+        auto* objectIDImageView =
+            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->GetDefaultImageView();
+        auto* objectIDImageBuffer =
+            static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer.asset)->GetBuffer();
 
         RHIRenderingAttachmentDesc objectIDAttachmentDesc{};
         objectIDAttachmentDesc.imageView = objectIDImageView;
@@ -1092,7 +1075,7 @@ namespace Hazel
             OnSceneStop();
         }
 
-        Project::GetActive()->GetAssetManager()->UnloadAllAssets();
+        Project::GetActive()->GetAssetManager()->ClearLoadedAssets();
 
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
@@ -1130,7 +1113,7 @@ namespace Hazel
             return;
         }
 
-        Project::GetActive()->GetAssetManager()->UnloadAllAssets();
+        Project::GetActive()->GetAssetManager()->ClearLoadedAssets();
 
         Ref<Scene> newScene = CreateRef<Scene>();
         SceneSerializer serializer(newScene);
@@ -1143,9 +1126,6 @@ namespace Hazel
             m_EditorScenePath = path;
             m_HoveredEntity = {};
         }
-
-        auto initAssetUUIDs = newScene->GetInitialAssetUUIDs();
-        Project::GetActive()->GetAssetManager()->LoadAssetUUIDs(initAssetUUIDs);
     }
 
     void EditorLayer::SaveScene()

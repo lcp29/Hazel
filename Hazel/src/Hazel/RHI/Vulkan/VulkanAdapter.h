@@ -21,6 +21,7 @@ namespace Hazel
         bool supportSynchronization2 = false;
         bool supportFragmentStoresAndAtomics = false;
         bool supportVertexPipelineStoresAndAtomics = false;
+        bool supportDescriptorBindingVariableDescriptorCount;
     };
 
     RHI_VK_CLASS_IMPL(RHIAdapter)

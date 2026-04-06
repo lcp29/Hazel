@@ -4,7 +4,7 @@
 
 #pragma once
 #include "Hazel/RHI/RHI.h"
-#include "Hazel/Renderer/Mesh.h"
+#include "GPUAsset/GPUMeshAsset.h"
 
 namespace Hazel
 {

@@ -4,56 +4,63 @@
 
 #include "AssetManager.h"
 
+#include "AssetImporter.h"
+#include "AssetUtils.h"
 #include "Hazel/Project/Project.h"
 #include "Hazel/Renderer/Renderer.h"
 
+#include <algorithm>
 #include <ranges>
+#include <thread>
 
 namespace Hazel
 {
     AssetManager::AssetManager(Project* project, Renderer* renderer)
-        : m_Project(project),
-          m_Renderer(renderer) {}
+        : m_Project(project), m_Renderer(renderer) {}
 
-    AssetManager::AssetManager(AssetManager&& other) noexcept
+    void AssetManager::WriteAllMetaFiles() const
     {
-        m_Project = other.m_Project;
-        m_Renderer = other.m_Renderer;
-        m_Textures = std::move(other.m_Textures);
-        m_ComputeShaders = std::move(other.m_ComputeShaders);
-        m_Meshes = std::move(other.m_Meshes);
-        m_Shaders = std::move(other.m_Shaders);
-        m_RenderTextures = std::move(other.m_RenderTextures);
-        m_Samplers = std::move(other.m_Samplers);
-        m_AssetTypes = std::move(other.m_AssetTypes);
-
-        other.m_Project = nullptr;
-        other.m_Renderer = nullptr;
-    }
-
-    AssetManager& AssetManager::operator=(AssetManager&& other) noexcept
-    {
-        if (this == &other)
+        std::unique_lock assetLock(m_AssetMutex);
+        for (auto& asset : m_Assets | std::views::values)
         {
-            return *this;
+            auto type = asset->GetType();
+            switch (type)
+            {
+                case AssetType::Texture:
+                    WriteMetaToFile(static_cast<TextureAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string() + ".meta");
+                    break;
+                case AssetType::Shader:
+                    WriteMetaToFile(static_cast<ShaderAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string() + ".meta");
+                    break;
+                case AssetType::Sampler:
+                    WriteMetaToFile(static_cast<SamplerAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string());
+                    break;
+                case AssetType::RenderTexture:
+                    WriteMetaToFile(static_cast<RenderTextureAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string());
+                    break;
+                case AssetType::ComputeShader:
+                    WriteMetaToFile(static_cast<ComputeShaderAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string() + ".meta");
+                    break;
+                case AssetType::Mesh:
+                    WriteMetaToFile(static_cast<MeshAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string() + ".meta");
+                    break;
+                case AssetType::Material:
+                    WriteMetaToFile(static_cast<MaterialAsset*>(asset.get())->GetMeta(),
+                                    asset->GetFilePath().string());
+                    break;
+                default:
+                    break;
+            }
         }
-
-        m_Project = other.m_Project;
-        m_Renderer = other.m_Renderer;
-        m_Textures = std::move(other.m_Textures);
-        m_ComputeShaders = std::move(other.m_ComputeShaders);
-        m_Meshes = std::move(other.m_Meshes);
-        m_Shaders = std::move(other.m_Shaders);
-        m_RenderTextures = std::move(other.m_RenderTextures);
-        m_Samplers = std::move(other.m_Samplers);
-        m_AssetTypes = std::move(other.m_AssetTypes);
-
-        other.m_Project = nullptr;
-        other.m_Renderer = nullptr;
-        return *this;
     }
 
-    void AssetManager::ScanAll()
+    void AssetManager::InitializeAssetRegistry()
     {
         auto assetDirectory = m_Project->GetAssetDirectory();
 
@@ -61,345 +68,398 @@ namespace Hazel
         {
             if (file.is_regular_file())
             {
-                const auto& path = file.path();
-                const auto extension = path.extension().string();
+                const auto& assetPath = file.path();
 
-                static const std::unordered_set<std::string> imageExtensions =
-                    {".png", ".jpg", ".jpeg", ".bmp", ".tga", ".hdr"};
+                auto assetType = InferAssetTypeFromPath(assetPath);
 
-                if (imageExtensions.contains(extension))
+                if (assetType == AssetType::Unknown)
                 {
-                    auto metaFileName = path.string() + ".meta";
-                    TextureAssetMeta meta;
-                    if (std::filesystem::exists(metaFileName))
-                    {
-                        YAML::Node metaNode = YAML::LoadFile(metaFileName);
-                        meta = TextureAssetMeta::Deserialize(metaNode);
-                    }
-                    else
-                    {
-                        meta.uuid = UUID();
-                        auto metaNode = meta.Serialize();
-                        std::ofstream output(metaFileName);
-                        output << metaNode;
-                        output.close();
-                    }
-                    if (m_Textures.contains(meta.uuid))
-                    {
-                        continue;
-                    }
-                    TextureAsset asset(meta.uuid, path, m_Renderer, meta);
-                    m_Textures.emplace(meta.uuid, std::move(asset));
-                    m_AssetTypes.emplace(meta.uuid, AssetType::Texture);
+                    continue;
                 }
-                else if (extension == ".comp")
+
+                auto metaPath = GetMetaPathFromAssetPath(assetPath);
+
+                if (!std::filesystem::exists(metaPath))
                 {
-                    auto metaFileName = path.string() + ".meta";
-                    ComputeShaderAssetMeta meta;
-                    if (std::filesystem::exists(metaFileName))
+                    switch (assetType)
                     {
-                        YAML::Node metaNode = YAML::LoadFile(metaFileName);
-                        meta = ComputeShaderAssetMeta::Deserialize(metaNode);
-                    }
-                    else
-                    {
-                        meta.uuid = UUID();
-                        auto metaNode = meta.Serialize();
-                        std::ofstream output(metaFileName);
-                        output << metaNode;
-                        output.close();
-                    }
-                    if (m_ComputeShaders.contains(meta.uuid))
-                    {
-                        continue;
-                    }
-                    ComputeShaderAsset asset(m_Renderer, path, meta);
-                    m_ComputeShaders.emplace(meta.uuid, std::move(asset));
-                    m_AssetTypes.emplace(meta.uuid, AssetType::ComputeShader);
-                }
-                else if (extension == ".obj")
-                {
-                    auto metaFileName = path.string() + ".meta";
-                    MeshAssetMeta meta;
-                    if (std::filesystem::exists(metaFileName))
-                    {
-                        YAML::Node metaNode = YAML::LoadFile(metaFileName);
-                        meta = MeshAssetMeta::Deserialize(metaNode);
-                    }
-                    else
-                    {
-                        meta.uuid = UUID();
-                        auto metaNode = meta.Serialize();
-                        std::ofstream output(metaFileName);
-                        output << metaNode;
-                        output.close();
-                    }
-                    if (m_Meshes.contains(meta.uuid))
-                    {
-                        continue;
-                    }
-                    MeshAsset asset(meta.uuid, m_Renderer, path, meta);
-                    m_Meshes.emplace(meta.uuid, std::move(asset));
-                    m_AssetTypes.emplace(meta.uuid, AssetType::Mesh);
-                }
-                else if (extension == ".shader")
-                {
-                    auto metaFileName = path.string() + ".meta";
-                    ShaderAssetMeta meta;
-                    if (std::filesystem::exists(metaFileName))
-                    {
-                        YAML::Node metaNode = YAML::LoadFile(metaFileName);
-                        meta = ShaderAssetMeta::Deserialize(metaNode);
-                    }
-                    else
-                    {
-                        meta.uuid = UUID();
-                        auto metaNode = meta.Serialize();
-                        std::ofstream output(metaFileName);
-                        output << metaNode;
-                        output.close();
-                    }
-                    if (m_Shaders.contains(meta.uuid))
-                    {
-                        continue;
-                    }
-                    ShaderAsset asset(m_Renderer, path, meta);
-                    m_Shaders.emplace(meta.uuid, std::move(asset));
-                    m_AssetTypes.emplace(meta.uuid, AssetType::Shader);
-                }
-                else if (extension == ".meta")
-                {
-                    const auto stemFilePath = path.stem();
-                    const auto stemExtension = stemFilePath.extension().string();
-                    if (stemExtension == ".rt")
-                    {
-                        YAML::Node metaNode = YAML::LoadFile(path.string());
-                        auto meta = RenderTextureAssetMeta::Deserialize(metaNode);
-                        // new meta file
-                        if (!metaNode["UUID"])
-                        {
-                            metaNode = meta.Serialize();
-                            std::ofstream output(path.string());
-                            output << metaNode;
-                            output.close();
-                        }
-                        if (m_RenderTextures.contains(meta.uuid))
-                        {
+                        case AssetType::Texture:
+                            WriteMetaToFile(TextureAssetMeta::CreateDefault(), metaPath);
+                            break;
+                        case AssetType::Shader:
+                            WriteMetaToFile(ShaderAssetMeta::CreateDefault(), metaPath);
+                            break;
+                        case AssetType::ComputeShader:
+                            WriteMetaToFile(ComputeShaderAssetMeta::CreateDefault(), metaPath);
+                            break;
+                        case AssetType::Mesh:
+                            WriteMetaToFile(MeshAssetMeta::CreateDefault(), metaPath);
+                            break;
+                        default:
                             continue;
-                        }
-                        RenderTextureAsset asset(meta.uuid, path, m_Renderer, meta);
-                        m_RenderTextures.emplace(meta.uuid, std::move(asset));
-                        m_AssetTypes.emplace(meta.uuid, AssetType::RenderTexture);
                     }
-                    else if (stemExtension == ".sampler")
+                }
+
+                std::unique_ptr<AssetRegistryTerm> registryTerm = std::make_unique<AssetRegistryTerm>();
+                registryTerm->type = assetType;
+                registryTerm->filePath = assetPath;
+                registryTerm->state = AssetState::Unloaded;
+
+                auto uuid = GetUUIDFromMetaFile(metaPath);
+                if (uuid != UUID(-1))
+                {
+                    registryTerm->uuid = uuid;
+                    std::unique_lock registryLock(m_AssetRegistryMutex);
+                    m_AssetRegistry.emplace(uuid, std::move(registryTerm));
+                    continue;
+                }
+
+                switch (assetType)
+                {
+                    case AssetType::Texture:
                     {
-                        YAML::Node metaNode = YAML::LoadFile(path.string());
-                        auto meta = SamplerAssetMeta::Deserialize(metaNode);
-                        // new meta file
-                        if (!metaNode["UUID"])
-                        {
-                            metaNode = meta.Serialize();
-                            std::ofstream output(path.string());
-                            output << metaNode;
-                            output.close();
-                        }
-                        if (m_Samplers.contains(meta.uuid))
-                        {
-                            continue;
-                        }
-                        SamplerAsset asset(meta.uuid, path, m_Renderer, meta);
-                        m_Samplers.emplace(meta.uuid, std::move(asset));
-                        m_AssetTypes.emplace(meta.uuid, AssetType::Sampler);
+                        TextureAssetMeta meta = TextureAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
                     }
-                    else if (stemExtension == ".mat")
+                    case AssetType::Shader:
                     {
-                        YAML::Node metaNode = YAML::LoadFile(path.string());
-                        auto meta = MaterialAssetMeta::Deserialize(metaNode);
-                        // new meta file
-                        if (!metaNode["UUID"])
-                        {
-                            metaNode = meta.Serialize();
-                            std::ofstream output(path.string());
-                            output << metaNode;
-                            output.close();
-                        }
-                        if (m_Materials.contains(meta.uuid))
-                        {
-                            continue;
-                        }
-                        MaterialAsset asset(meta.uuid, this, m_Renderer, path, meta);
-                        m_Materials.emplace(meta.uuid, std::move(asset));
-                        m_AssetTypes.emplace(meta.uuid, AssetType::Material);
+                        ShaderAssetMeta meta = ShaderAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
                     }
+                    case AssetType::Sampler:
+                    {
+                        SamplerAssetMeta meta = SamplerAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
+                    }
+                    case AssetType::RenderTexture:
+                    {
+                        RenderTextureAssetMeta meta = RenderTextureAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
+                    }
+                    case AssetType::ComputeShader:
+                    {
+                        ComputeShaderAssetMeta meta = ComputeShaderAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
+                    }
+                    case AssetType::Mesh:
+                    {
+                        MeshAssetMeta meta = MeshAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
+                    }
+                    case AssetType::Material:
+                    {
+                        MaterialAssetMeta meta = MaterialAssetMeta::CreateDefault();
+                        WriteMetaToFile(meta, metaPath);
+                        registryTerm->uuid = meta.GetUUID();
+                        std::unique_lock registryLock(m_AssetRegistryMutex);
+                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                        break;
+                    }
+                    default:
+                        break;
                 }
             }
         }
     }
 
-    void AssetManager::WriteAllMetaFiles() const
+    AssetType AssetManager::GetAssetType(UUID uuid) const
     {
-        // textures
-        for (const auto& asset : m_Textures | std::views::values)
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        if (!m_AssetRegistry.contains(uuid))
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << metaNode;
-            output.close();
+            return AssetType::Unknown;
         }
 
-        // compute shaders
-        for (const auto& asset : m_ComputeShaders | std::views::values)
+        return m_AssetRegistry.at(uuid)->type;
+    }
+
+    bool AssetManager::HasAsset(UUID uuid) const
+    {
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        return m_AssetRegistry.contains(uuid);
+    }
+
+    std::filesystem::path AssetManager::GetAssetPath(UUID uuid) const
+    {
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        if (!m_AssetRegistry.contains(uuid))
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << metaNode;
-            output.close();
+            return {};
         }
 
-        // shaders
-        for (const auto& asset : m_Shaders | std::views::values)
+        return m_AssetRegistry.at(uuid)->filePath;
+    }
+
+    std::vector<AssetRegistryTerm*> AssetManager::GetAssetsByType(AssetType type) const
+    {
+        std::vector<AssetRegistryTerm*> assets;
+
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        for (const auto& registryTerm : m_AssetRegistry | std::views::values)
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << metaNode;
-            output.close();
+            if (registryTerm->type == type)
+            {
+                assets.push_back(registryTerm.get());
+            }
         }
 
-        // render textures
-        for (const auto& asset : m_RenderTextures | std::views::values)
+        std::ranges::sort(assets,
+                          [](const AssetRegistryTerm* lhs, const AssetRegistryTerm* rhs) {
+                              return lhs->filePath.filename().string() < rhs->filePath.filename().string();
+                          });
+        return assets;
+    }
+
+    void AssetManager::RegisterAsset(std::unique_ptr<AssetRegistryTerm> term)
+    {
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        m_AssetRegistry.emplace(term->uuid, std::move(term));
+    }
+
+    void AssetManager::ClearLoadedAssets()
+    {
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string());
-            output << metaNode;
-            output.close();
+            std::unique_lock assetLock(m_AssetMutex);
+            m_Assets.clear();
         }
 
-        // samplers
-        for (const auto& asset : m_Samplers | std::views::values)
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string());
-            output << metaNode;
-            output.close();
+            std::unique_lock dependencyLock(m_DependencyMutex);
+            m_Dependencies.clear();
+            m_Dependents.clear();
         }
 
-        // meshes
-        for (const auto& asset : m_Meshes | std::views::values)
+        std::unique_lock registryLock(m_AssetRegistryMutex);
+        for (auto& registryTerm : m_AssetRegistry | std::views::values)
         {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string() + ".meta");
-            output << metaNode;
-            output.close();
-        }
-
-        // materials
-        for (const auto& asset : m_Materials | std::views::values)
-        {
-            auto metaNode = asset.GetMeta().Serialize();
-            std::ofstream output(asset.GetFilePath().string());
-            output << metaNode;
-            output.close();
+            registryTerm->state = AssetState::Unloaded;
         }
     }
 
-    void AssetManager::UnloadAllAssets()
+    Asset* AssetManager::RequestAsset(UUID uuid)
     {
-        // materials 'go' before shaders
-        for (auto& asset : m_Materials | std::views::values)
         {
-            asset.Unload();
-        }
-        for (auto& asset : m_Shaders | std::views::values)
-        {
-            asset.Unload();
+            std::unique_lock assetLock(m_AssetMutex);
+            if (m_Assets.contains(uuid))
+            {
+                return m_Assets[uuid].get();
+            }
         }
 
-        for (auto& asset : m_Textures | std::views::values)
+        AssetRegistryTerm* registry = nullptr;
         {
-            asset.Unload();
+            std::unique_lock registryLock(m_AssetRegistryMutex);
+            if (!m_AssetRegistry.contains(uuid))
+            {
+                return nullptr;
+            }
+
+            registry = m_AssetRegistry.at(uuid).get();
         }
-        for (auto& asset : m_ComputeShaders | std::views::values)
+
         {
-            asset.Unload();
+            std::unique_lock registryStateLock(registry->mutex);
+            auto state = registry->state;
+            if (state == AssetState::Failed)
+            {
+                return nullptr;
+            }
+
+            if (state == AssetState::Loaded)
+            {
+                registryStateLock.unlock();
+                std::unique_lock assetLock(m_AssetMutex);
+                if (m_Assets.contains(uuid))
+                {
+                    return m_Assets[uuid].get();
+                }
+                return nullptr;
+            }
+
+            if (state == AssetState::Loading)
+            {
+                return nullptr;
+            }
+
+            registry->state = AssetState::Loading;
         }
-        for (auto& asset : m_RenderTextures | std::views::values)
-        {
-            asset.Unload();
-        }
-        for (auto& asset : m_Samplers | std::views::values)
-        {
-            asset.Unload();
-        }
-        for (auto& asset : m_Meshes | std::views::values)
-        {
-            asset.Unload();
-        }
+
+        std::thread([this, uuid, registry] {
+            LoadAssetFromRegistry(uuid, registry);
+        }).detach();
+        return nullptr;
     }
 
-    void AssetManager::LoadAssetUUIDs(const std::vector<UUID>& uuids)
+    Asset* AssetManager::RequestAssetBlocked(UUID uuid)
     {
-        for (auto& uuid : uuids)
         {
-            if (uuid == UUID(-1))
+            std::unique_lock assetLock(m_AssetMutex);
+            if (m_Assets.contains(uuid))
+            {
+                return m_Assets[uuid].get();
+            }
+        }
+
+        AssetRegistryTerm* registry = nullptr;
+        {
+            std::unique_lock registryLock(m_AssetRegistryMutex);
+            if (!m_AssetRegistry.contains(uuid))
+            {
+                return nullptr;
+            }
+
+            registry = m_AssetRegistry.at(uuid).get();
+        }
+
+        while (true)
+        {
+            std::unique_lock registryStateLock(registry->mutex);
+            auto state = registry->state;
+            if (state == AssetState::Failed)
+            {
+                return nullptr;
+            }
+
+            if (state == AssetState::Loaded)
+            {
+                registryStateLock.unlock();
+                std::unique_lock assetLock(m_AssetMutex);
+                if (m_Assets.contains(uuid))
+                {
+                    return m_Assets[uuid].get();
+                }
+                return nullptr;
+            }
+
+            if (state == AssetState::Loading)
+            {
+                registry->loadingCondition.wait(registryStateLock,
+                                                [registry] {
+                                                    return registry->state != AssetState::Loading;
+                                                });
+                continue;
+            }
+
+            if (state != AssetState::Unloaded)
             {
                 continue;
             }
 
-            auto type = m_AssetTypes[uuid];
-            switch (type)
-            {
-                case AssetType::Texture:
-                    if (m_Textures.contains(uuid))
-                    {
-                        m_Textures.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::ComputeShader:
-                    if (m_ComputeShaders.contains(uuid))
-                    {
-                        m_ComputeShaders.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::Shader:
-                    if (m_Shaders.contains(uuid))
-                    {
-                        m_Shaders.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::RenderTexture:
-                    if (m_RenderTextures.contains(uuid))
-                    {
-                        m_RenderTextures.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::Sampler:
-                    if (m_Samplers.contains(uuid))
-                    {
-                        m_Samplers.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::Mesh:
-                    if (m_Meshes.contains(uuid))
-                    {
-                        m_Meshes.at(uuid).Load();
-                    }
-                    break;
-                case AssetType::Material:
-                    if (m_Materials.contains(uuid))
-                    {
-                        auto& mat = m_Materials.at(uuid);
-                        mat.Load();
-                        auto shaderUUID = mat.GetMeta().shader;
-                        if (m_Shaders.contains(shaderUUID))
-                        {
-                            auto& shader = m_Shaders.at(mat.GetMeta().shader);
-                            shader.GetShader()->RecreateMaterialResourceGroup();
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
+            registry->state = AssetState::Loading;
+            registryStateLock.unlock();
+            return LoadAssetFromRegistry(uuid, registry);
         }
+    }
+
+    Asset* AssetManager::LoadAssetFromRegistry(UUID uuid, AssetRegistryTerm* registry)
+    {
+        std::unique_ptr<Asset> asset = nullptr;
+
+        switch (registry->type)
+        {
+            case AssetType::Texture:
+                asset = AssetImporter::ImportTexture(registry);
+                break;
+            case AssetType::Shader:
+                asset = AssetImporter::ImportShader(registry);
+                break;
+            case AssetType::Sampler:
+                asset = AssetImporter::ImportSampler(registry);
+                break;
+            case AssetType::RenderTexture:
+                asset = AssetImporter::ImportRenderTexture(registry);
+                break;
+            case AssetType::ComputeShader:
+                asset = AssetImporter::ImportComputeShader(registry);
+                break;
+            case AssetType::Mesh:
+                asset = AssetImporter::ImportMesh(registry);
+                break;
+            case AssetType::Material:
+                asset = AssetImporter::ImportMaterial(this, registry);
+                break;
+            default:
+                break;
+        }
+
+        if (asset)
+        {
+            if (registry->type == AssetType::Material)
+            {
+                auto* materialAsset = static_cast<MaterialAsset*>(asset.get());
+                auto materialUUID = materialAsset->GetUUID();
+
+                std::unique_lock dependencyLock(m_DependencyMutex);
+                m_Dependencies[materialUUID].clear();
+
+                auto shaderUUID = materialAsset->GetMeta().GetShader();
+                if (shaderUUID != UUID(-1))
+                {
+                    m_Dependencies[materialUUID].insert(shaderUUID);
+                    m_Dependents[shaderUUID].insert(materialUUID);
+                }
+
+                for (const auto& property : materialAsset->GetMeta().GetProperties())
+                {
+                    if (property.sampler != UUID(-1))
+                    {
+                        auto samplerUUID = property.sampler;
+                        m_Dependencies[materialUUID].insert(samplerUUID);
+                        m_Dependents[samplerUUID].insert(materialUUID);
+                    }
+
+                    if (property.texture != UUID(-1))
+                    {
+                        auto textureUUID = property.texture;
+                        m_Dependencies[materialUUID].insert(textureUUID);
+                        m_Dependents[textureUUID].insert(materialUUID);
+                    }
+                }
+            }
+
+            auto assetPointer = asset.get();
+            {
+                std::unique_lock assetLock(m_AssetMutex);
+                m_Assets[uuid] = std::move(asset);
+            }
+
+            {
+                std::unique_lock loadedStateLock(registry->mutex);
+                registry->state = AssetState::Loaded;
+            }
+            registry->loadingCondition.notify_all();
+            return assetPointer;
+        }
+
+        {
+            std::unique_lock failedStateLock(registry->mutex);
+            registry->state = AssetState::Failed;
+        }
+        registry->loadingCondition.notify_all();
+        return nullptr;
     }
 } // namespace Hazel

@@ -9,6 +9,11 @@ namespace Hazel
         return CreateScope<GraphicsContext>(appName, window);
     }
 
+    GraphicsContext::~GraphicsContext()
+    {
+        ReleaseDefaultCommandBuffers();
+    }
+
     void GraphicsContext::Init(Window* window)
     {
         if (m_Initialized)
@@ -69,16 +74,72 @@ namespace Hazel
         }
         m_Device = m_Instance->CreateDevice(&m_Adapter, deviceCaps, m_Surface);
 
+        m_Initialized = true;
+    }
+
+    RHICommandBuffer* GraphicsContext::AcquireDefaultCommandBuffer()
+    {
+        std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
+        for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
+        {
+            if (!pooledCommandBuffer.inUse)
+            {
+                pooledCommandBuffer.inUse = true;
+                pooledCommandBuffer.commandBuffer->Reset();
+                return pooledCommandBuffer.commandBuffer;
+            }
+        }
+
         RHICommandPoolDesc cmdPoolDesc{};
         cmdPoolDesc.allowCommandBufferReset = true;
         cmdPoolDesc.transient = false;
-        m_DefaultCommandPool = m_Device->CreateCommandPoolUniformQueue(cmdPoolDesc);
+        auto* commandPool = m_Device->CreateCommandPoolUniformQueue(cmdPoolDesc);
 
         RHICommandBufferDesc cmdDesc{};
         cmdDesc.level = RHICommandBufferLevel::Primary;
-        m_DefaultCommandBuffer = m_DefaultCommandPool->CreateCommandBuffer(cmdDesc);
+        auto* commandBuffer = commandPool->CreateCommandBuffer(cmdDesc);
 
-        m_Initialized = true;
+        auto& pooledCommandBuffer = m_DefaultCommandBuffers.emplace_back();
+        pooledCommandBuffer.pool = commandPool;
+        pooledCommandBuffer.commandBuffer = commandBuffer;
+        pooledCommandBuffer.inUse = true;
+        pooledCommandBuffer.commandBuffer->Reset();
+        return pooledCommandBuffer.commandBuffer;
+    }
+
+    void GraphicsContext::ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer)
+    {
+        if (!commandBuffer)
+        {
+            return;
+        }
+
+        std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
+        for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
+        {
+            if (pooledCommandBuffer.commandBuffer == commandBuffer)
+            {
+                pooledCommandBuffer.inUse = false;
+                return;
+            }
+        }
+    }
+
+    void GraphicsContext::ReleaseDefaultCommandBuffers()
+    {
+        std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
+        for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
+        {
+            if (pooledCommandBuffer.commandBuffer)
+            {
+                pooledCommandBuffer.commandBuffer->ReleaseImmediate();
+            }
+            if (pooledCommandBuffer.pool)
+            {
+                pooledCommandBuffer.pool->ReleaseImmediate();
+            }
+        }
+        m_DefaultCommandBuffers.clear();
     }
 
     GraphicsContext::GraphicsContext(const std::string& appName, Window* window)

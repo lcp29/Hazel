@@ -224,6 +224,7 @@ namespace Hazel
         enabledFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
         vulkan12Features.bufferDeviceAddress = VK_TRUE;
         vulkan12Features.descriptorIndexing = VK_TRUE;
+        vulkan12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
         vulkan13Features.synchronization2 = VK_TRUE;
         vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
         vulkan12Features.timelineSemaphore = VK_TRUE;

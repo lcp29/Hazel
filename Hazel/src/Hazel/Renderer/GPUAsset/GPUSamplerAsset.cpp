@@ -2,13 +2,13 @@
 // Created by helmholtz on 2026/3/25.
 //
 
-#include "Hazel/Renderer/Sampler.h"
+#include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
 {
-    void Sampler::Release()
+    void GPUSamplerAsset::Release()
     {
         if (!m_IsValid)
         {
@@ -21,7 +21,7 @@ namespace Hazel
         m_IsValid = false;
     }
 
-    void Sampler::ReleaseImmediate()
+    void GPUSamplerAsset::ReleaseImmediate()
     {
         if (!m_IsValid)
         {
