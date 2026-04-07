@@ -5,6 +5,8 @@
 #include "MeshImportUtils.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
+#include "glm/gtx/compatibility.hpp"
+
 #include <tiny_obj_loader.h>
 
 #include <array>
@@ -75,6 +77,8 @@ namespace Hazel
         {
             Vertex vertex{};
             bool hasTexCoord = false;
+            bool hasNormal = false;
+            float angle = 0.0f;
             uint32_t triangleIndex = 0;
             uint32_t localCornerIndex = 0;
             uint32_t positionNodeIndex = 0;
@@ -403,11 +407,12 @@ namespace Hazel
                     ObjCorner corner;
                     corner.vertex.position = ReadVec3(attrib.vertices, index.vertex_index);
                     corner.hasTexCoord = index.texcoord_index >= 0;
+                    corner.hasNormal = index.normal_index >= 0;
                     if (corner.hasTexCoord)
                     {
                         corner.vertex.texCoord = ReadVec2(attrib.texcoords, index.texcoord_index);
                     }
-                    if (index.normal_index >= 0)
+                    if (corner.hasNormal)
                     {
                         corner.vertex.normal = ReadVec3(attrib.normals, index.normal_index);
                     }
@@ -432,18 +437,60 @@ namespace Hazel
                     triangle.positionNodeIndices[localCorner] = corner.positionNodeIndex;
                 }
 
-                const glm::vec3& p0 = corners[triangle.cornerIndices[0]].vertex.position;
-                const glm::vec3& p1 = corners[triangle.cornerIndices[1]].vertex.position;
-                const glm::vec3& p2 = corners[triangle.cornerIndices[2]].vertex.position;
+                auto& corner0 = corners[triangle.cornerIndices[0]];
+                auto& corner1 = corners[triangle.cornerIndices[1]];
+                auto& corner2 = corners[triangle.cornerIndices[2]];
+
+                const glm::vec3& p0 = corner0.vertex.position;
+                const glm::vec3& p1 = corner1.vertex.position;
+                const glm::vec3& p2 = corner2.vertex.position;
+
                 const glm::vec3 cross = glm::cross(p1 - p0, p2 - p0);
                 const float crossLength = glm::length(cross);
-                if (crossLength <= kDegenerateTriangleEpsilon)
+
+                if (crossLength <= kDegenerateTriangleEpsilon) { triangle.isDegenerate = true; }
+                else { triangle.faceNormal = cross / crossLength; }
+
+                corner0.angle = glm::acos(glm::clamp(
+                    glm::dot(glm::normalize(p1 - p0), glm::normalize(p2 - p0)) /
+                    (glm::length(p1 - p0) * glm::length(p2 - p0)),
+                    -1.0f,
+                    1.0f));
+                corner1.angle = glm::acos(glm::clamp(
+                    glm::dot(glm::normalize(p2 - p1), glm::normalize(p0 - p1)) /
+                    (glm::length(p2 - p1) * glm::length(p0 - p1)),
+                    -1.0f,
+                    1.0f));
+                corner2.angle = glm::acos(glm::clamp(
+                    glm::dot(glm::normalize(p0 - p2), glm::normalize(p1 - p2)) /
+                    (glm::length(p0 - p2) * glm::length(p1 - p2)),
+                    -1.0f,
+                    1.0f));
+
+                if (!corner0.hasNormal) { corner0.vertex.normal = triangle.faceNormal; }
+                if (!corner1.hasNormal) { corner1.vertex.normal = triangle.faceNormal; }
+                if (!corner2.hasNormal) { corner2.vertex.normal = triangle.faceNormal; }
+
+                if (corner0.hasTexCoord && corner1.hasTexCoord && corner2.hasTexCoord)
                 {
-                    triangle.isDegenerate = true;
-                }
-                else
-                {
-                    triangle.faceNormal = cross / crossLength;
+                    const glm::vec2& uv0 = corner0.vertex.texCoord;
+                    const glm::vec2& uv1 = corner1.vertex.texCoord;
+                    const glm::vec2& uv2 = corner2.vertex.texCoord;
+
+                    const glm::vec3 edge1 = p1 - p0;
+                    const glm::vec3 edge2 = p2 - p0;
+                    const glm::vec2 deltaUV1 = uv1 - uv0;
+                    const glm::vec2 deltaUV2 = uv2 - uv0;
+
+                    const float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                    if (std::isfinite(f))
+                    {
+                        const glm::vec3 tangent =
+                            f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+                        corner0.vertex.tangent += tangent;
+                        corner1.vertex.tangent += tangent;
+                        corner2.vertex.tangent += tangent;
+                    }
                 }
 
                 triangles.push_back(triangle);
@@ -523,7 +570,11 @@ namespace Hazel
                 }
 
                 const uint32_t finalVertexIndex = static_cast<uint32_t>(finalVertices.size());
-                finalVertices.push_back(corners[seedCornerIndex].vertex);
+
+                auto vertex = corners[seedCornerIndex].vertex;
+                glm::vec3 normalSum(0.0f);
+                glm::vec3 tangentSum(0.0f);
+                float totalAngle = 0.0f;
 
                 std::queue<uint32_t> pendingCorners;
                 pendingCorners.push(seedCornerIndex);
@@ -534,6 +585,10 @@ namespace Hazel
                     const uint32_t cornerIndex = pendingCorners.front();
                     pendingCorners.pop();
                     finalVertexIndexPerCorner[cornerIndex] = finalVertexIndex;
+
+                    normalSum += corners[cornerIndex].vertex.normal * corners[cornerIndex].angle;
+                    tangentSum += corners[cornerIndex].vertex.tangent * corners[cornerIndex].angle;
+                    totalAngle += corners[cornerIndex].angle;
 
                     for (const uint32_t adjacentCornerIndex : cornerAdjacency[cornerIndex])
                     {
@@ -546,6 +601,14 @@ namespace Hazel
                         pendingCorners.push(adjacentCornerIndex);
                     }
                 }
+
+                if (totalAngle > 0.0f)
+                {
+                    vertex.normal = normalSum / totalAngle;
+                    vertex.tangent = tangentSum / totalAngle;
+                }
+
+                finalVertices.push_back(vertex);
             }
         }
 
