@@ -52,7 +52,6 @@ namespace Hazel
 
     private:
         bool m_IsValid = false;
-        Renderer* m_Renderer = nullptr;
         RHIShader* m_VertexShader = nullptr;
         RHIShader* m_FragmentShader = nullptr;
         RHIShaderReflection m_Reflection{};

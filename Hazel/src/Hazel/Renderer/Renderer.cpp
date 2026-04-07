@@ -9,6 +9,7 @@
 #include "Hazel/Asset/TextureAsset.h"
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/Project/Project.h"
+#include "Hazel/Renderer/GPUAsset/CachedMaterial.h"
 #include "Hazel/Renderer/GPUAsset/GPUComputeShaderAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
@@ -27,9 +28,7 @@ namespace Hazel
         : m_GraphicsContext(graphicsContext),
           m_Instance(graphicsContext->GetInstance()),
           m_Device(graphicsContext->GetDevice()),
-          m_Window(window),
-          m_MaterialShaderRegistry(std::make_unique<MaterialShaderRegistry>(this)),
-          m_BindlessRegistry(std::make_unique<BindlessRegistry>(this))
+          m_Window(window)
     {
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
@@ -44,45 +43,49 @@ namespace Hazel
         m_MaxFramesInFlight = GlobalSettings.Get(MaxFramesInFlightString, m_MaxFramesInFlight);
         m_SwapchainImageFormat = GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
 
-        m_UsedGPUAssetsPerFrames = std::make_unique<UsedAssetPerFrames>(m_MaxFramesInFlight);
+        m_ResourceBindingManager = std::make_unique<ResourceBindingRegistry>(this);
 
         CreateSwapchainResources();
         CreatePerFrameData();
         m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
+
+        m_ResourceBindingManager->CreatePerViewResources();
+
+        m_RenderScene = std::make_unique<RenderScene>(this);
     }
 
     Renderer::~Renderer() = default;
 
     uint32_t Renderer::RegisterBindlessTexture(GPUAssetResolveResult texture)
     {
-        return m_BindlessRegistry->RegisterTexture(std::move(texture));
+        return GetResourceBindingRegistry()->RegisterTexture(std::move(texture));
     }
 
     uint32_t Renderer::RegisterBindlessSampler(GPUAssetResolveResult sampler)
     {
-        return m_BindlessRegistry->RegisterSampler(std::move(sampler));
+        return GetResourceBindingRegistry()->RegisterSampler(std::move(sampler));
     }
 
     uint32_t Renderer::RegisterBindlessSamplerWithImage(GPUAssetResolveResult sampler, GPUAssetResolveResult image)
     {
-        return m_BindlessRegistry->RegisterSamplerWithImage(std::move(sampler), std::move(image));
+        return GetResourceBindingRegistry()->RegisterSamplerWithImage(std::move(sampler), std::move(image));
     }
 
     void Renderer::UnregisterBindlessTexture(uint32_t slot)
     {
-        m_BindlessRegistry->UnregisterTexture(slot);
+        GetResourceBindingRegistry()->UnregisterTexture(slot);
     }
 
     void Renderer::UnregisterBindlessSampler(uint32_t slot)
     {
-        m_BindlessRegistry->UnregisterSampler(slot);
+        GetResourceBindingRegistry()->UnregisterSampler(slot);
     }
 
     void Renderer::UnregisterBindlessSamplerWithImage(uint32_t slot)
     {
-        m_BindlessRegistry->UnregisterCombinedImageSampler(slot);
+        GetResourceBindingRegistry()->UnregisterCombinedImageSampler(slot);
     }
 
     GPUAssetResolveResult Renderer::ResolveGPUAsset(UUID uuid, AssetType type)
@@ -107,7 +110,6 @@ namespace Hazel
                 if (!shader.asset)
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
                     return GPUAssetResolveResult(currentAsset);
                 }
                 obsoleteMaterial = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
@@ -121,7 +123,6 @@ namespace Hazel
                 gpuState.resolvedVersion >= asset->GetVersion() && !obsoleteMaterial)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
                 return GPUAssetResolveResult(currentAsset);
             }
 
@@ -130,7 +131,6 @@ namespace Hazel
                 if (currentAsset)
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
                     return GPUAssetResolveResult(currentAsset);
                 }
                 return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()));
@@ -146,7 +146,6 @@ namespace Hazel
         if (currentAsset)
         {
             currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
             return GPUAssetResolveResult(currentAsset);
         }
         return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()));
@@ -188,7 +187,6 @@ namespace Hazel
                 gpuState.resolvedVersion >= asset->GetVersion() && !obsoleteMaterial)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
                 return GPUAssetResolveResult(currentAsset);
             }
 
@@ -209,7 +207,6 @@ namespace Hazel
                     gpuState.resolvedVersion >= asset->GetVersion())
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
                     return GPUAssetResolveResult(currentAsset);
                 }
 
@@ -269,22 +266,22 @@ namespace Hazel
 
     uint32_t Renderer::RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material)
     {
-        return m_MaterialShaderRegistry->RegisterMaterial(shader, shaderSourceVersion, material);
+        return GetResourceBindingRegistry()->RegisterMaterial(shader, shaderSourceVersion, material);
     }
 
     void Renderer::UnregisterMaterial(UUID shader, uint64_t shaderSourceVersion, uint32_t materialID)
     {
-        m_MaterialShaderRegistry->UnregisterMaterial(shader, shaderSourceVersion, materialID);
+        GetResourceBindingRegistry()->UnregisterMaterial(shader, shaderSourceVersion, materialID);
     }
 
     void Renderer::RegisterShader(UUID uuid, uint64_t sourceVersion, const RHIShaderReflection& reflection)
     {
-        m_MaterialShaderRegistry->RegisterShader(uuid, sourceVersion, reflection);
+        GetResourceBindingRegistry()->RegisterShader(uuid, sourceVersion, reflection);
     }
 
     void Renderer::UnregisterShader(UUID uuid, uint64_t sourceVersion)
     {
-        m_MaterialShaderRegistry->UnregisterShader(uuid, sourceVersion);
+        GetResourceBindingRegistry()->UnregisterShader(uuid, sourceVersion);
     }
 
     GPUAssetResolveResult Renderer::ResolveGPUAssetWhileLoading(Asset* asset, AssetType type)
@@ -321,7 +318,6 @@ namespace Hazel
         m_GPUAssetRegistry.EnqueueForDeferredRelease(std::move(oldGPUAsset));
         gpuState.condition.notify_all();
 
-        m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentGPUAsset);
         return GPUAssetResolveResult(currentGPUAsset);
     }
 
@@ -355,14 +351,14 @@ namespace Hazel
         textureDesc.usages = RHIImageUsageFlagBits::Sampled;
 
         m_WhiteTexture = std::make_unique<GPUTextureAsset>(m_WhiteTextureUUID, 0, textureDesc, this, image, imageView);
-        m_WhiteTextureBindingSlot = m_BindlessRegistry->RegisterTexture(
+        m_WhiteTextureBindingSlot = GetResourceBindingRegistry()->RegisterTexture(
             GPUAssetResolveResult(m_WhiteTexture.get(), false));
 
         data[1] = 0;
         image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
         imageView = m_Device->CreateImageView(image, imageViewDesc);
         m_ErrorTexture = std::make_unique<GPUTextureAsset>(m_ErrorTextureUUID, 0, textureDesc, this, image, imageView);
-        m_ErrorTextureBindingSlot = m_BindlessRegistry->RegisterTexture(
+        m_ErrorTextureBindingSlot = GetResourceBindingRegistry()->RegisterTexture(
             GPUAssetResolveResult(m_ErrorTexture.get(), false));
 
         RHISamplerDesc samplerDesc{};
@@ -373,10 +369,10 @@ namespace Hazel
                                                              samplerDesc,
                                                              sampler,
                                                              m_CurrentFrame);
-        m_DefaultSamplerBindingSlot = m_BindlessRegistry->RegisterSampler(
+        m_DefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSampler(
             GPUAssetResolveResult(m_DefaultSampler.get(), false));
 
-        m_WhiteTextureWithDefaultSamplerBindingSlot = m_BindlessRegistry->RegisterSamplerWithImage(
+        m_WhiteTextureWithDefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSamplerWithImage(
             GPUAssetResolveResult(m_WhiteTexture.get(), false),
             GPUAssetResolveResult(m_DefaultSampler.get(), false));
 
@@ -507,6 +503,10 @@ namespace Hazel
                                  static_cast<float>(image->GetDesc().height));
                 cmd->SetScissor(0, 0, image->GetDesc().width, image->GetDesc().height);
 
+                m_ResourceBindingManager->BindPerViewResources(cmd,
+                                                               static_cast<GPUGraphicsPipelineAsset*>(pipeline.asset)->
+                                                               GetPipeline());
+
                 cmd->Draw(3, 1, 0, 0);
             }
         }
@@ -597,6 +597,11 @@ namespace Hazel
 
         if (m_CurrentFrame >= m_MaxFramesInFlight)
             m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint);
+
+        GetResourceBindingRegistry()->
+            UpdateResourceGroupForPendingOperations(m_ResourceBindingManager->GetPerViewResourceGroup());
+        GetResourceBindingRegistry()->CreateOrUpdateMaterialPropertyResources();
+
         frameData.commandBuffer->Reset();
         frameData.commandBuffer->Begin(true);
 
@@ -617,13 +622,6 @@ namespace Hazel
         frameData.renderCompleteSyncPoint = m_Device->GetUniformQueue()->Submit(submitDesc);
 
         m_Swapchain->SubmitFrame(frameData.frameNumber, {frameData.renderCompleteSyncPoint});
-
-        auto usedAssets = m_UsedGPUAssetsPerFrames->GetUsedAssets(GetCurrentFrameInFlightIndex());
-
-        for (auto* asset : usedAssets)
-        {
-            asset->SetLastReferencedInfo(m_CurrentFrame, frameData.renderCompleteSyncPoint);
-        }
 
         auto garbage = m_GPUAssetRegistry.AcquireSomeAssetsForGarbageCollection(
             m_CurrentFrame - kDefaultGPUAssetGarbageCollectFrameThreshold);
@@ -661,7 +659,7 @@ namespace Hazel
 
     void Renderer::Release()
     {
-        m_MaterialShaderRegistry.reset();
+        m_ResourceBindingManager.reset();
 
         if (m_ResourceHeapAllocator)
         {

@@ -61,7 +61,6 @@ namespace Hazel
         bool m_PerFrame = true;
         RenderBufferDesc m_Desc{};
         uint32_t m_MaxFramesInFlight = 0;
-        Renderer* m_Renderer = nullptr;
         std::vector<RHIBuffer*> m_Buffers;
     };
 

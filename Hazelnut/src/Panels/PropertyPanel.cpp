@@ -139,15 +139,28 @@ namespace Hazel
 
         DrawComponent<TransformComponent>("Transform",
                                           entity,
-                                          [](auto& component) {
-                                              PropertyPanelHelpers::DrawVec3Control("Translation",
-                                                  component.translation);
+                                          [entity](auto& component) mutable {
+                                              glm::vec3 translation = component.translation;
+                                              PropertyPanelHelpers::DrawVec3Control("Translation", translation);
+                                              if (glm::any(glm::notEqual(translation, component.translation)))
+                                              {
+                                                  entity.SetTranslation(translation);
+                                              }
+
                                               glm::vec3 rotation = glm::degrees(component.rotation);
                                               PropertyPanelHelpers::DrawVec3Control("Rotation", rotation);
-                                              component.rotation = glm::radians(rotation);
-                                              PropertyPanelHelpers::DrawVec3Control("Scale",
-                                                  component.scale,
-                                                  1.0f);
+                                              const glm::vec3 rotationRadians = glm::radians(rotation);
+                                              if (glm::any(glm::notEqual(rotationRadians, component.rotation)))
+                                              {
+                                                  entity.SetRotation(rotationRadians);
+                                              }
+
+                                              glm::vec3 scale = component.scale;
+                                              PropertyPanelHelpers::DrawVec3Control("Scale", scale, 1.0f);
+                                              if (glm::any(glm::notEqual(scale, component.scale)))
+                                              {
+                                                  entity.SetScale(scale);
+                                              }
                                           });
 
         DrawComponent<CameraComponent>("Camera",
@@ -281,17 +294,26 @@ namespace Hazel
 
         DrawComponent<MeshRendererComponent>("Mesh Renderer",
                                              entity,
-                                             [](auto& component) {
+                                             [entity](auto& component) mutable {
                                                  auto* assetManager = Project::GetActive()->GetAssetManager();
                                                  auto meshes = assetManager->GetAssetsByType(AssetType::Mesh);
                                                  auto materials = assetManager->GetAssetsByType(AssetType::Material);
 
-                                                 PropertyPanelHelpers::DrawAssetRegistryCombo("Mesh",
+                                                 UUID meshUUID = component.meshUUID;
+                                                 if (PropertyPanelHelpers::DrawAssetRegistryCombo("Mesh",
                                                      meshes,
-                                                     component.meshUUID);
-                                                 PropertyPanelHelpers::DrawAssetRegistryCombo("Material",
+                                                     meshUUID))
+                                                 {
+                                                     entity.SetMesh(meshUUID);
+                                                 }
+
+                                                 UUID materialUUID = component.materialUUID;
+                                                 if (PropertyPanelHelpers::DrawAssetRegistryCombo("Material",
                                                      materials,
-                                                     component.materialUUID);
+                                                     materialUUID))
+                                                 {
+                                                     entity.SetMaterial(materialUUID);
+                                                 }
                                              });
     }
 

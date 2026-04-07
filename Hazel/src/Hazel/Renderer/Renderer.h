@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BindlessRegistry.h"
-#include "MaterialShaderRegistry.h"
+#include "ResourceBindingRegistry.h"
+#include "RenderScene.h"
 #include "GPUAsset/GPUAssetResolveResult.h"
 #include "Hazel/Asset/MaterialAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
@@ -21,35 +21,6 @@ namespace Hazel
     struct RenderBufferDesc;
     class MaterialAsset;
     class MaterialShaderRegistry;
-
-    struct UsedAssetPerFrames
-    {
-        std::vector<std::unique_ptr<std::mutex>> assetMutexes;
-        std::vector<std::unordered_set<GPUAsset*>> usedAssets;
-
-        UsedAssetPerFrames(int maxFramesInFlight)
-        {
-            for (int i = 0; i < maxFramesInFlight; i++)
-            {
-                assetMutexes.emplace_back(std::make_unique<std::mutex>());
-            }
-            usedAssets.resize(maxFramesInFlight);
-        }
-
-        void AddUsedAsset(int frameIndex, GPUAsset* asset)
-        {
-            std::lock_guard lock(*assetMutexes[frameIndex].get());
-            usedAssets[frameIndex].insert(asset);
-        }
-
-        std::unordered_set<GPUAsset*> GetUsedAssets(int frameIndex)
-        {
-            std::lock_guard lock(*assetMutexes[frameIndex].get());
-            auto assets = usedAssets[frameIndex];
-            usedAssets[frameIndex].clear();
-            return assets;
-        }
-    };
 
     class Renderer
     {
@@ -141,8 +112,10 @@ namespace Hazel
         void RegisterShader(UUID uuid, uint64_t sourceVersion, const RHIShaderReflection& reflection);
         void UnregisterShader(UUID uuid, uint64_t sourceVersion);
 
-        MaterialShaderRegistry* GetMaterialShaderRegistry() const { return m_MaterialShaderRegistry.get(); }
         ResourceHeapAllocator* GetResourceHeapAllocator() const { return m_ResourceHeapAllocator.get(); }
+        ResourceBindingRegistry* GetResourceBindingRegistry() const { return m_ResourceBindingManager.get(); }
+
+        RenderScene* GetRenderScene() const { return m_RenderScene.get(); }
 
         void Step() { m_CurrentFrame++; }
 
@@ -184,9 +157,8 @@ namespace Hazel
         // TODO: refactored gpu asset management below
         GPUAssetRegistry m_GPUAssetRegistry;
         std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator = nullptr;
-        std::unique_ptr<MaterialShaderRegistry> m_MaterialShaderRegistry = nullptr;
-        std::unique_ptr<BindlessRegistry> m_BindlessRegistry = nullptr;
-        std::unique_ptr<UsedAssetPerFrames> m_UsedGPUAssetsPerFrames = nullptr;
+        std::unique_ptr<ResourceBindingRegistry> m_ResourceBindingManager = nullptr;
+        std::unique_ptr<RenderScene> m_RenderScene = nullptr;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();

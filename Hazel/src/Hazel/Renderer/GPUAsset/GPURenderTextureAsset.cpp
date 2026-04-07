@@ -140,12 +140,11 @@ namespace Hazel
                                                  std::vector<RHIImage*> images,
                                                  std::vector<RHIImageView*> imageViews,
                                                  uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::RenderTexture, sourceVersion, lastReferencedFrame),
+        : GPUAsset(uuid, AssetType::RenderTexture, renderer, sourceVersion, lastReferencedFrame),
           m_IsValid(true),
           m_PerFrame(desc.perFrame),
           m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
           m_Desc(desc),
-          m_Renderer(renderer),
           m_Images(std::move(images)),
           m_ImageViews(std::move(imageViews)) {}
 

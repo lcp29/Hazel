@@ -50,12 +50,11 @@ namespace Hazel
                                                const RenderBufferDesc& desc,
                                                std::vector<RHIBuffer*> buffers,
                                                uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::Unknown, sourceVersion, lastReferencedFrame),
+        : GPUAsset(uuid, AssetType::RenderBuffer, renderer, sourceVersion, lastReferencedFrame),
           m_IsValid(true),
           m_PerFrame(desc.perFrame),
           m_Desc(desc),
           m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
-          m_Renderer(renderer),
           m_Buffers(std::move(buffers)) {}
 
     void GPURenderBufferAsset::Release()

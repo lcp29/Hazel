@@ -7,7 +7,7 @@
 #include "VulkanShader.h"
 
 #include "VulkanDevice.h"
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporterInternal.h"
+#include "Hazel/Renderer/ShaderCommon.h"
 
 #include <algorithm>
 #include <spirv_cross/spirv_cross.hpp>
@@ -273,13 +273,13 @@ namespace Hazel
                 bindingReflection.variableName = resource.name;
             }
 
-            if (reflectBuffer && (set != GPUAssetImporterInternal::kMaterialResourceSet || binding != 0))
+            if (reflectBuffer && (set != kMaterialResourceSet || binding != 0))
             {
                 bindingReflection.buffer = ReflectBuffer(compiler, resource);
             }
 
             // a special case for material properties
-            if (reflectBuffer && set == GPUAssetImporterInternal::kMaterialResourceSet && binding == 0)
+            if (reflectBuffer && set == kMaterialResourceSet && binding == 0)
             {
                 bindingReflection.buffer = ReflectBuffer(compiler, resource, true);
             }

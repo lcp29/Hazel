@@ -18,11 +18,12 @@ namespace Hazel
 
         GPUComputeShaderAsset(UUID uuid,
                               uint64_t sourceVersion,
+                              Renderer* renderer,
                               RHIShader* computeShader,
                               std::vector<RHIResourceLayout*> resourceLayouts,
                               RHIResourceSignature* resourceSignature,
                               uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::ComputeShader, sourceVersion, lastReferencedFrame),
+            : GPUAsset(uuid, AssetType::ComputeShader, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
               m_ComputeShader(computeShader),
               m_ResourceLayouts(std::move(resourceLayouts)),
@@ -48,8 +49,8 @@ namespace Hazel
             return m_ResourceLayouts;
         }
 
-        void Release();
-        void ReleaseImmediate();
+        void Release() override;
+        void ReleaseImmediate() override;
 
     private:
         bool m_IsValid = false;

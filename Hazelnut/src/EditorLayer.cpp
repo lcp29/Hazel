@@ -297,6 +297,10 @@ namespace Hazel
             }
         }
 
+        // pull render scene update
+        auto payload = m_ActiveScene->GetRenderSceneUpdatePayloads();
+        m_Renderer->GetRenderScene()->Update(payload);
+
         // render frame buffer
         // TODO
         Camera camera;
@@ -313,10 +317,13 @@ namespace Hazel
         OnObjectIDMapRender();
 
         auto [mx, my] = ImGui::GetMousePos();
+
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
+
         glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
         my = viewportSize.y - my;
+
         int mouseX = static_cast<int>(mx);
         int mouseY = static_cast<int>(my);
 
@@ -327,11 +334,13 @@ namespace Hazel
         {
             auto syncPoint = m_Renderer->GetFrameData(currentFrameIndex - 1).renderCompleteSyncPoint;
             m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);
-            size_t pixelIndex = (mouseY * static_cast<size_t>(viewportSize.x) + mouseX);
+
+            size_t pixelIndex = mouseY * static_cast<size_t>(viewportSize.x) + mouseX;
+
             int pixelData =
-                *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer.asset)->
-                      GetAllBuffers()[(currentFrameIndex - 1) % m_Renderer->GetMaxFramesInFlight()]->Map()) +
-                  pixelIndex);
+                *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(
+                          m_ObjectIDRenderTextureBuffer.asset)->GetAllBuffers()
+                      [(currentFrameIndex - 1) % m_Renderer->GetMaxFramesInFlight()]->Map()) + pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());

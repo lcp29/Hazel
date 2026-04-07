@@ -4,6 +4,7 @@
 #include "GPUAsset/GPUSamplerAsset.h"
 #include "GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderBufferAsset.h"
+#include "GPUAsset/CachedMaterial.h"
 
 #include <thread>
 #include <tuple>
@@ -56,7 +57,6 @@ namespace Hazel
             }
 
             pipelineAsset->SetLastReferencedFrame(m_CurrentFrame);
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), pipelineAsset);
 
             {
                 std::unique_lock assetLock(pipelineAsset->GetMutex());
@@ -127,7 +127,6 @@ namespace Hazel
                 return GPUAssetResolveResult(nullptr, false);
             }
 
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
             m_GPUAssetRegistry.AddAsset(std::move(asset));
             currentAsset->Use();
             return GPUAssetResolveResult(currentAsset);
@@ -151,7 +150,6 @@ namespace Hazel
                 return GPUAssetResolveResult(nullptr, false);
             }
 
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
             m_GPUAssetRegistry.AddAsset(std::move(asset));
             currentAsset->Use();
             return GPUAssetResolveResult(currentAsset);
@@ -181,7 +179,6 @@ namespace Hazel
                 return GPUAssetResolveResult(nullptr, false);
             }
 
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), currentAsset);
             m_GPUAssetRegistry.AddAsset(std::move(asset));
             currentAsset->Use();
             return GPUAssetResolveResult(currentAsset);
@@ -241,7 +238,6 @@ namespace Hazel
             }
 
             pipelineAsset->SetLastReferencedFrame(m_CurrentFrame);
-            m_UsedGPUAssetsPerFrames->AddUsedAsset(GetCurrentFrameInFlightIndex(), pipelineAsset);
 
             {
                 std::unique_lock assetLock(pipelineAsset->GetMutex());

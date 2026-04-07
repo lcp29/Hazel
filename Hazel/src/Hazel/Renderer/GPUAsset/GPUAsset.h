@@ -9,14 +9,18 @@
 
 namespace Hazel
 {
+    class Renderer;
+
     class GPUAsset
     {
     public:
         explicit GPUAsset(UUID uuid,
                           AssetType assetType,
+                          Renderer* renderer,
                           uint64_t sourceVersion,
                           uint64_t lastReferencedFrame)
-            : m_UUID(uuid), m_SourceVersion(sourceVersion), m_LastReferencedFrame(lastReferencedFrame),
+            : m_UUID(uuid), m_Renderer(renderer), m_SourceVersion(sourceVersion),
+              m_LastReferencedFrame(lastReferencedFrame),
               m_Type(assetType) {}
 
         virtual ~GPUAsset() = default;
@@ -44,11 +48,14 @@ namespace Hazel
         void Use() { m_UseCount.fetch_add(1); }
         void Return() { m_UseCount.fetch_sub(1); }
 
+        Renderer* GetRenderer() const { return m_Renderer; }
+
         virtual void Release() = 0;
         virtual void ReleaseImmediate() = 0;
 
     protected:
         UUID m_UUID = 0;
+        Renderer* m_Renderer = nullptr;
         uint64_t m_SourceVersion = 0;
         RHISyncPoint m_LastReferencedSyncPoint = {};
         uint64_t m_LastReferencedFrame = 0;

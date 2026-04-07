@@ -23,9 +23,8 @@ namespace Hazel
                      const std::vector<uint32_t>& indices,
                      const std::vector<MeshletInfo>& meshlets,
                      uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Mesh, sourceVersion, lastReferencedFrame),
+            : GPUAsset(uuid, AssetType::Mesh, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
-              m_Renderer(renderer),
               m_Vertices(vertices),
               m_Indices(indices),
               m_Meshlets(meshlets),
@@ -36,7 +35,6 @@ namespace Hazel
 
     private:
         bool m_IsValid = false;
-        Renderer* m_Renderer = nullptr;
         std::vector<Vertex> m_Vertices;
         std::vector<uint32_t> m_Indices;
         std::vector<MeshletInfo> m_Meshlets;

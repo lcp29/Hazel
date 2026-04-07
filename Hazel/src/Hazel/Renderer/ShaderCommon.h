@@ -13,6 +13,9 @@
 
 namespace Hazel
 {
+    constexpr int kPerViewResourceSet = 0;
+    constexpr int kMaterialResourceSet = 2;
+
     inline std::string ReadTextFile(const std::filesystem::path& filePath)
     {
         std::ifstream fileStream(filePath, std::ios::in | std::ios::binary);
@@ -149,7 +152,8 @@ namespace Hazel
         for (const auto& fragmentPushConstant : fragmentReflection.pushConstants)
         {
             auto pushConstantIt = std::ranges::find_if(mergedReflection.pushConstants,
-                                                       [&fragmentPushConstant](const RHIShaderPushConstantReflection& pushConstant) {
+                                                       [&fragmentPushConstant](
+                                                       const RHIShaderPushConstantReflection& pushConstant) {
                                                            return pushConstant.offset == fragmentPushConstant.offset &&
                                                                   pushConstant.size == fragmentPushConstant.size;
                                                        });
@@ -179,5 +183,56 @@ namespace Hazel
                           });
 
         return mergedReflection;
+    }
+
+    inline void AddReflectionToSetData(std::vector<RHIResourceLayoutDesc>& setData,
+                                       const RHIShaderReflection& reflection,
+                                       RHIShaderStages stage)
+    {
+        for (const auto& group : reflection.resourceGroups)
+        {
+            if (group.set >= setData.size())
+            {
+                setData.resize(group.set + 1);
+            }
+
+            auto& layoutDesc = setData[group.set];
+            for (const auto& slot : group.slots)
+            {
+                auto bindingIt = std::ranges::find_if(layoutDesc.bindings,
+                                                      [&slot](const RHIResourceBindingSlotDesc& binding) {
+                                                          return binding.slot == slot.slot;
+                                                      });
+
+                if (bindingIt == layoutDesc.bindings.end())
+                {
+                    RHIResourceBindingSlotDesc bindingDesc{};
+                    bindingDesc.slot = slot.slot;
+                    bindingDesc.type = slot.type;
+                    bindingDesc.count = slot.count;
+                    bindingDesc.stages = stage;
+                    layoutDesc.bindings.push_back(bindingDesc);
+                }
+                else
+                {
+                    bindingIt->stages |= stage;
+                    bindingIt->count = slot.count;
+                }
+            }
+        }
+    }
+
+    inline std::vector<RHIPushConstantRangeDesc> BuildComputePushConstantRanges(const RHIShaderReflection& reflection)
+    {
+        std::vector<RHIPushConstantRangeDesc> ranges;
+        for (const auto& pushConstant : reflection.pushConstants)
+        {
+            RHIPushConstantRangeDesc range{};
+            range.offset = pushConstant.offset;
+            range.size = pushConstant.size;
+            range.stages = RHIShaderStageFlagBits::Compute;
+            ranges.push_back(range);
+        }
+        return ranges;
     }
 }

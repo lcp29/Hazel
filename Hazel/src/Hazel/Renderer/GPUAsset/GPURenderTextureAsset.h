@@ -70,7 +70,6 @@ namespace Hazel
         bool m_PerFrame = true;
         uint32_t m_MaxFramesInFlight = 0;
         RenderTextureDesc m_Desc{};
-        Renderer* m_Renderer = nullptr;
         std::vector<RHIImage*> m_Images;
         std::vector<RHIImageView*> m_ImageViews;
     };

@@ -342,14 +342,29 @@ namespace Hazel
             || !vkGroup->IsValid());
 
         const vk::DescriptorSet descriptorSet = vkGroup->GetHandle();
-        m_CommandBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics,
-            vkSignature->GetPipelineLayout(),
-            set,
-            1,
-            &descriptorSet,
-            bufferOffsets->size(),
-            bufferOffsets->data());
+
+        if (bufferOffsets)
+        {
+            m_CommandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                vkSignature->GetPipelineLayout(),
+                set,
+                1,
+                &descriptorSet,
+                bufferOffsets->size(),
+                bufferOffsets->data());
+        }
+        else
+        {
+            m_CommandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                vkSignature->GetPipelineLayout(),
+                set,
+                1,
+                &descriptorSet,
+                0,
+                nullptr);
+        }
         return true;
     }
 

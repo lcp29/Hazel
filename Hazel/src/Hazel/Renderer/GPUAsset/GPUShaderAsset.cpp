@@ -15,9 +15,8 @@ namespace Hazel
                                    RHIShader* fragmentShader,
                                    RHIShaderReflection reflection,
                                    uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::Shader, sourceVersion, lastReferencedFrame),
+        : GPUAsset(uuid, AssetType::Shader, renderer, sourceVersion, lastReferencedFrame),
           m_IsValid(true),
-          m_Renderer(renderer),
           m_VertexShader(vertexShader),
           m_FragmentShader(fragmentShader),
           m_Reflection(reflection) {}

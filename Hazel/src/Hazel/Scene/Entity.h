@@ -1,10 +1,14 @@
 #pragma once
 
+#include <type_traits>
+
 #include "Hazel/Core/UUID.h"
 #include "Scene.h"
 
 namespace Hazel
 {
+    struct MeshRendererComponent;
+
     class Entity
     {
     public:
@@ -22,6 +26,10 @@ namespace Hazel
             HZ_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
             T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
             m_Scene->OnComponentAdded<T>(*this, component);
+            if constexpr (std::is_same_v<T, MeshRendererComponent>)
+            {
+                AddMeshRendererPayload(component);
+            }
             return component;
         }
 
@@ -50,6 +58,10 @@ namespace Hazel
         void RemoveComponent()
         {
             HZ_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
+            if constexpr (std::is_same_v<T, MeshRendererComponent>)
+            {
+                RemoveMeshRendererPayload();
+            }
             m_Scene->m_Registry.remove<T>(m_EntityHandle);
         }
 
@@ -71,7 +83,21 @@ namespace Hazel
         static Entity DeserializeWithoutRelationship(const YAML::Node& node, Scene* scene);
         void BuildRelationship(const YAML::Node& node);
 
+        void SetTransform(const glm::vec3& translation, const glm::vec3& rotation, const glm::vec3& scale);
+        void SetTransform(const glm::mat4& transform);
+        void SetTranslation(const glm::vec3& translation);
+        void SetRotation(const glm::vec3& rotation);
+        void SetScale(const glm::vec3& scale);
+        void SetMesh(UUID mesh);
+        void SetMaterial(UUID material);
+
+        Scene* GetScene() const { return m_Scene; }
+
     private:
+        glm::mat4 GetGlobalTransform() const;
+        void AddMeshRendererPayload(const MeshRendererComponent& component);
+        void RemoveMeshRendererPayload();
+
         entt::entity m_EntityHandle{entt::null};
         Scene* m_Scene = nullptr;
     };

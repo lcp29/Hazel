@@ -21,11 +21,10 @@ namespace Hazel
                                  AssetType assetType,
                                  RHIGraphicsPipeline* pipeline,
                                  UUID shader,
-                                 Renderer* m_renderer,
+                                 Renderer* renderer,
                                  uint64_t lastReferencedFrame)
-            : GPUAsset(uuid, assetType, 0, lastReferencedFrame),
+            : GPUAsset(uuid, assetType, renderer, 0, lastReferencedFrame),
               m_Isvalid(true),
-              m_Renderer(m_renderer),
               m_Shader(shader),
               m_Pipeline(pipeline) {}
 
@@ -51,7 +50,6 @@ namespace Hazel
     private:
         bool m_Isvalid = false;
         bool m_IsLoading = true;
-        Renderer* m_Renderer = nullptr;
         UUID m_Shader = UUID(-1);
         RHIGraphicsPipeline* m_Pipeline = nullptr;
         std::mutex m_Mutex;

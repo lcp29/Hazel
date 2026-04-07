@@ -41,12 +41,6 @@ namespace Hazel
             return *this;
         }
 
-        ~GPUAssetResolveResult()
-        {
-            if (asset && returnAfterUse)
-            {
-                asset->Return();
-            }
-        }
+        ~GPUAssetResolveResult();
     };
 }

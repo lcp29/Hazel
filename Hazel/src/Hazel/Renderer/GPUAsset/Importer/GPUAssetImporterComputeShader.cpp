@@ -2,8 +2,8 @@
 
 #include "Hazel/Asset/ComputeShaderAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUComputeShaderAsset.h"
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporterInternal.h"
 #include "Hazel/Renderer/Renderer.h"
+#include "Hazel/Renderer/ShaderCommon.h"
 
 namespace Hazel
 {
@@ -21,7 +21,7 @@ namespace Hazel
         auto* computeShader = device->CreateShader(computeShaderDesc);
 
         std::vector<RHIResourceLayoutDesc> setData;
-        GPUAssetImporterInternal::AddReflectionToSetData(setData,
+        AddReflectionToSetData(setData,
                                                          computeShaderData.reflection,
                                                          RHIShaderStageFlagBits::Compute);
 
@@ -40,12 +40,13 @@ namespace Hazel
 
         RHIResourceSignatureDesc signatureDesc{};
         signatureDesc.resourceLayouts = resourceLayouts;
-        signatureDesc.pushConstantRanges = GPUAssetImporterInternal::BuildComputePushConstantRanges(
+        signatureDesc.pushConstantRanges = BuildComputePushConstantRanges(
             computeShaderData.reflection);
         auto* resourceSignature = device->CreateResourceSignature(signatureDesc);
 
         return std::make_unique<GPUComputeShaderAsset>(asset->GetUUID(),
                                                        asset->GetVersion(),
+                                                       renderer,
                                                        computeShader,
                                                        std::move(resourceLayouts),
                                                        resourceSignature,

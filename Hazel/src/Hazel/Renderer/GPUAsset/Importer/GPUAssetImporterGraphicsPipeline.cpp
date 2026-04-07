@@ -7,8 +7,8 @@
 #include "Hazel/Asset/MeshAsset.h"
 #include "Hazel/Core/UUID.h"
 #include "GPUAssetImporter.h"
-#include "GPUAssetImporterInternal.h"
 #include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
+#include "Hazel/Renderer/GPUAsset/CachedMaterial.h"
 
 namespace Hazel
 {
@@ -41,7 +41,7 @@ namespace Hazel
 
         RHIResourceSignatureDesc resourceSignatureDesc{};
 
-        pipelineDesc.resourceSignature = renderer->GetMaterialShaderRegistry()->GetShaderResourceSignature(
+        pipelineDesc.resourceSignature = renderer->GetResourceBindingRegistry()->GetShaderResourceSignature(
             cachedMaterial->GetShader(),
             cachedMaterial->GetShaderSourceVersion());
 

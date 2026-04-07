@@ -33,10 +33,9 @@ namespace Hazel
                        const MaterialPipelineState& pipelineState,
                        const std::unordered_map<std::string, MaterialAssetProperty>& properties,
                        uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Material, sourceVersion, lastReferencedFrame),
+            : GPUAsset(uuid, AssetType::Material, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
               m_MaterialID(materialID),
-              m_Renderer(renderer),
               m_Shader(shader),
               m_ShaderSourceVersion(shaderSourceVersion),
               m_PipelineState(pipelineState),

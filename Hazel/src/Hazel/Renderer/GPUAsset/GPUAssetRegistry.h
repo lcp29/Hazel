@@ -192,9 +192,9 @@ namespace Hazel
                     }
                     else
                     {
+                        auto syncPoint = begin->second->GetLastReferencedSyncPoint();
                         for (auto iter = begin; iter != end; ++iter)
                         {
-                            auto syncPoint = iter->second->GetLastReferencedSyncPoint();
                             if (!syncPoint || syncPoint->valid == false)
                             {
                                 assetsToRelease.emplace(iter->first, std::move(iter->second));

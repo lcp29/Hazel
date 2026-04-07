@@ -159,7 +159,10 @@ namespace Hazel
                 groupRecord.isValid = true;
                 m_Groups.push_back(groupRecord);
             }
-            *outHeap = heapRecord.heap;
+            if (outHeap)
+            {
+                *outHeap = heapRecord.heap;
+            }
             return group;
         }
 
@@ -189,7 +192,10 @@ namespace Hazel
             m_Groups.push_back(groupRecord);
         }
 
-        *outHeap = heap;
+        if (outHeap)
+        {
+            *outHeap = heap;
+        }
         return group;
     }
 

@@ -23,8 +23,8 @@ namespace Hazel
                         const RHISamplerDesc& desc,
                         RHISampler* sampler,
                         uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Sampler, sourceVersion, lastReferencedFrame),
-              m_IsValid(true), m_Desc(desc), m_Renderer(renderer), m_Sampler(sampler) {}
+            : GPUAsset(uuid, AssetType::Sampler, renderer, sourceVersion, lastReferencedFrame),
+              m_IsValid(true), m_Desc(desc), m_Sampler(sampler) {}
 
         void Release() override;
         void ReleaseImmediate() override;
@@ -47,7 +47,6 @@ namespace Hazel
     private:
         bool m_IsValid = false;
         RHISamplerDesc m_Desc{};
-        Renderer* m_Renderer = nullptr;
         RHISampler* m_Sampler = nullptr;
     };
 } // namespace Hazel

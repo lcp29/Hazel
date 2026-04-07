@@ -34,10 +34,9 @@ namespace Hazel
                         RHIImage* image,
                         RHIImageView* imageView,
                         uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Texture, sourceVersion, lastReferencedFrame),
+            : GPUAsset(uuid, AssetType::Texture, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
               m_Desc(desc),
-              m_Renderer(renderer),
               m_Image(image),
               m_DefaultImageView(imageView) {}
 
@@ -67,7 +66,6 @@ namespace Hazel
     private:
         bool m_IsValid = false;
         TextureDesc m_Desc{};
-        Renderer* m_Renderer = nullptr;
         RHIImage* m_Image = nullptr;
         RHIImageView* m_DefaultImageView = nullptr;
     };

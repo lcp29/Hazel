@@ -23,7 +23,8 @@ namespace Hazel
         ComputeShader,
         Mesh,
         Material,
-        GraphicsPipeline
+        GraphicsPipeline,
+        RenderBuffer
     };
 
     enum class AssetState

@@ -5,6 +5,7 @@
 #include "Hazel/Renderer/Camera.h"
 #include "ViewportCameraController.h"
 #include "entt.hpp"
+#include "Hazel/Renderer/RenderScene.h"
 
 class b2World;
 
@@ -87,6 +88,23 @@ namespace Hazel
             return m_Registry.view<Components...>();
         }
 
+        void AddToRenderSceneUpdatePayload(RenderSceneUpdatePayload payload)
+        {
+            m_RenderSceneUpdatePayloads.push_back(payload);
+        }
+
+        std::vector<RenderSceneUpdatePayload> GetRenderSceneUpdatePayloads()
+        {
+            auto payload = m_RenderSceneUpdatePayloads;
+            m_RenderSceneUpdatePayloads.clear();
+            return payload;
+        }
+
+        entt::registry& GetRegistry()
+        {
+            return m_Registry;
+        }
+
     private:
         template <typename T>
         void OnComponentAdded(Entity entity, T& component);
@@ -104,6 +122,8 @@ namespace Hazel
         std::string m_Name = "Untitled Scene";
 
         std::unordered_map<UUID, entt::entity> m_EntityMap;
+
+        std::vector<RenderSceneUpdatePayload> m_RenderSceneUpdatePayloads;
 
         friend class Entity;
         friend class SceneSerializer;

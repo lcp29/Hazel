@@ -1,7 +1,12 @@
 // Common Bindings
 
-layout (set = 0, binding = 0) uniform PerCameraInfo
+#extension GL_EXT_nonuniform_qualifier : require
+
+layout (std430, set = 0, binding = 0) uniform PerCameraInfo
 {
+    mat4x4 view;
+    mat4x4 projection;
+    mat4x4 viewProjection;
     vec3 cameraPos;
 } perCameraInfo;
 
@@ -11,9 +16,6 @@ layout (set = 0, binding = 3) uniform sampler2D bindlessTextureSamplers[];
 
 layout (push_constant) uniform PushConstants
 {
-    mat4x4 view;
-    mat4x4 projection;
-    mat4x4 viewProjection;
     uint materialIndex;
 } pushConstants;
 
@@ -40,16 +42,16 @@ layout (push_constant) uniform PushConstants
     uint sampler_##name;
 
 #define GetMaterialTexture(name) \
-    bindlessTextures[properties[materialIndex].MaterialTexture(name)]
+    bindlessTextures[nonuniformEXT(properties[pushConstants.materialIndex].texture_##name)]
 
 #define GetMaterialSampler(name) \
-    bindlessSamplers[properties[materialIndex].MaterialSampler(name)]
+    bindlessSamplers[nonuniformEXT(properties[pushConstants.materialIndex].sampler_##name)]
 
 #define GetMaterialTextureSampler(name) \
-    bindlessTextureSamplers[properties[materialIndex].MaterialTextureSampler(name)]
+    bindlessTextureSamplers[nonuniformEXT(properties[pushConstants.materialIndex].combined_##name)]
 
 #define GetMaterialProperty(name) \
-    properties[materialIndex].name
+    properties[pushConstants.materialIndex].name
 
 vec3 GetCameraPos()
 {

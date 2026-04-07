@@ -25,12 +25,6 @@ namespace Hazel
         auto* vertexShader = device->CreateShader(vertexShaderDesc);
         auto* fragmentShader = device->CreateShader(fragmentShaderDesc);
 
-        RHIShaderReflection vertexReflection;
-        ReflectShaderSPIRV(shaderData.vertexBinary, vertexReflection);
-
-        RHIShaderReflection fragmentReflection;
-        ReflectShaderSPIRV(shaderData.fragmentBinary, fragmentReflection);
-
         auto shaderAsset = std::make_unique<GPUShaderAsset>(asset->GetUUID(),
                                                             asset->GetVersion(),
                                                             renderer,
