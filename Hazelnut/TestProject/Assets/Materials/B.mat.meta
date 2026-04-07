@@ -1,6 +1,6 @@
 UUID: 6531589879330968622
 Shader: 17413239457703166156
-Version: 32
+Version: 532
 PipelineState:
   PolygonMode: 0
   CullMode: 2
@@ -11,4 +11,9 @@ PipelineState:
   DepthCompareOp: 3
   StencilTestEnable: false
   ColorBlendAttachments: ~
-Properties: ~
+Properties:
+  - Name: t
+    Type: Int
+    Data: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+    Sampler: 18446744073709551615
+    Texture: 18446744073709551615

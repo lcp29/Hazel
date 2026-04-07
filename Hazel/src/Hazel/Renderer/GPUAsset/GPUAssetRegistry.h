@@ -8,6 +8,7 @@
 #include "Hazel/Project/Project.h"
 
 #include <memory>
+#include <ranges>
 
 namespace Hazel
 {
@@ -171,6 +172,57 @@ namespace Hazel
             }
             std::unique_lock lock(m_GPUAssetReleaseMutex);
             m_GPUAssetsToRelease.emplace(syncPoint->queue, std::move(asset));
+        }
+
+        void FlushGPUAssetReleaseQueue()
+        {
+            {
+                std::unique_lock lock(m_GPUAssetReleaseMutex);
+                std::multimap<RHIQueue*, std::unique_ptr<GPUAsset>> assetsToRelease;
+                std::multimap<RHIQueue*, std::unique_ptr<GPUAsset>> assetsNotToRelease;
+                for (auto it = m_GPUAssetsToRelease.begin(); it != m_GPUAssetsToRelease.end();)
+                {
+                    auto [begin, end] = m_GPUAssetsToRelease.equal_range(it->first);
+                    if (!it->first)
+                    {
+                        for (auto iter = begin; iter != end; ++iter)
+                        {
+                            assetsToRelease.emplace(iter->first, std::move(iter->second));
+                        }
+                    }
+                    else
+                    {
+                        for (auto iter = begin; iter != end; ++iter)
+                        {
+                            auto syncPoint = iter->second->GetLastReferencedSyncPoint();
+                            if (!syncPoint || syncPoint->valid == false)
+                            {
+                                assetsToRelease.emplace(iter->first, std::move(iter->second));
+                            }
+                            else
+                            {
+                                auto currentTimelineValue = iter->first->GetCurrentTimelineValue();
+                                if (syncPoint->value <= currentTimelineValue)
+                                {
+                                    assetsToRelease.emplace(iter->first, std::move(iter->second));
+                                }
+                                else
+                                {
+                                    assetsNotToRelease.emplace(iter->first, std::move(iter->second));
+                                }
+                            }
+                        }
+                    }
+                    it = end;
+                }
+                m_GPUAssetsToRelease = std::move(assetsNotToRelease);
+                std::thread([assetsToRelease = std::move(assetsToRelease)]() mutable {
+                    for (auto& asset : assetsToRelease | std::views::values)
+                    {
+                        asset.reset();
+                    }
+                }).detach();
+            }
         }
 
         std::mutex& GetPipelineCacheMutex()

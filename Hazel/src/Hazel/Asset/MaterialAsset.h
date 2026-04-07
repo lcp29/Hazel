@@ -36,12 +36,18 @@ namespace Hazel
 
     struct MaterialAssetProperty
     {
-        std::string name;
-        MaterialAssetPropertyType type;
+        std::string name{};
+        MaterialAssetPropertyType type = MaterialAssetPropertyType::Float;
         uint8_t data[64];
-        UUID sampler;
-        UUID texture;
-        uint32_t slot;
+
+        union
+        {
+            UUID sampler;
+            uint64_t bindlessID = 0;
+        };
+
+        UUID texture{};
+        uint32_t slot = 0;
         RHIShaderBufferMemberReflection member{};
     };
 

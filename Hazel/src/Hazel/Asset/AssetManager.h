@@ -13,6 +13,8 @@
 #include "Hazel/Core/UUID.h"
 #include "../Renderer/GPUAsset/GPUMeshAsset.h"
 
+#include <FileWatch.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -29,7 +31,7 @@ namespace Hazel
     class AssetManager
     {
     public:
-        AssetManager() = default;
+        AssetManager() = delete;
 
         AssetManager(Project* project, Renderer* renderer);
 

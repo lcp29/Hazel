@@ -168,14 +168,14 @@ namespace Hazel
         rootNode["PipelineState"] = SerializePipelineState(m_PipelineState);
 
         YAML::Node propertiesNode;
-        for (const auto& [name, type, data, sampler, texture, slot, member] : m_Properties)
+        for (const auto& property : m_Properties)
         {
             YAML::Node propertyNode;
-            propertyNode["Name"] = name;
-            propertyNode["Type"] = MaterialAssetPropertyTypeToString(type);
-            propertyNode["Data"] = YAML::Binary(data, 64);
-            propertyNode["Sampler"] = static_cast<uint64_t>(sampler);
-            propertyNode["Texture"] = static_cast<uint64_t>(texture);
+            propertyNode["Name"] = property.name;
+            propertyNode["Type"] = MaterialAssetPropertyTypeToString(property.type);
+            propertyNode["Data"] = YAML::Binary(property.data, 64);
+            propertyNode["Sampler"] = static_cast<uint64_t>(property.sampler);
+            propertyNode["Texture"] = static_cast<uint64_t>(property.texture);
             propertiesNode.push_back(propertyNode);
         }
         rootNode["Properties"] = propertiesNode;

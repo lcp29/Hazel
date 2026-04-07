@@ -11,6 +11,7 @@
 #include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
 #include "Hazel/Renderer/RendererAPI.h"
+#include "Hazel/Renderer/ResourceHeapAllocator.h"
 
 #include <memory>
 #include <vector>
@@ -19,14 +20,44 @@ namespace Hazel
 {
     struct RenderBufferDesc;
     class MaterialAsset;
-    class ResourceHeapAllocator;
     class MaterialShaderRegistry;
+
+    struct UsedAssetPerFrames
+    {
+        std::vector<std::unique_ptr<std::mutex>> assetMutexes;
+        std::vector<std::unordered_set<GPUAsset*>> usedAssets;
+
+        UsedAssetPerFrames(int maxFramesInFlight)
+        {
+            for (int i = 0; i < maxFramesInFlight; i++)
+            {
+                assetMutexes.emplace_back(std::make_unique<std::mutex>());
+            }
+            usedAssets.resize(maxFramesInFlight);
+        }
+
+        void AddUsedAsset(int frameIndex, GPUAsset* asset)
+        {
+            std::lock_guard lock(*assetMutexes[frameIndex].get());
+            usedAssets[frameIndex].insert(asset);
+        }
+
+        std::unordered_set<GPUAsset*> GetUsedAssets(int frameIndex)
+        {
+            std::lock_guard lock(*assetMutexes[frameIndex].get());
+            auto assets = usedAssets[frameIndex];
+            usedAssets[frameIndex].clear();
+            return assets;
+        }
+    };
 
     class Renderer
     {
     public:
         constexpr static auto SwapchainFormatString = "r.Swapchain.Format";
         constexpr static auto MaxFramesInFlightString = "r.Swapchain.MaxFramesInFlight";
+
+        constexpr static int kDefaultGPUAssetGarbageCollectFrameThreshold = 600;
 
         struct FrameData
         {
@@ -85,6 +116,9 @@ namespace Hazel
         uint32_t RegisterBindlessTexture(GPUAssetResolveResult texture);
         uint32_t RegisterBindlessSampler(GPUAssetResolveResult sampler);
         uint32_t RegisterBindlessSamplerWithImage(GPUAssetResolveResult sampler, GPUAssetResolveResult image);
+        void UnregisterBindlessTexture(uint32_t slot);
+        void UnregisterBindlessSampler(uint32_t slot);
+        void UnregisterBindlessSamplerWithImage(uint32_t slot);
 
         GPUAssetResolveResult ResolveGPUAsset(UUID uuid, AssetType type);
         GPUAssetResolveResult ResolveGPUAssetBlocked(UUID uuid, AssetType type);
@@ -149,9 +183,10 @@ namespace Hazel
 
         // TODO: refactored gpu asset management below
         GPUAssetRegistry m_GPUAssetRegistry;
-        std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator;
-        std::unique_ptr<MaterialShaderRegistry> m_MaterialShaderRegistry;
-        std::unique_ptr<BindlessRegistry> m_BindlessRegistry;
+        std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator = nullptr;
+        std::unique_ptr<MaterialShaderRegistry> m_MaterialShaderRegistry = nullptr;
+        std::unique_ptr<BindlessRegistry> m_BindlessRegistry = nullptr;
+        std::unique_ptr<UsedAssetPerFrames> m_UsedGPUAssetsPerFrames = nullptr;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();

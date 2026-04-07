@@ -28,29 +28,28 @@ namespace Hazel
             {
                 case MaterialAssetPropertyType::Sampler:
                 {
-                    bindlessProperty.type = MaterialAssetPropertyType::UInt;
                     UUID samplerUUID = bindlessProperty.sampler;
                     auto samplerResult = renderer->ResolveGPUAssetBlocked(samplerUUID, AssetType::Sampler);
                     uint32_t slot = samplerResult.asset
                                         ? renderer->RegisterBindlessSampler(std::move(samplerResult))
                                         : renderer->GetDefaultSamplerBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
+                    bindlessProperty.bindlessID = slot;
                     break;
                 }
                 case MaterialAssetPropertyType::Texture:
                 {
-                    bindlessProperty.type = MaterialAssetPropertyType::UInt;
                     UUID textureUUID = bindlessProperty.texture;
                     auto textureResult = renderer->ResolveGPUAssetBlocked(textureUUID, AssetType::Texture);
                     uint32_t slot = textureResult.asset
                                         ? renderer->RegisterBindlessTexture(std::move(textureResult))
                                         : renderer->GetWhiteTextureBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
+                    bindlessProperty.bindlessID = slot;
                     break;
                 }
                 case MaterialAssetPropertyType::SamplerWithTexture:
                 {
-                    bindlessProperty.type = MaterialAssetPropertyType::UInt;
                     UUID samplerUUID = bindlessProperty.sampler;
                     UUID imageUUID = bindlessProperty.texture;
                     auto samplerResult = renderer->ResolveGPUAssetBlocked(samplerUUID, AssetType::Sampler);
@@ -60,6 +59,7 @@ namespace Hazel
                                             std::move(samplerResult))
                                         : renderer->GetWhiteTextureWithDefaultSamplerBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
+                    bindlessProperty.bindlessID = slot;
                     break;
                 }
                 default:
