@@ -4,9 +4,12 @@
 
 #include "RenderScene.h"
 
+#include "Renderer.h"
+
 namespace Hazel
 {
-    RenderScene::RenderScene(Renderer* renderer): m_Renderer(renderer) {}
+    RenderScene::RenderScene(Renderer* renderer)
+        : m_Renderer(renderer) {}
 
     void RenderScene::Update(const std::vector<RenderSceneUpdatePayload>& payload)
     {
@@ -19,7 +22,7 @@ namespace Hazel
                 {
                     if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity).transform = object.changeTransform.transform;
+                        m_RenderObjects.at(object.entity)->transform = object.changeTransform.transform;
                     }
                     break;
                 }
@@ -27,7 +30,7 @@ namespace Hazel
                 {
                     if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity).material = object.changeMaterial.material;
+                        m_RenderObjects.at(object.entity)->material = object.changeMaterial.material;
                     }
                     break;
                 }
@@ -35,13 +38,16 @@ namespace Hazel
                 {
                     if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity).mesh = object.changeMesh.mesh;
+                        m_RenderObjects.at(object.entity)->mesh = object.changeMesh.mesh;
                     }
                     break;
                 }
                 case RenderSceneUpdatePayload::Type::Add:
                 {
-                    m_RenderObjects[object.entity] = object.add.renderObject;
+                    auto renderObject = std::make_unique<RenderObject>(object.add.renderObject);
+                    auto* pointer = renderObject.get();
+                    m_RenderObjects[object.entity] = std::move(renderObject);
+                    m_RenderObjectsUnsorted.insert(pointer);
                     break;
                 }
                 case RenderSceneUpdatePayload::Type::Remove:
@@ -49,6 +55,34 @@ namespace Hazel
                     m_RenderObjects.erase(object.entity);
                     break;
                 }
+            }
+        }
+    }
+
+    void RenderScene::Clear()
+    {
+        std::unique_lock lock(m_RenderObjectsMutex);
+        m_RenderObjects.clear();
+    }
+
+    void RenderScene::SortRenderObjectShader()
+    {
+        std::unique_lock lock(m_RenderObjectsMutex);
+
+        for (auto it = m_RenderObjectsUnsorted.begin(); it != m_RenderObjectsUnsorted.end();)
+        {
+            auto material = m_Renderer->ResolveGPUAsset((*it)->material, AssetType::Material);
+            if (material.asset)
+            {
+                auto itInMultimap = m_RenderObjectsSortedByShader.emplace(
+                    static_cast<CachedMaterial*>(material.asset)->GetShader(),
+                    *it);
+                m_RenderObjectLocationInMap[*it] = itInMultimap;
+                it = m_RenderObjectsUnsorted.erase(it);
+            }
+            else
+            {
+                ++it;
             }
         }
     }

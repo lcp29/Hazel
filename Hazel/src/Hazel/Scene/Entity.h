@@ -1,13 +1,11 @@
 #pragma once
-
-#include <type_traits>
-
 #include "Hazel/Core/UUID.h"
 #include "Scene.h"
 
 namespace Hazel
 {
     struct MeshRendererComponent;
+    class Scene;
 
     class Entity
     {

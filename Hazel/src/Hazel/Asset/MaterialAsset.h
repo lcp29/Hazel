@@ -61,26 +61,9 @@ namespace Hazel
         bool depthWriteEnable = false;
         RHICompareOp depthCompareOp = RHICompareOp::LessOrEqual;
         bool stencilTestEnable = false;
-        std::vector<RHIColorBlendAttachmentDesc> colorBlendAttachments;
 
         bool operator==(const MaterialPipelineState& other) const
         {
-            bool equalVector = true;
-            if (colorBlendAttachments.size() != other.colorBlendAttachments.size())
-            {
-                equalVector = false;
-            }
-            else
-            {
-                for (size_t i = 0; i < colorBlendAttachments.size(); i++)
-                {
-                    if (colorBlendAttachments != other.colorBlendAttachments)
-                    {
-                        equalVector = false;
-                        break;
-                    }
-                }
-            }
             return polygonMode == other.polygonMode &&
                    cullMode == other.cullMode &&
                    depthClampEnable == other.depthClampEnable &&
@@ -88,8 +71,7 @@ namespace Hazel
                    depthTestEnable == other.depthTestEnable &&
                    depthWriteEnable == other.depthWriteEnable &&
                    depthCompareOp == other.depthCompareOp &&
-                   stencilTestEnable == other.stencilTestEnable &&
-                   equalVector;
+                   stencilTestEnable == other.stencilTestEnable;
         };
     };
 

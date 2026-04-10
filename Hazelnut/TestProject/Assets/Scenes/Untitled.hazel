@@ -2,107 +2,31 @@ Scene: Untitled Scene
 Entities:
   - ID:
       ID:
-        - 13654640126028634088
+        - 2790958276251421839
     Tag:
-      Tag: Empty Entity
+      Tag: Cube
     Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0.034906585, 0.05235988, 0.06981317]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent:
-        - 6501905845521713992
-      FirstChild:
-        - 1558224381636670451
-      NextSibling:
-        - 18446744073709551615
-      PrevSibling:
-        - 18446744073709551615
-      ChildCount: 3
-  - ID:
-      ID:
-        - 6501905845521713992
-    Tag:
-      Tag: Empty Entity
-    Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Translation: [0.49238655, 0, -0.020245701]
+      Rotation: [0, -0, 0]
+      Scale: [5.665714, 0.19278133, 4.4842577]
     Relationship:
       Parent:
         - 18446744073709551615
-      FirstChild:
-        - 13654640126028634088
-      NextSibling:
-        - 18446744073709551615
-      PrevSibling:
-        - 18446744073709551615
-      ChildCount: 1
-  - ID:
-      ID:
-        - 802823726157517221
-    Tag:
-      Tag: Empty Entity
-    Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent:
-        - 13654640126028634088
       FirstChild:
         - 18446744073709551615
       NextSibling:
         - 18446744073709551615
       PrevSibling:
-        - 3788340662652755114
+        - 18446744073709551615
       ChildCount: 0
     MeshRenderer:
       MeshUUID:
-        - 10086467548157331674
+        - 1485101453066220028
       MaterialUUID:
-        - 1856475893048179180
-  - ID:
-      ID:
-        - 3788340662652755114
-    Tag:
-      Tag: Empty Entity
-    Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent:
-        - 13654640126028634088
-      FirstChild:
-        - 18446744073709551615
-      NextSibling:
-        - 802823726157517221
-      PrevSibling:
-        - 1558224381636670451
-      ChildCount: 0
-  - ID:
-      ID:
-        - 1558224381636670451
-    Tag:
-      Tag: Empty Entity
-    Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent:
-        - 13654640126028634088
-      FirstChild:
-        - 18446744073709551615
-      NextSibling:
-        - 3788340662652755114
-      PrevSibling:
-        - 18446744073709551615
-      ChildCount: 0
+        - 4967033768694551770
 ViewportCamera:
   ProjectionType: Perspective
-  FovX: 0.8615474
-  AspectRatio: 1.4647137
+  FovX: 1.0775948
+  AspectRatio: 1.9053103
   NearClip: 0.01
   FarClip: 1000

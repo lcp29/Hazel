@@ -44,57 +44,6 @@ namespace Hazel
             return MaterialAssetPropertyType::Int;
         }
 
-        YAML::Node SerializeColorBlendAttachment(const RHIColorBlendAttachmentDesc& attachment)
-        {
-            YAML::Node node;
-            node["BlendEnable"] = attachment.blendEnable;
-            node["SrcColorBlendFactor"] = static_cast<uint32_t>(attachment.srcColorBlendFactor);
-            node["DstColorBlendFactor"] = static_cast<uint32_t>(attachment.dstColorBlendFactor);
-            node["ColorBlendOp"] = static_cast<uint32_t>(attachment.colorBlendOp);
-            node["SrcAlphaBlendFactor"] = static_cast<uint32_t>(attachment.srcAlphaBlendFactor);
-            node["DstAlphaBlendFactor"] = static_cast<uint32_t>(attachment.dstAlphaBlendFactor);
-            node["AlphaBlendOp"] = static_cast<uint32_t>(attachment.alphaBlendOp);
-            node["ColorWriteMask"] = static_cast<uint8_t>(attachment.colorWriteMask);
-            return node;
-        }
-
-        RHIColorBlendAttachmentDesc DeserializeColorBlendAttachment(const YAML::Node& node)
-        {
-            RHIColorBlendAttachmentDesc attachment{};
-            if (!node)
-            {
-                return attachment;
-            }
-
-            attachment.blendEnable = node["BlendEnable"] ? node["BlendEnable"].as<bool>() : attachment.blendEnable;
-            attachment.srcColorBlendFactor = node["SrcColorBlendFactor"]
-                                                 ? static_cast<RHIBlendFactor>(node["SrcColorBlendFactor"].as<
-                                                     uint32_t>())
-                                                 : attachment.srcColorBlendFactor;
-            attachment.dstColorBlendFactor = node["DstColorBlendFactor"]
-                                                 ? static_cast<RHIBlendFactor>(node["DstColorBlendFactor"].as<
-                                                     uint32_t>())
-                                                 : attachment.dstColorBlendFactor;
-            attachment.colorBlendOp = node["ColorBlendOp"]
-                                          ? static_cast<RHIBlendOp>(node["ColorBlendOp"].as<uint32_t>())
-                                          : attachment.colorBlendOp;
-            attachment.srcAlphaBlendFactor = node["SrcAlphaBlendFactor"]
-                                                 ? static_cast<RHIBlendFactor>(node["SrcAlphaBlendFactor"].as<
-                                                     uint32_t>())
-                                                 : attachment.srcAlphaBlendFactor;
-            attachment.dstAlphaBlendFactor = node["DstAlphaBlendFactor"]
-                                                 ? static_cast<RHIBlendFactor>(node["DstAlphaBlendFactor"].as<
-                                                     uint32_t>())
-                                                 : attachment.dstAlphaBlendFactor;
-            attachment.alphaBlendOp = node["AlphaBlendOp"]
-                                          ? static_cast<RHIBlendOp>(node["AlphaBlendOp"].as<uint32_t>())
-                                          : attachment.alphaBlendOp;
-            attachment.colorWriteMask = node["ColorWriteMask"]
-                                            ? RHIColorComponentFlags(node["ColorWriteMask"].as<uint8_t>())
-                                            : attachment.colorWriteMask;
-            return attachment;
-        }
-
         YAML::Node SerializePipelineState(const MaterialPipelineState& state)
         {
             YAML::Node node;
@@ -106,13 +55,6 @@ namespace Hazel
             node["DepthWriteEnable"] = state.depthWriteEnable;
             node["DepthCompareOp"] = static_cast<uint32_t>(state.depthCompareOp);
             node["StencilTestEnable"] = state.stencilTestEnable;
-
-            YAML::Node colorBlendAttachmentsNode;
-            for (const auto& attachment : state.colorBlendAttachments)
-            {
-                colorBlendAttachmentsNode.push_back(SerializeColorBlendAttachment(attachment));
-            }
-            node["ColorBlendAttachments"] = colorBlendAttachmentsNode;
             return node;
         }
 
@@ -148,13 +90,6 @@ namespace Hazel
             state.stencilTestEnable = node["StencilTestEnable"]
                                           ? node["StencilTestEnable"].as<bool>()
                                           : state.stencilTestEnable;
-            if (node["ColorBlendAttachments"])
-            {
-                for (const auto& attachmentNode : node["ColorBlendAttachments"])
-                {
-                    state.colorBlendAttachments.push_back(DeserializeColorBlendAttachment(attachmentNode));
-                }
-            }
             return state;
         }
     }
@@ -245,6 +180,13 @@ namespace Hazel
         }
 
         ShaderAsset* shaderAsset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(m_Shader));
+        if (!shaderAsset)
+        {
+            SetShader(-1);
+            ClearProperties();
+            return;
+        }
+
         std::vector<MaterialAssetProperty> oldProperties = std::move(m_Properties);
         ClearProperties();
 

@@ -7,6 +7,13 @@
 
 namespace Hazel
 {
+    enum class CursorMode
+    {
+        Normal = 0,
+        Hidden,
+        Disabled
+    };
+
     struct WindowProps
     {
         std::string Title;
@@ -36,6 +43,8 @@ namespace Hazel
         virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
         virtual void SetVSync(bool enabled) = 0;
         virtual bool IsVSync() const = 0;
+        virtual void SetCursorMode(CursorMode mode) = 0;
+        virtual CursorMode GetCursorMode() const = 0;
 
         virtual void* GetNativeWindow() const = 0;
 

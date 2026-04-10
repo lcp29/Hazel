@@ -19,6 +19,12 @@ namespace Hazel::PropertyPanelHelpers
     const char* GetFormatName(RHIFormat format);
     bool DrawFormatCombo(const char* label, RHIFormat& format);
 
+    const char* GetPolygonModeName(RHIPolygonMode polygonMode);
+    bool DrawPolygonModeCombo(const char* label, RHIPolygonMode& polygonMode);
+
+    const char* GetCullModeName(RHICullMode cullMode);
+    bool DrawCullModeCombo(const char* label, RHICullMode& cullMode);
+
     const char* GetViewTypeName(RHIImageViewType viewType);
     bool DrawViewTypeCombo(const char* label, RHIImageViewType& viewType);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Hazel/Scene/Scene.h"
+#include "GeometryDataRegistry.h"
 #include "ResourceBindingRegistry.h"
 #include "RenderScene.h"
 #include "GPUAsset/GPUAssetResolveResult.h"
@@ -46,8 +48,8 @@ namespace Hazel
 
         void BeginSwapchainTargetRendering();
         void EndSwapchainTargetRendering();
-        // void Render(RenderScene* renderScene, Camera& camera);
-        void Render(Camera& camera);
+
+        void Render();
 
         static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 
@@ -96,9 +98,13 @@ namespace Hazel
 
         GPUAssetResolveResult ResolveGPUGraphicsPipeline(UUID material,
                                                          const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                         const std::vector<RHIColorBlendAttachmentDesc>&
+                                                         colorBlendAttachments,
                                                          RHIFormat depthStencilFormat);
         GPUAssetResolveResult ResolveGPUGraphicsPipelineBlocked(UUID material,
                                                                 const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                                const std::vector<RHIColorBlendAttachmentDesc>&
+                                                                colorBlendAttachments,
                                                                 RHIFormat depthStencilFormat);
         GPUAssetResolveResult ResolveGPURenderTexture(const RenderTextureDesc& desc,
                                                       uint64_t lastReferencedFrame = -1);
@@ -114,8 +120,30 @@ namespace Hazel
 
         ResourceHeapAllocator* GetResourceHeapAllocator() const { return m_ResourceHeapAllocator.get(); }
         ResourceBindingRegistry* GetResourceBindingRegistry() const { return m_ResourceBindingManager.get(); }
+        GeometryDataRegistry* GetGeometryDataRegistry() const { return m_GeometryDataRegistry.get(); }
 
         RenderScene* GetRenderScene() const { return m_RenderScene.get(); }
+        void ClearRenderScene() const { m_RenderScene->Clear(); }
+
+        void RunGraphicsPass(RHICommandBuffer* cmd,
+                             SceneCameraView* camera,
+                             const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                             const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                             const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                             RHIOffset2D renderOffset,
+                             RHIExtent2D renderViewSize);
+
+        void RunGraphicsPass(RHICommandBuffer* cmd,
+                             UUID overrideMaterial,
+                             SceneCameraView* camera,
+                             const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                             const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                             const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                             RHIOffset2D renderOffset,
+                             RHIExtent2D renderViewSize);
+
+        // TODO: TEMP URGENT INTERVIEW
+        void SetCameras(const std::vector<SceneCameraView> cameras) { m_Cameras = cameras; }
 
         void Step() { m_CurrentFrame++; }
 
@@ -153,11 +181,13 @@ namespace Hazel
         std::vector<FrameData> m_Frames;
         UUID m_DefaultRenderTextureUUID = UUID();
         std::unique_ptr<GPURenderTextureAsset> m_DefaultRenderTexture;
+        std::unique_ptr<GPURenderTextureAsset> m_DefaultDepthRenderTexture;
 
         // TODO: refactored gpu asset management below
         GPUAssetRegistry m_GPUAssetRegistry;
         std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator = nullptr;
         std::unique_ptr<ResourceBindingRegistry> m_ResourceBindingManager = nullptr;
+        std::unique_ptr<GeometryDataRegistry> m_GeometryDataRegistry = nullptr;
         std::unique_ptr<RenderScene> m_RenderScene = nullptr;
 
         // default resources
@@ -171,6 +201,9 @@ namespace Hazel
         uint32_t m_DefaultSamplerBindingSlot = 0;
         std::unique_ptr<GPUSamplerAsset> m_DefaultSampler;
         uint32_t m_WhiteTextureWithDefaultSamplerBindingSlot = 0;
+
+        // TODO: TEMP URGENT INTERVIEW
+        std::vector<SceneCameraView> m_Cameras;
     };
 } // namespace Hazel
 

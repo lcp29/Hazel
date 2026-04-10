@@ -1,5 +1,6 @@
 // Common Bindings
 
+#extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_nonuniform_qualifier : require
 
 layout (std430, set = 0, binding = 0) uniform PerCameraInfo
@@ -7,16 +8,17 @@ layout (std430, set = 0, binding = 0) uniform PerCameraInfo
     mat4x4 view;
     mat4x4 projection;
     mat4x4 viewProjection;
-    vec3 cameraPos;
 } perCameraInfo;
 
-layout (set = 0, binding = 1) uniform texture2D bindlessTextures[];
-layout (set = 0, binding = 2) uniform sampler bindlessSamplers[];
-layout (set = 0, binding = 3) uniform sampler2D bindlessTextureSamplers[];
+layout (set = 0, binding = 1) uniform texture2D bindlessTextures[65536];
+layout (set = 0, binding = 2) uniform sampler bindlessSamplers[65536];
+layout (set = 0, binding = 3) uniform sampler2D bindlessTextureSamplers[65536];
 
 layout (push_constant) uniform PushConstants
 {
+    mat4x4 model;
     uint materialIndex;
+    uint entityIndex;
 } pushConstants;
 
 // Per Material Property Wrappers
@@ -53,7 +55,30 @@ layout (push_constant) uniform PushConstants
 #define GetMaterialProperty(name) \
     properties[pushConstants.materialIndex].name
 
-vec3 GetCameraPos()
+#define BeginUserValues() \
+    layout(set = 1, binding = 0) uniform UserUploadValues \
+    {
+
+#define EndUserValues() \
+    } userUploadValues;
+
+#define UserValue(type, name) \
+    type name;
+
+#define GetUserValue(name) \
+    userUploadValues.name
+
+mat4x4 GetViewProjectionMatrix()
 {
-    return perCameraInfo.cameraPos;
+    return perCameraInfo.viewProjection;
+}
+
+mat4x4 GetModelMatrix()
+{
+    return pushConstants.model;
+}
+
+uint GetEntityIndex()
+{
+    return pushConstants.entityIndex;
 }

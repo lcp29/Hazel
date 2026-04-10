@@ -13,6 +13,12 @@ namespace Hazel
             return;
         }
 
+        if (m_CachedPipeline)
+        {
+            m_CachedPipeline->Release();
+            m_CachedPipeline = nullptr;
+        }
+
         if (m_ResourceSignature)
         {
             m_ResourceSignature->Release();
@@ -36,6 +42,12 @@ namespace Hazel
         if (!m_IsValid)
         {
             return;
+        }
+
+        if (m_CachedPipeline)
+        {
+            m_CachedPipeline->ReleaseImmediate();
+            m_CachedPipeline = nullptr;
         }
 
         if (m_ResourceSignature)

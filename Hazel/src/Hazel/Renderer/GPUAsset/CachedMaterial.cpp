@@ -30,6 +30,7 @@ namespace Hazel
     }
 
     uint64_t CachedMaterial::GetPipelineKey(const std::vector<RHIFormat>& colorAttachmentFormats,
+                                            const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                             RHIFormat depthStencilFormat) const
     {
         uint64_t seed = std::hash<UUID>{}(m_Shader);
@@ -46,7 +47,7 @@ namespace Hazel
 
         seed = HashCombine(seed, std::hash<uint64_t>{}(GetSourceVersion()));
 
-        for (const auto& attachment : m_PipelineState.colorBlendAttachments)
+        for (const auto& attachment : colorBlendAttachments)
         {
             seed = HashCombine(seed, HashColorBlendAttachment(attachment));
         }

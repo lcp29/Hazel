@@ -1,0 +1,18 @@
+UUID: 4967033768694551770
+Shader: 15438009982326158792
+Version: 41
+PipelineState:
+  PolygonMode: 0
+  CullMode: 1
+  DepthClampEnable: false
+  DepthBiasEnable: false
+  DepthTestEnable: true
+  DepthWriteEnable: true
+  DepthCompareOp: 3
+  StencilTestEnable: false
+Properties:
+  - Name: combined_color
+    Type: Combined
+    Data: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+    Sampler: 17499198406784436298
+    Texture: 4818220413264901501

@@ -86,13 +86,13 @@ namespace Hazel
         Renderer* m_Renderer = nullptr;
         UUID m_ObjectIDRenderTextureUUID = UUID();
         GPUAssetResolveResult m_ObjectIDRenderTexture = {nullptr, false};
+        GPUAssetResolveResult m_ObjectIDDepthRenderTexture = {nullptr, false};
         GPUAssetResolveResult m_ObjectIDRenderTextureBuffer = {nullptr, false};
 
         // viewport related
         bool m_ViewportFocused = false, m_ViewportHovered = false;
         glm::vec2 m_ViewportSize = {1280.0f, 720.0f};
         glm::vec2 m_ViewportBounds[2];
-        ViewportCameraController m_ViewportCameraController;
 
         int m_GizmoType = -1;
 

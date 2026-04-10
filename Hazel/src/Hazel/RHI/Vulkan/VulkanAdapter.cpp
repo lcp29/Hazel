@@ -55,7 +55,10 @@ namespace Hazel
               m_RequiredVulkanFeatures.supportSynchronization2 &&
               m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics &&
               m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics &&
-              m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount))
+              m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount &&
+              m_RequiredVulkanFeatures.supportDescriptorBindingStorageBufferUpdateAfterBind &&
+              m_RequiredVulkanFeatures.supportDescriptorBindingSampledImageUpdateAfterBind &&
+              m_RequiredVulkanFeatures.supportRuntimeDescriptorArray))
         {
             return false;
         }
@@ -142,5 +145,13 @@ namespace Hazel
             features2.features.vertexPipelineStoresAndAtomics;
         m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount =
             supportsVulkan12 && vulkan12Features.descriptorBindingVariableDescriptorCount;
+        m_RequiredVulkanFeatures.supportDescriptorBindingStorageBufferUpdateAfterBind =
+            supportsVulkan12 && vulkan12Features.descriptorBindingStorageBufferUpdateAfterBind;
+        m_RequiredVulkanFeatures.supportDescriptorBindingSampledImageUpdateAfterBind =
+            supportsVulkan12 && vulkan12Features.descriptorBindingSampledImageUpdateAfterBind;
+        m_RequiredVulkanFeatures.supportRuntimeDescriptorArray =
+            supportsVulkan12 && vulkan12Features.runtimeDescriptorArray;
+        m_RequiredVulkanFeatures.supportShaderSampledImageArrayNonUniformIndexing =
+            supportsVulkan12 && vulkan12Features.shaderSampledImageArrayNonUniformIndexing;
     }
 } // namespace Hazel

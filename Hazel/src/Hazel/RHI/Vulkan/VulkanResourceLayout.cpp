@@ -24,17 +24,44 @@ namespace Hazel
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         bindings.reserve(desc.bindings.size());
+
+        std::vector<vk::DescriptorBindingFlags> bindingFlags;
+        vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo;
+
+        bool requireUpdateAfterBindPool = false;
+
         for (const auto& bindingDesc : desc.bindings)
         {
+            auto& localBindingFlags = bindingFlags.emplace_back();
+
+            if (bindingDesc.updateAfterBind)
+            {
+                localBindingFlags |= vk::DescriptorBindingFlagBits::eUpdateAfterBind;
+                requireUpdateAfterBindPool = true;
+            }
+
+            if (bindingDesc.partiallyBound)
+            {
+                localBindingFlags |= vk::DescriptorBindingFlagBits::ePartiallyBound;
+            }
+
             bindings.emplace_back(bindingDesc.slot,
                                   VulkanConvertResourceBindingType(bindingDesc.type),
                                   bindingDesc.count,
                                   VulkanConvertShaderStages(bindingDesc.stages));
         }
 
+        bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(bindingFlags.size());
+        bindingFlagsCreateInfo.pBindingFlags = bindingFlags.data();
+
         vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
         descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         descriptorSetLayoutCreateInfo.pBindings = bindings.data();
+        if (requireUpdateAfterBindPool)
+        {
+            descriptorSetLayoutCreateInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool;
+        }
+        descriptorSetLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
         m_DescriptorSetLayout = m_Device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
         if (!m_DescriptorSetLayout)
         {

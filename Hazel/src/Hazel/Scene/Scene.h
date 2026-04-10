@@ -4,14 +4,26 @@
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
 #include "ViewportCameraController.h"
-#include "entt.hpp"
 #include "Hazel/Renderer/RenderScene.h"
+#include "Transform.h"
 
-class b2World;
+#include <entt.hpp>
 
 namespace Hazel
 {
     class Entity;
+
+    struct SceneCameraView
+    {
+        Camera* camera = nullptr;
+        Transform transform;
+        UUID entityUUID = UUID(-1);
+        UUID renderTextureUUID = UUID(-1);
+        bool isEditorView = false;
+        bool isPrimary = false;
+        bool isViewportCamera = false;
+        int priority = 0;
+    };
 
     class Scene
     {
@@ -37,6 +49,8 @@ namespace Hazel
 
         Entity FindEntityByName(std::string_view name);
         Entity GetEntityByUUID(UUID uuid);
+        std::vector<SceneCameraView> GetAllCameras();
+        std::vector<RenderSceneUpdatePayload> GetInitialRenderSceneUpdatePayloads() const;
 
         std::vector<UUID> GetInitialAssetUUIDs() const;
 
@@ -48,6 +62,19 @@ namespace Hazel
         const Camera& GetViewportCamera() const
         {
             return m_ViewportCamera;
+        }
+
+        SceneCameraView GetSceneViewportCamera()
+        {
+            SceneCameraView ret{};
+            ret.camera = &m_ViewportCamera;
+            ret.entityUUID = UUID(-1);
+            ret.renderTextureUUID = UUID(-1);
+            ret.isEditorView = true;
+            ret.isPrimary = false;
+            ret.isViewportCamera = true;
+            ret.transform = m_ViewportCameraController.GetCameraTransform();
+            return ret;
         }
 
         void SetViewportCamera(const Camera& camera)
@@ -105,9 +132,16 @@ namespace Hazel
             return m_Registry;
         }
 
+        ViewportCameraController& GetViewportCameraController()
+        {
+            return m_ViewportCameraController;
+        }
+
     private:
         template <typename T>
         void OnComponentAdded(Entity entity, T& component);
+        glm::mat4 GetWorldTransform(entt::entity entity) const;
+        void AddTransformPayloadsForSubtree(entt::entity entity, const glm::mat4& globalTransform);
 
     private:
         entt::registry m_Registry;

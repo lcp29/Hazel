@@ -33,6 +33,8 @@ namespace Hazel
 
         void SetVSync(bool enabled) override;
         bool IsVSync() const override;
+        void SetCursorMode(CursorMode mode) override;
+        CursorMode GetCursorMode() const override;
 
         void* GetNativeWindow() const override
         {

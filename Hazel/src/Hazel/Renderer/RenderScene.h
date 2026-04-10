@@ -6,6 +6,8 @@
 #include "Hazel/RHI/RHI.h"
 #include "Hazel/Core/UUID.h"
 
+#include <map>
+#include <unordered_set>
 #include <glm/glm.hpp>
 
 namespace Hazel
@@ -16,8 +18,10 @@ namespace Hazel
     {
         glm::mat4x4 transform{1.0f};
         UUID material = UUID(-1);
+        UUID shader = UUID(-1);
         UUID mesh = UUID(-1);
         UUID entity = UUID(-1);
+        uint32_t enttEntity = static_cast<uint32_t>(-1);
     };
 
     struct RenderSceneUpdatePayload
@@ -64,11 +68,22 @@ namespace Hazel
     public:
         RenderScene(Renderer* renderer);
         void Update(const std::vector<RenderSceneUpdatePayload>& payload);
+        void Clear();
+        void SortRenderObjectShader();
+
+        const std::multimap<UUID, RenderObject*>& GetRenderObjectsSortedByShader() const
+        {
+            return m_RenderObjectsSortedByShader;
+        }
 
     private:
         Renderer* m_Renderer = nullptr;
 
         std::mutex m_RenderObjectsMutex;
-        std::unordered_map<UUID, RenderObject> m_RenderObjects;
+        std::unordered_map<UUID, std::unique_ptr<RenderObject>> m_RenderObjects;
+
+        std::unordered_map<RenderObject*, std::multimap<UUID, RenderObject*>::iterator> m_RenderObjectLocationInMap;
+        std::multimap<UUID, RenderObject*> m_RenderObjectsSortedByShader;
+        std::unordered_set<RenderObject*> m_RenderObjectsUnsorted;
     };
 } // Hazel

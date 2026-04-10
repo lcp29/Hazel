@@ -22,8 +22,8 @@ namespace Hazel
 
         std::vector<RHIResourceLayoutDesc> setData;
         AddReflectionToSetData(setData,
-                                                         computeShaderData.reflection,
-                                                         RHIShaderStageFlagBits::Compute);
+                               computeShaderData.reflection,
+                               RHIShaderStageFlagBits::Compute);
 
         std::vector<RHIResourceLayout*> resourceLayouts;
         resourceLayouts.reserve(setData.size());
@@ -44,12 +44,18 @@ namespace Hazel
             computeShaderData.reflection);
         auto* resourceSignature = device->CreateResourceSignature(signatureDesc);
 
+        RHIComputePipelineDesc pipelineDesc{};
+        pipelineDesc.computeShader = computeShader;
+        pipelineDesc.resourceSignature = resourceSignature;
+        auto* computePipeline = device->CreateComputePipeline(pipelineDesc);
+
         return std::make_unique<GPUComputeShaderAsset>(asset->GetUUID(),
                                                        asset->GetVersion(),
                                                        renderer,
                                                        computeShader,
                                                        std::move(resourceLayouts),
                                                        resourceSignature,
+                                                       computePipeline,
                                                        renderer->GetCurrentFrameIndex());
     }
 } // namespace Hazel

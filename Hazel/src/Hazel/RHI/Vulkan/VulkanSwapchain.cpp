@@ -218,7 +218,7 @@ namespace Hazel
         Release();
     }
 
-    RHISwapchainAcquireResult RHI_VK_FUNC_IMPL(RHISwapchain, AcquireImage)()
+    RHISwapchainAcquireResult RHI_VK_FUNC_IMPL(RHISwapchain, AcquireImage)(uint64_t timeout)
     {
         if (!m_IsValid || !m_DeviceOwner || !m_Swapchain || m_ImageAvailableSemaphores.size() != m_ImageCount)
         {
@@ -235,7 +235,7 @@ namespace Hazel
         const auto acquireSemaphore = m_ImageAvailableSemaphores[acquireSemaphoreIndex];
         auto acquireResult = m_Device.acquireNextImageKHR(
             m_Swapchain,
-            std::numeric_limits<uint64_t>::max(),
+            timeout,
             acquireSemaphore,
             VK_NULL_HANDLE);
         if (acquireResult.result != vk::Result::eSuccess && acquireResult.result != vk::Result::eSuboptimalKHR)

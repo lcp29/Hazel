@@ -35,6 +35,7 @@ namespace Hazel
                                         : renderer->GetDefaultSamplerBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
                     bindlessProperty.bindlessID = slot;
+                    bindlessProperty.member.size = sizeof(uint32_t);
                     break;
                 }
                 case MaterialAssetPropertyType::Texture:
@@ -46,6 +47,7 @@ namespace Hazel
                                         : renderer->GetWhiteTextureBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
                     bindlessProperty.bindlessID = slot;
+                    bindlessProperty.member.size = sizeof(uint32_t);
                     break;
                 }
                 case MaterialAssetPropertyType::SamplerWithTexture:
@@ -60,6 +62,7 @@ namespace Hazel
                                         : renderer->GetWhiteTextureWithDefaultSamplerBindingSlot();
                     std::memcpy(&bindlessProperty.data, &slot, sizeof(uint32_t));
                     bindlessProperty.bindlessID = slot;
+                    bindlessProperty.member.size = sizeof(uint32_t);
                     break;
                 }
                 default:

@@ -138,6 +138,7 @@ namespace Hazel
         auto vertexCompileResult = CompileShaderFileToSPIRV(vertexShaderFileDesc);
         if (vertexCompileResult.GetCompilationStatus() != shaderc_compilation_status_success)
         {
+            HZ_WARN(vertexCompileResult.GetErrorMessage());
             return nullptr;
         }
 
@@ -150,6 +151,7 @@ namespace Hazel
         auto fragmentCompileResult = CompileShaderFileToSPIRV(fragmentShaderFileDesc);
         if (fragmentCompileResult.GetCompilationStatus() != shaderc_compilation_status_success)
         {
+            HZ_WARN(fragmentCompileResult.GetErrorMessage());
             return nullptr;
         }
 

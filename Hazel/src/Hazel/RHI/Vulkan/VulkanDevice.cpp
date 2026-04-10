@@ -78,18 +78,12 @@ namespace Hazel
 
             for (uint32_t i = 0; i < queueFamilies.size(); i++)
             {
-                if (queueFamilies[i].queueCount > 0 && preferred(queueFamilies[i]))
-                {
-                    return i;
-                }
+                if (queueFamilies[i].queueCount > 0 && preferred(queueFamilies[i])) { return i; }
             }
 
             for (uint32_t i = 0; i < queueFamilies.size(); i++)
             {
-                if (queueFamilies[i].queueCount > 0 && matches(queueFamilies[i]))
-                {
-                    return i;
-                }
+                if (queueFamilies[i].queueCount > 0 && matches(queueFamilies[i])) { return i; }
             }
 
             return std::nullopt;
@@ -101,15 +95,8 @@ namespace Hazel
         {
             for (uint32_t i = 0; i < queueFamilies.size(); i++)
             {
-                if (queueFamilies[i].queueCount == 0)
-                {
-                    continue;
-                }
-
-                if (physicalDevice.getSurfaceSupportKHR(i, surface).value)
-                {
-                    return i;
-                }
+                if (queueFamilies[i].queueCount == 0) { continue; }
+                if (physicalDevice.getSurfaceSupportKHR(i, surface).value) { return i; }
             }
 
             return std::nullopt;
@@ -225,6 +212,10 @@ namespace Hazel
         vulkan12Features.bufferDeviceAddress = VK_TRUE;
         vulkan12Features.descriptorIndexing = VK_TRUE;
         vulkan12Features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        vulkan12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+        vulkan12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+        vulkan12Features.runtimeDescriptorArray = VK_TRUE;
+        vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
         vulkan13Features.synchronization2 = VK_TRUE;
         vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
         vulkan12Features.timelineSemaphore = VK_TRUE;
@@ -323,7 +314,7 @@ namespace Hazel
     bool RHI_VK_FUNC_IMPL(RHIDevice, WaitSyncPoint)(RHISyncPoint* syncPoint,
                                                     uint64_t timeout)
     {
-        if (!m_Device)
+        if (!m_Device || !syncPoint->valid || !syncPoint->queue)
         {
             return false;
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hazel/Core/Timestep.h"
 #include "Hazel/Scene/Entity.h"
 #include "Hazel/Scene/Scene.h"
 

@@ -186,4 +186,34 @@ namespace Hazel
     {
         return m_Data.VSync;
     }
+
+    void WindowsWindow::SetCursorMode(CursorMode mode)
+    {
+        switch (mode)
+        {
+            case CursorMode::Normal:
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                break;
+            case CursorMode::Hidden:
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                break;
+            case CursorMode::Disabled:
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                break;
+        }
+    }
+
+    CursorMode WindowsWindow::GetCursorMode() const
+    {
+        switch (glfwGetInputMode(m_Window, GLFW_CURSOR))
+        {
+            case GLFW_CURSOR_HIDDEN:
+                return CursorMode::Hidden;
+            case GLFW_CURSOR_DISABLED:
+                return CursorMode::Disabled;
+            case GLFW_CURSOR_NORMAL:
+            default:
+                return CursorMode::Normal;
+        }
+    }
 } // namespace Hazel

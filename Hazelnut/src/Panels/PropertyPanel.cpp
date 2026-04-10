@@ -167,6 +167,8 @@ namespace Hazel
                                        entity,
                                        [](auto& component) {
                                            auto& camera = component.camera;
+                                           auto* assetManager = Project::GetActive()->GetAssetManager();
+                                           auto renderTextures = assetManager->GetAssetsByType(AssetType::RenderTexture);
                                            ImGui::Checkbox("Primary", &component.isPrimary);
 
                                            const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
@@ -219,6 +221,10 @@ namespace Hazel
                                                if (ImGui::DragFloat("Far", &orthoFar))
                                                    camera.SetOrthoFarClip(orthoFar);
                                            }
+
+                                           PropertyPanelHelpers::DrawAssetRegistryCombo("Render Texture",
+                                               renderTextures,
+                                               component.renderTextureUUID);
                                        });
 
         DrawComponent<ScriptComponent>("Script",
@@ -608,6 +614,22 @@ namespace Hazel
             if (changed)
             {
                 meta.RefreshShader(assetManager);
+                WriteMetaToFile(asset);
+            }
+
+            auto pipelineState = meta.GetPipelineState();
+            changed = false;
+            changed |= PropertyPanelHelpers::DrawPolygonModeCombo("Polygon Mode", pipelineState.polygonMode);
+            changed |= PropertyPanelHelpers::DrawCullModeCombo("Cull Mode", pipelineState.cullMode);
+            changed |= ImGui::Checkbox("Depth Clamp", &pipelineState.depthClampEnable);
+            changed |= ImGui::Checkbox("Depth Bias", &pipelineState.depthBiasEnable);
+            changed |= ImGui::Checkbox("Depth Test", &pipelineState.depthTestEnable);
+            changed |= ImGui::Checkbox("Depth Write", &pipelineState.depthWriteEnable);
+            changed |= PropertyPanelHelpers::DrawCompareOpCombo("Depth Compare Op", pipelineState.depthCompareOp);
+            changed |= ImGui::Checkbox("Stencil Test", &pipelineState.stencilTestEnable);
+            if (changed)
+            {
+                meta.SetPipelineState(pipelineState);
                 WriteMetaToFile(asset);
             }
 

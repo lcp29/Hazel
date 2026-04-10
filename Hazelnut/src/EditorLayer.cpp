@@ -1,4 +1,6 @@
 #include "EditorLayer.h"
+
+#include "../../Hazel/vendor/yaml-cpp/src/tag.h"
 #include "Hazel/Scene/SceneSerializer.h"
 #include "Hazel/Utils/PlatformUtils.h"
 #include "Hazel/Math/Math.h"
@@ -285,7 +287,13 @@ namespace Hazel
             case SceneState::Edit:
             {
                 if (m_ViewportFocused)
-                    m_ViewportCameraController.OnUpdate(ts);
+                {
+                    m_ActiveScene->GetViewportCameraController().OnUpdate(ts);
+                }
+                else
+                {
+                    m_ActiveScene->GetViewportCameraController().StopControlling();
+                }
 
                 m_ActiveScene->OnUpdateEditor(ts);
                 break;
@@ -300,11 +308,11 @@ namespace Hazel
         // pull render scene update
         auto payload = m_ActiveScene->GetRenderSceneUpdatePayloads();
         m_Renderer->GetRenderScene()->Update(payload);
+        m_Renderer->GetRenderScene()->SortRenderObjectShader();
+        m_Renderer->SetCameras(m_ActiveScene->GetAllCameras());
 
         // render frame buffer
-        // TODO
-        Camera camera;
-        m_Renderer->Render(camera);
+        m_Renderer->Render();
 
         // transition the default render texture to shader read for ImGui rendering
         auto* image = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].Image;
@@ -332,15 +340,11 @@ namespace Hazel
             mouseY < static_cast<int>(viewportSize.y) &&
             currentFrameIndex > 0)
         {
-            auto syncPoint = m_Renderer->GetFrameData(currentFrameIndex - 1).renderCompleteSyncPoint;
-            m_Renderer->GetDevice()->WaitSyncPoint(&syncPoint);
-
             size_t pixelIndex = mouseY * static_cast<size_t>(viewportSize.x) + mouseX;
 
             int pixelData =
                 *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(
-                          m_ObjectIDRenderTextureBuffer.asset)->GetAllBuffers()
-                      [(currentFrameIndex - 1) % m_Renderer->GetMaxFramesInFlight()]->Map()) + pixelIndex);
+                      m_ObjectIDRenderTextureBuffer.asset)->GetBuffer()->Map()) + pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
@@ -384,6 +388,9 @@ namespace Hazel
 
         m_ObjectIDRenderTexture = m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc);
 
+        objectIDRenderTextureDesc.format = RHIFormat::D32SFloatS8Uint;
+        m_ObjectIDDepthRenderTexture = m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc);
+
         RenderBufferDesc objectIDRenderBufferDesc{};
         objectIDRenderBufferDesc.perFrame = true;
         objectIDRenderBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
@@ -401,32 +408,49 @@ namespace Hazel
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
         auto* objectIDImage =
             static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->GetImage();
-        auto* objectIDImageView =
-            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->GetDefaultImageView();
         auto* objectIDImageBuffer =
             static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer.asset)->GetBuffer();
-
-        RHIRenderingAttachmentDesc objectIDAttachmentDesc{};
-        objectIDAttachmentDesc.imageView = objectIDImageView;
-        objectIDAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
-        objectIDAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
-        objectIDAttachmentDesc.clearColorValue.uint32[0] = -1;
-        objectIDAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
-
-        RHIRenderingInfo renderingInfo{};
-        renderingInfo.colorAttachments = {objectIDAttachmentDesc};
-        renderingInfo.renderOffset = {0, 0};
-        renderingInfo.renderViewSize = {
-            static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y)
-        };
-        renderingInfo.colorAttachments = {objectIDAttachmentDesc};
+        auto* depthImage =
+            static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture.asset)->GetImage();
 
         objectIDImage->Transition(commandBuffer,
                                   objectIDImage->GetCurrentState(),
                                   RHIImageResourceState::ColorAttachment);
-        commandBuffer->BeginRendering(renderingInfo);
-        // TODO: rendering
-        commandBuffer->EndRendering();
+
+        depthImage->Transition(commandBuffer,
+                               depthImage->GetCurrentState(),
+                               RHIImageResourceState::DepthStencilAttachment);
+
+        static uint64_t objectIDMaterialID = 15999967383665241091ull;
+        auto viewportCamera = m_ActiveScene->GetSceneViewportCamera();
+
+        RHIRenderingAttachmentDesc colorAttachmentDesc{};
+        colorAttachmentDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->
+            GetDefaultImageView();
+        colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
+        colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
+        colorAttachmentDesc.clearColorValue.int32 = {-1, 0, 0, 0};
+        colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
+
+        RHIRenderingAttachmentDesc depthStencilDesc{};
+        depthStencilDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture.asset)->
+            GetDefaultImageView();
+        depthStencilDesc.loadOp = RHIRenderingLoadOp::Clear;
+        depthStencilDesc.storeOp = RHIRenderingStoreOp::Store;
+        depthStencilDesc.clearDepthStencilValue.depth = 1.0f;
+        depthStencilDesc.clearDepthStencilValue.stencil = 0;
+        depthStencilDesc.state = RHIImageResourceState::DepthStencilAttachment;
+
+        m_Renderer->RunGraphicsPass(
+            commandBuffer,
+            objectIDMaterialID,
+            &viewportCamera,
+            {colorAttachmentDesc},
+            {RHIColorBlendAttachmentDesc{}},
+            &depthStencilDesc,
+            {0, 0},
+            {static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y)});
+
         objectIDImage->Transition(commandBuffer,
                                   objectIDImage->GetCurrentState(),
                                   RHIImageResourceState::TransferSource);
@@ -677,7 +701,11 @@ namespace Hazel
         if (!m_DefaultRenderTextureUIData.empty())
         {
             void* textureID = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].ImGuiTexture;
+#ifdef RHI_USE_VULKAN
+            ImGui::Image(textureID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 1}, ImVec2{1, 0});
+#else
             ImGui::Image(textureID, ImVec2{m_ViewportSize.x, m_ViewportSize.y}, ImVec2{0, 0}, ImVec2{1, 1});
+#endif
         }
 
         if (ImGui::BeginDragDropTarget())
@@ -690,57 +718,58 @@ namespace Hazel
             ImGui::EndDragDropTarget();
         }
 
-        // TODO: Gizmos
-        // Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
-        // if (selectedEntity && m_GizmoType != -1)
-        // {
-        //     ImGuizmo::SetOrthographic(false);
-        //     ImGuizmo::SetDrawlist();
-        //
-        //     ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y,
-        //                       m_ViewportBounds[1].x - m_ViewportBounds[0].x,
-        //                       m_ViewportBounds[1].y - m_ViewportBounds[0].y);
-        //
-        //     // Camera
-        //
-        //     // Runtime camera from entity
-        //     // auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
-        //     // const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
-        //     // const glm::mat4& cameraProjection = camera.GetProjection();
-        //     // glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
-        //
-        //     // Editor camera
-        //     const glm::mat4& cameraProjection = m_ActiveScene->GetViewportCamera().GetProjection();
-        //     glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
-        //
-        //     // Entity transform
-        //     auto& tc = selectedEntity.GetComponent<TransformComponent>();
-        //     glm::mat4 transform = tc.GetTransform();
-        //
-        //     // Snapping
-        //     bool snap = Input::IsKeyPressed(Key::LeftControl);
-        //     float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-        //     // Snap to 45 degrees for rotation
-        //     if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-        //         snapValue = 45.0f;
-        //
-        //     float snapValues[3] = {snapValue, snapValue, snapValue};
-        //
-        //     ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-        //                          (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
-        //                          nullptr, snap ? snapValues : nullptr);
-        //
-        //     if (ImGuizmo::IsUsing())
-        //     {
-        //         glm::vec3 translation, rotation, scale;
-        //         Math::DecomposeTransform(transform, translation, rotation, scale);
-        //
-        //         glm::vec3 deltaRotation = rotation - tc.rotation;
-        //         tc.translation = translation;
-        //         tc.rotation += deltaRotation;
-        //         tc.scale = scale;
-        //     }
-        // }
+        Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+        if (selectedEntity && m_GizmoType != -1)
+        {
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::SetDrawlist();
+
+            ImGuizmo::SetRect(m_ViewportBounds[0].x,
+                              m_ViewportBounds[0].y,
+                              m_ViewportBounds[1].x - m_ViewportBounds[0].x,
+                              m_ViewportBounds[1].y - m_ViewportBounds[0].y);
+
+            // Camera
+
+            // Runtime camera from entity
+            // auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
+            // const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
+            // const glm::mat4& cameraProjection = camera.GetProjection();
+            // glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
+
+            // Editor camera
+            const glm::mat4& cameraProjection = m_ActiveScene->GetViewportCamera().GetProjection();
+            glm::mat4 cameraView = m_ActiveScene->GetSceneViewportCamera().transform.GetView();
+
+            // Entity transform
+            auto& tc = selectedEntity.GetComponent<TransformComponent>();
+            glm::mat4 transform = tc.GetTransform();
+
+            // Snapping
+            bool snap = Input::IsKeyPressed(Key::LeftControl);
+            float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+            // Snap to 45 degrees for rotation
+            if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+                snapValue = 45.0f;
+
+            float snapValues[3] = {snapValue, snapValue, snapValue};
+
+            ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+                                 glm::value_ptr(cameraProjection),
+                                 (ImGuizmo::OPERATION)m_GizmoType,
+                                 ImGuizmo::LOCAL,
+                                 glm::value_ptr(transform),
+                                 nullptr,
+                                 snap ? snapValues : nullptr);
+
+            if (ImGuizmo::IsUsing())
+            {
+                glm::vec3 translation, rotation, scale;
+                Math::DecomposeTransform(transform, translation, rotation, scale);
+
+                selectedEntity.SetTransform(translation, rotation, scale);
+            }
+        }
 
         ImGui::End();
         ImGui::PopStyleVar();
@@ -900,18 +929,24 @@ namespace Hazel
             // Gizmos
             case Key::Q:
             {
+                if (m_ActiveScene && m_ActiveScene->GetViewportCameraController().IsControlling())
+                    break;
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = -1;
                 break;
             }
             case Key::W:
             {
+                if (m_ActiveScene && m_ActiveScene->GetViewportCameraController().IsControlling())
+                    break;
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
                 break;
             }
             case Key::E:
             {
+                if (m_ActiveScene && m_ActiveScene->GetViewportCameraController().IsControlling())
+                    break;
                 if (!ImGuizmo::IsUsing())
                     m_GizmoType = ImGuizmo::OPERATION::ROTATE;
                 break;
@@ -924,6 +959,8 @@ namespace Hazel
                 }
                 else
                 {
+                    if (m_ActiveScene && m_ActiveScene->GetViewportCameraController().IsControlling())
+                        break;
                     if (!ImGuizmo::IsUsing())
                         m_GizmoType = ImGuizmo::OPERATION::SCALE;
                 }
@@ -1085,6 +1122,7 @@ namespace Hazel
         }
 
         Project::GetActive()->GetAssetManager()->ClearLoadedAssets();
+        m_Renderer->ClearRenderScene();
 
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
@@ -1123,6 +1161,7 @@ namespace Hazel
         }
 
         Project::GetActive()->GetAssetManager()->ClearLoadedAssets();
+        m_Renderer->ClearRenderScene();
 
         Ref<Scene> newScene = CreateRef<Scene>();
         SceneSerializer serializer(newScene);
@@ -1135,6 +1174,8 @@ namespace Hazel
             m_EditorScenePath = path;
             m_HoveredEntity = {};
         }
+        auto initialRenderScenePayload = newScene->GetInitialRenderSceneUpdatePayloads();
+        m_Renderer->GetRenderScene()->Update(std::move(initialRenderScenePayload));
     }
 
     void EditorLayer::SaveScene()

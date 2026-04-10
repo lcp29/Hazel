@@ -23,7 +23,8 @@ namespace Hazel
             auto argsTuple = std::forward_as_tuple(std::forward<Args>(args)...);
             UUID material = std::get<0>(argsTuple);
             const auto& colorAttachmentFormats = std::get<1>(argsTuple);
-            RHIFormat depthStencilFormat = std::get<2>(argsTuple);
+            const auto& colorBlendAttachments = std::get<2>(argsTuple);
+            RHIFormat depthStencilFormat = std::get<3>(argsTuple);
 
             auto materialResult = ResolveGPUAsset(material, AssetType::Material);
             auto* materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
@@ -32,7 +33,9 @@ namespace Hazel
                 return GPUAssetResolveResult(nullptr, false);
             }
 
-            UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats, depthStencilFormat);
+            UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats,
+                                                              colorBlendAttachments,
+                                                              depthStencilFormat);
             GPUGraphicsPipelineAsset* pipelineAsset = nullptr;
             bool shouldSpawn = false;
             {
@@ -69,7 +72,7 @@ namespace Hazel
 
             if (shouldSpawn)
             {
-                std::thread([this, material, colorAttachmentFormats, depthStencilFormat, pipelineAsset] {
+                std::thread([this, material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat, pipelineAsset] {
                     auto materialResult = ResolveGPUAssetBlocked(material, AssetType::Material);
                     auto materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
                     if (!materialAsset)
@@ -94,7 +97,11 @@ namespace Hazel
                         return;
                     }
 
-                    auto pipeline = CreateGraphicsPipeline(material, colorAttachmentFormats, depthStencilFormat, this);
+                    auto pipeline = CreateGraphicsPipeline(material,
+                                                           colorAttachmentFormats,
+                                                           colorBlendAttachments,
+                                                           depthStencilFormat,
+                                                           this);
                     std::unique_lock assetLock(pipelineAsset->GetMutex());
                     pipelineAsset->SetPipeline(pipeline);
                     pipelineAsset->SetLoading(false);
@@ -197,7 +204,8 @@ namespace Hazel
             auto argsTuple = std::forward_as_tuple(std::forward<Args>(args)...);
             UUID material = std::get<0>(argsTuple);
             const auto& colorAttachmentFormats = std::get<1>(argsTuple);
-            RHIFormat depthStencilFormat = std::get<2>(argsTuple);
+            const auto& colorBlendAttachments = std::get<2>(argsTuple);
+            RHIFormat depthStencilFormat = std::get<3>(argsTuple);
 
             auto materialResult = ResolveGPUAssetBlocked(material, AssetType::Material);
             auto materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
@@ -213,7 +221,9 @@ namespace Hazel
                 return GPUAssetResolveResult(nullptr, false);
             }
 
-            UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats, depthStencilFormat);
+            UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats,
+                                                              colorBlendAttachments,
+                                                              depthStencilFormat);
             GPUGraphicsPipelineAsset* pipelineAsset = nullptr;
             bool shouldCreate = false;
             {
@@ -265,7 +275,11 @@ namespace Hazel
 
             if (shouldCreate)
             {
-                auto pipeline = CreateGraphicsPipeline(material, colorAttachmentFormats, depthStencilFormat, this);
+                auto pipeline = CreateGraphicsPipeline(material,
+                                                       colorAttachmentFormats,
+                                                       colorBlendAttachments,
+                                                       depthStencilFormat,
+                                                       this);
                 std::unique_lock assetLock(pipelineAsset->GetMutex());
                 pipelineAsset->SetPipeline(pipeline);
                 pipelineAsset->SetLoading(false);

@@ -38,9 +38,7 @@ namespace Hazel
         imageDesc.mipLevels = textureDesc.useMipmap ? DeduceMipLevelCount(textureDesc.width, textureDesc.height) : 1;
         imageDesc.format = textureDesc.format;
         imageDesc.usages = textureDesc.usages;
-        imageDesc.initialState = textureDesc.useMipmap
-                                     ? RHIImageResourceState::TransferDestination
-                                     : RHIImageResourceState::ShaderRead;
+        imageDesc.initialState = RHIImageResourceState::Undefined;
 
         auto* graphicsContext = renderer->GetGraphicsContext();
         auto* device = renderer->GetDevice();
@@ -49,6 +47,12 @@ namespace Hazel
         cmd->Begin(true);
 
         auto* image = device->CreateImage(imageDesc, false);
+
+        image->Transition(cmd,
+                          RHIImageResourceState::Undefined,
+                          textureDesc.useMipmap
+                              ? RHIImageResourceState::TransferDestination
+                              : RHIImageResourceState::ShaderRead);
 
         RHIBufferDesc stagingBufferDesc{};
         stagingBufferDesc.size = textureData.rawImageData.size();

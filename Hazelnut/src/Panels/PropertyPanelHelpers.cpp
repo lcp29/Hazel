@@ -145,6 +145,86 @@ namespace Hazel::PropertyPanelHelpers
         return changed;
     }
 
+    const char* GetPolygonModeName(RHIPolygonMode polygonMode)
+    {
+        switch (polygonMode)
+        {
+            case RHIPolygonMode::Fill:
+                return "Fill";
+            case RHIPolygonMode::Line:
+                return "Line";
+        }
+
+        return "Fill";
+    }
+
+    bool DrawPolygonModeCombo(const char* label, RHIPolygonMode& polygonMode)
+    {
+        static const RHIPolygonMode polygonModes[] = {RHIPolygonMode::Fill, RHIPolygonMode::Line};
+
+        bool changed = false;
+        if (ImGui::BeginCombo(label, GetPolygonModeName(polygonMode)))
+        {
+            for (auto value : polygonModes)
+            {
+                bool selected = value == polygonMode;
+                if (ImGui::Selectable(GetPolygonModeName(value), selected))
+                {
+                    polygonMode = value;
+                    changed = true;
+                }
+                if (selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        return changed;
+    }
+
+    const char* GetCullModeName(RHICullMode cullMode)
+    {
+        switch (cullMode)
+        {
+            case RHICullMode::None:
+                return "None";
+            case RHICullMode::Front:
+                return "Front";
+            case RHICullMode::Back:
+                return "Back";
+        }
+
+        return "Back";
+    }
+
+    bool DrawCullModeCombo(const char* label, RHICullMode& cullMode)
+    {
+        static const RHICullMode cullModes[] = {RHICullMode::None, RHICullMode::Front, RHICullMode::Back};
+
+        bool changed = false;
+        if (ImGui::BeginCombo(label, GetCullModeName(cullMode)))
+        {
+            for (auto value : cullModes)
+            {
+                bool selected = value == cullMode;
+                if (ImGui::Selectable(GetCullModeName(value), selected))
+                {
+                    cullMode = value;
+                    changed = true;
+                }
+                if (selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        return changed;
+    }
+
     const char* GetViewTypeName(RHIImageViewType viewType)
     {
         switch (viewType)

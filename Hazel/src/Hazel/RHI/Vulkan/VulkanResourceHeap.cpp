@@ -65,6 +65,12 @@ namespace Hazel
 
         vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
         descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+
+        if (desc.updateAfterBind)
+        {
+            descriptorPoolCreateInfo.flags |= vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
+        }
+
         descriptorPoolCreateInfo.maxSets = desc.maxGroups;
         descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();

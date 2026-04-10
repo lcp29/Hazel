@@ -5,12 +5,18 @@
 #pragma once
 #include <glm/glm.hpp>
 
-struct PerViewUniformBuffer
+template <typename T, int dataSize>
+struct Padded
+{
+    T data;
+    uint8_t padding[dataSize - sizeof(T)];
+};
+
+struct PerViewUniformBufferInner
 {
     glm::mat4 view;
     glm::mat4 proj;
     glm::mat4 viewProj;
-    glm::vec3 cameraPos;
-
-    char _padding[52];
 };
+
+using PerViewUniformBuffer = Padded<PerViewUniformBufferInner, 256>;

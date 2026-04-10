@@ -21,5 +21,6 @@ namespace Hazel
         uint32_t storageBufferCount = 0;
         uint32_t uniformTexelBufferCount = 0;
         uint32_t storageTexelBufferCount = 0;
+        bool updateAfterBind = false;
     };
 } // namespace Hazel

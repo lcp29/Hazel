@@ -22,12 +22,14 @@ namespace Hazel
                               RHIShader* computeShader,
                               std::vector<RHIResourceLayout*> resourceLayouts,
                               RHIResourceSignature* resourceSignature,
+                              RHIComputePipeline* cachedPipeline,
                               uint64_t lastReferencedFrame = 0)
             : GPUAsset(uuid, AssetType::ComputeShader, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
               m_ComputeShader(computeShader),
               m_ResourceLayouts(std::move(resourceLayouts)),
-              m_ResourceSignature(resourceSignature) {}
+              m_ResourceSignature(resourceSignature),
+              m_CachedPipeline(cachedPipeline) {}
 
         bool IsValid() const
         {
@@ -57,5 +59,6 @@ namespace Hazel
         RHIShader* m_ComputeShader = nullptr;
         std::vector<RHIResourceLayout*> m_ResourceLayouts;
         RHIResourceSignature* m_ResourceSignature = nullptr;
+        RHIComputePipeline* m_CachedPipeline = nullptr;
     };
 } // namespace Hazel

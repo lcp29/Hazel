@@ -12,9 +12,6 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include "Hazel/Asset/AssetManager.h"
-#include "Hazel/Project/Project.h"
-
 #include <glm/gtx/quaternion.hpp>
 #include <yaml-cpp/yaml.h>
 
@@ -184,7 +181,7 @@ namespace Hazel
 
         glm::mat4 GetTransform() const
         {
-            glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotationMatrix));
+            glm::mat4 rotationMatrix = glm::toMat4(glm::quat(rotation));
 
             return glm::translate(glm::mat4(1.0f), translation) * rotationMatrix * glm::scale(glm::mat4(1.0f), scale);
         }
@@ -257,6 +254,7 @@ namespace Hazel
     struct CameraComponent
     {
         Camera camera;
+        UUID renderTextureUUID = UUID(-1);
         bool isViewportCamera = false;
         bool isPrimary = false;
         int priority = 0; // the lower, rendered earlier
@@ -268,6 +266,7 @@ namespace Hazel
         {
             YAML::Node node;
             node["Camera"] = camera.Serialize();
+            node["RenderTextureUUID"] = renderTextureUUID;
             node["IsPrimary"] = isPrimary;
             node["IsViewportCamera"] = isViewportCamera;
             node["Priority"] = priority;
@@ -278,6 +277,9 @@ namespace Hazel
         {
             CameraComponent component;
             component.camera = Camera::Deserialize(node["Camera"]);
+            component.renderTextureUUID = node["RenderTextureUUID"]
+                                              ? node["RenderTextureUUID"][0].as<UUID>()
+                                              : UUID(-1);
             component.isPrimary = node["IsPrimary"].as<bool>();
             component.isViewportCamera = node["IsViewportCamera"].as<bool>();
             component.priority = node["Priority"].as<int>();
@@ -307,6 +309,8 @@ namespace Hazel
         }
     };
 
+    class Entity;
+
     struct ScriptComponent
     {
         std::string className;
@@ -332,8 +336,7 @@ namespace Hazel
         void Bind()
         {
             instantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
-            destroyScript = [](NativeScriptComponent* nsc)
-            {
+            destroyScript = [](NativeScriptComponent* nsc) {
                 delete nsc->instance;
                 nsc->instance = nullptr;
             };

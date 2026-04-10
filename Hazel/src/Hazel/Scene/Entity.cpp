@@ -7,78 +7,6 @@
 
 namespace Hazel
 {
-    namespace
-    {
-        glm::mat4 BuildTransformMatrix(const TransformComponent& transform)
-        {
-            const glm::mat4 rotationMatrix = glm::toMat4(glm::quat(transform.rotation));
-            return glm::translate(glm::mat4(1.0f), transform.translation) * rotationMatrix *
-                   glm::scale(glm::mat4(1.0f), transform.scale);
-        }
-
-        glm::mat4 ComputeParentGlobalTransform(entt::entity entityHandle, Scene* scene)
-        {
-            const auto& relationship = scene->GetRegistry().get<EntityRelationshipComponent>(entityHandle);
-            if (relationship.parent == entt::null)
-            {
-                return glm::mat4(1.0f);
-            }
-
-            const auto parentGlobalTransform = ComputeParentGlobalTransform(relationship.parent, scene);
-            const auto& parentTransform = scene->GetRegistry().get<TransformComponent>(relationship.parent);
-            return parentGlobalTransform * BuildTransformMatrix(parentTransform);
-        }
-
-        void AddTransformPayloadForSubtree(entt::entity entityHandle, Scene* scene, const glm::mat4& globalTransform)
-        {
-            if (scene->GetRegistry().any_of<MeshRendererComponent>(entityHandle))
-            {
-                RenderSceneUpdatePayload payload{};
-                payload.entity = scene->GetRegistry().get<IDComponent>(entityHandle).ID;
-                payload.type = RenderSceneUpdatePayload::Type::ChangeTransform;
-                payload.changeTransform.transform = globalTransform;
-                scene->AddToRenderSceneUpdatePayload(payload);
-            }
-
-            const auto& relationship = scene->GetRegistry().get<EntityRelationshipComponent>(entityHandle);
-            auto childHandle = relationship.firstChild;
-            while (childHandle != entt::null)
-            {
-                const auto& childTransform = scene->GetRegistry().get<TransformComponent>(childHandle);
-                const auto childGlobalTransform = globalTransform * BuildTransformMatrix(childTransform);
-                AddTransformPayloadForSubtree(childHandle, scene, childGlobalTransform);
-                childHandle = scene->GetRegistry().get<EntityRelationshipComponent>(childHandle).nextSibling;
-            }
-        }
-    } // namespace
-
-    glm::mat4 Entity::GetGlobalTransform() const
-    {
-        const auto parentGlobalTransform = ComputeParentGlobalTransform(m_EntityHandle, m_Scene);
-        return parentGlobalTransform * BuildTransformMatrix(
-                   m_Scene->GetRegistry().get<TransformComponent>(m_EntityHandle));
-    }
-
-    void Entity::AddMeshRendererPayload(const MeshRendererComponent& component)
-    {
-        RenderSceneUpdatePayload payload{};
-        payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::Add;
-        payload.add.renderObject.transform = GetGlobalTransform();
-        payload.add.renderObject.material = component.materialUUID;
-        payload.add.renderObject.mesh = component.meshUUID;
-        payload.add.renderObject.entity = GetUUID();
-        m_Scene->AddToRenderSceneUpdatePayload(payload);
-    }
-
-    void Entity::RemoveMeshRendererPayload()
-    {
-        RenderSceneUpdatePayload payload{};
-        payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::Remove;
-        m_Scene->AddToRenderSceneUpdatePayload(payload);
-    }
-
     void Entity::AddChild(Entity* child)
     {
         HZ_CORE_ASSERT(child->m_Scene == m_Scene, "Child entity must belong to the same scene!");
@@ -247,9 +175,7 @@ namespace Hazel
         transformComponent.rotation = rotation;
         transformComponent.scale = scale;
 
-        const auto parentGlobalTransform = ComputeParentGlobalTransform(m_EntityHandle, m_Scene);
-        const auto globalTransform = parentGlobalTransform * BuildTransformMatrix(transformComponent);
-        AddTransformPayloadForSubtree(m_EntityHandle, m_Scene, globalTransform);
+        m_Scene->AddTransformPayloadsForSubtree(m_EntityHandle, m_Scene->GetWorldTransform(m_EntityHandle));
     }
 
     void Entity::SetTransform(const glm::mat4& transform)
@@ -257,9 +183,7 @@ namespace Hazel
         auto& transformComponent = GetComponent<TransformComponent>();
         transformComponent.SetTransform(transform);
 
-        const auto parentGlobalTransform = ComputeParentGlobalTransform(m_EntityHandle, m_Scene);
-        const auto globalTransform = parentGlobalTransform * BuildTransformMatrix(transformComponent);
-        AddTransformPayloadForSubtree(m_EntityHandle, m_Scene, globalTransform);
+        m_Scene->AddTransformPayloadsForSubtree(m_EntityHandle, m_Scene->GetWorldTransform(m_EntityHandle));
     }
 
     void Entity::SetTranslation(const glm::vec3& translation)
@@ -310,6 +234,32 @@ namespace Hazel
         payload.entity = GetUUID();
         payload.type = RenderSceneUpdatePayload::Type::ChangeMaterial;
         payload.changeMaterial.material = material;
+        m_Scene->AddToRenderSceneUpdatePayload(payload);
+    }
+
+    glm::mat4 Entity::GetGlobalTransform() const
+    {
+        return m_Scene->GetWorldTransform(m_EntityHandle);
+    }
+
+    void Entity::AddMeshRendererPayload(const MeshRendererComponent& component)
+    {
+        RenderSceneUpdatePayload payload{};
+        payload.entity = GetUUID();
+        payload.type = RenderSceneUpdatePayload::Type::Add;
+        payload.add.renderObject.transform = GetGlobalTransform();
+        payload.add.renderObject.material = component.materialUUID;
+        payload.add.renderObject.mesh = component.meshUUID;
+        payload.add.renderObject.entity = GetUUID();
+        payload.add.renderObject.enttEntity = static_cast<uint32_t>(m_EntityHandle);
+        m_Scene->AddToRenderSceneUpdatePayload(payload);
+    }
+
+    void Entity::RemoveMeshRendererPayload()
+    {
+        RenderSceneUpdatePayload payload{};
+        payload.entity = GetUUID();
+        payload.type = RenderSceneUpdatePayload::Type::Remove;
         m_Scene->AddToRenderSceneUpdatePayload(payload);
     }
 } // namespace Hazel

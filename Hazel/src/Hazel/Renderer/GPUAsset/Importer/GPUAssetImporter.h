@@ -24,6 +24,8 @@ namespace Hazel
     class GPUTextureAsset;
     class CachedMaterial;
     class MaterialAsset;
+    class MeshAsset;
+    class GPUMeshAsset;
 
     std::unique_ptr<GPUComputeShaderAsset> ImportGPUComputeShaderAsset(Renderer* renderer,
                                                                        const ComputeShaderAsset* asset);
@@ -33,9 +35,12 @@ namespace Hazel
     std::unique_ptr<GPUShaderAsset> ImportGPUShaderAsset(Renderer* renderer, const ShaderAsset* asset);
     std::unique_ptr<GPUTextureAsset> ImportGPUTextureAsset(Renderer* renderer, const TextureAsset* asset);
     std::unique_ptr<CachedMaterial> ImportCachedMaterial(Renderer* renderer, const MaterialAsset* asset);
+    // TODO: TEMP URGENT INTERVIEW: mesh GPU importer
+    std::unique_ptr<GPUMeshAsset> ImportGPUMeshAsset(Renderer* renderer, const MeshAsset* asset);
 
     RHIGraphicsPipeline* CreateGraphicsPipeline(UUID material,
                                                 const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                                 RHIFormat depthStencilFormat,
                                                 Renderer* renderer);
 } // Hazel

@@ -10,9 +10,20 @@
 
 namespace Hazel
 {
+    namespace
+    {
+        glm::mat4 BuildTransformMatrix(const TransformComponent& transform)
+        {
+            const glm::mat4 rotationMatrix = glm::toMat4(glm::quat(transform.rotation));
+            return glm::translate(glm::mat4(1.0f), transform.translation) * rotationMatrix *
+                   glm::scale(glm::mat4(1.0f), transform.scale);
+        }
+    } // namespace
+
     Scene::Scene()
     {
         m_ViewportCamera = Camera::Perspective(45.0f, 1.778f, 0.01f, 1000.0f);
+        m_ViewportCameraController.SetCamera(&m_ViewportCamera);
     }
 
     Scene::~Scene() {}
@@ -109,6 +120,14 @@ namespace Hazel
 
     void Scene::DestroyEntity(Entity entity)
     {
+        if (entity.HasComponent<MeshRendererComponent>())
+        {
+            RenderSceneUpdatePayload payload{};
+            payload.entity = entity.GetUUID();
+            payload.type = RenderSceneUpdatePayload::Type::Remove;
+            AddToRenderSceneUpdatePayload(payload);
+        }
+
         auto relationship = entity.GetComponent<EntityRelationshipComponent>();
         if (relationship.prevSibling != entt::null)
         {
@@ -272,6 +291,69 @@ namespace Hazel
         return {};
     }
 
+    std::vector<SceneCameraView> Scene::GetAllCameras()
+    {
+        std::vector<SceneCameraView> cameras;
+
+        SceneCameraView editorViewCamera{};
+        editorViewCamera.camera = &m_ViewportCamera;
+        editorViewCamera.transform = m_ViewportCameraController.GetCameraTransform();
+        editorViewCamera.entityUUID = UUID(-1);
+        editorViewCamera.renderTextureUUID = UUID(-1);
+        editorViewCamera.isEditorView = true;
+        editorViewCamera.isPrimary = false;
+        editorViewCamera.isViewportCamera = false;
+        editorViewCamera.priority = 0;
+        cameras.push_back(editorViewCamera);
+
+        auto view = m_Registry.view<CameraComponent, IDComponent, TransformComponent>();
+        for (auto entity : view)
+        {
+            auto& cameraComponent = view.get<CameraComponent>(entity);
+            auto& idComponent = view.get<IDComponent>(entity);
+            auto& transformComponent = view.get<TransformComponent>(entity);
+
+            SceneCameraView sceneCamera{};
+            sceneCamera.camera = &cameraComponent.camera;
+            sceneCamera.transform.translation = transformComponent.translation;
+            sceneCamera.transform.rotation = transformComponent.rotation;
+            sceneCamera.transform.scale = transformComponent.scale;
+            sceneCamera.entityUUID = idComponent.ID;
+            sceneCamera.renderTextureUUID = cameraComponent.renderTextureUUID;
+            sceneCamera.isEditorView = false;
+            sceneCamera.isPrimary = cameraComponent.isPrimary;
+            sceneCamera.isViewportCamera = cameraComponent.isViewportCamera;
+            sceneCamera.priority = cameraComponent.priority;
+            cameras.push_back(sceneCamera);
+        }
+
+        return cameras;
+    }
+
+    std::vector<RenderSceneUpdatePayload> Scene::GetInitialRenderSceneUpdatePayloads() const
+    {
+        std::vector<RenderSceneUpdatePayload> payloads;
+
+        auto view = m_Registry.view<MeshRendererComponent, IDComponent>();
+        for (auto entity : view)
+        {
+            const auto& meshRenderer = view.get<MeshRendererComponent>(entity);
+            const auto& idComponent = view.get<IDComponent>(entity);
+
+            RenderSceneUpdatePayload payload{};
+            payload.entity = idComponent.ID;
+            payload.type = RenderSceneUpdatePayload::Type::Add;
+            payload.add.renderObject.transform = GetWorldTransform(entity);
+            payload.add.renderObject.material = meshRenderer.materialUUID;
+            payload.add.renderObject.mesh = meshRenderer.meshUUID;
+            payload.add.renderObject.entity = idComponent.ID;
+            payload.add.renderObject.enttEntity = static_cast<uint32_t>(entity);
+            payloads.push_back(payload);
+        }
+
+        return payloads;
+    }
+
     std::vector<UUID> Scene::GetInitialAssetUUIDs() const
     {
         auto meshRendererEntities = m_Registry.view<MeshRendererComponent>();
@@ -289,6 +371,40 @@ namespace Hazel
             }
         }
         return uuids;
+    }
+
+    glm::mat4 Scene::GetWorldTransform(entt::entity entity) const
+    {
+        const auto& relationship = m_Registry.get<EntityRelationshipComponent>(entity);
+        const auto localTransform = BuildTransformMatrix(m_Registry.get<TransformComponent>(entity));
+        if (relationship.parent == entt::null)
+        {
+            return localTransform;
+        }
+
+        return GetWorldTransform(relationship.parent) * localTransform;
+    }
+
+    void Scene::AddTransformPayloadsForSubtree(entt::entity entity, const glm::mat4& globalTransform)
+    {
+        if (m_Registry.any_of<MeshRendererComponent>(entity))
+        {
+            RenderSceneUpdatePayload payload{};
+            payload.entity = m_Registry.get<IDComponent>(entity).ID;
+            payload.type = RenderSceneUpdatePayload::Type::ChangeTransform;
+            payload.changeTransform.transform = globalTransform;
+            AddToRenderSceneUpdatePayload(payload);
+        }
+
+        const auto& relationship = m_Registry.get<EntityRelationshipComponent>(entity);
+        auto child = relationship.firstChild;
+        while (child != entt::null)
+        {
+            const auto childGlobalTransform = globalTransform * BuildTransformMatrix(
+                                                  m_Registry.get<TransformComponent>(child));
+            AddTransformPayloadsForSubtree(child, childGlobalTransform);
+            child = m_Registry.get<EntityRelationshipComponent>(child).nextSibling;
+        }
     }
 
     template <typename T>

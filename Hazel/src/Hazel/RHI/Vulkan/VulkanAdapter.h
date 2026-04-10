@@ -21,7 +21,11 @@ namespace Hazel
         bool supportSynchronization2 = false;
         bool supportFragmentStoresAndAtomics = false;
         bool supportVertexPipelineStoresAndAtomics = false;
-        bool supportDescriptorBindingVariableDescriptorCount;
+        bool supportDescriptorBindingVariableDescriptorCount = false;
+        bool supportDescriptorBindingStorageBufferUpdateAfterBind = false;
+        bool supportDescriptorBindingSampledImageUpdateAfterBind = false;
+        bool supportRuntimeDescriptorArray = false;
+        bool supportShaderSampledImageArrayNonUniformIndexing = false;
     };
 
     RHI_VK_CLASS_IMPL(RHIAdapter)

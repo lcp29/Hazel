@@ -37,6 +37,30 @@ namespace Hazel
         }
     };
 
+    struct UserUploadValueBuffer
+    {
+        std::string name{};
+        uint64_t version = 1;
+        uint32_t size = 0;
+        uint8_t data[64];
+
+        template <typename T>
+        void SetValue(const T& value)
+        {
+            std::memcpy(data, &value, sizeof(T));
+            size = sizeof(T);
+            ++version;
+        }
+    };
+
+    struct UserUploadValueMeta
+    {
+        std::string name{};
+        uint64_t version = 0;
+        uint32_t offset = 0;
+        uint32_t size = 0;
+    };
+
     class ShaderMaterialSlot
     {
     public:
@@ -53,22 +77,40 @@ namespace Hazel
         void SetResized(bool resized);
 
         uint32_t RegisterMaterial(UUID material);
-
         void UnregisterMaterial(uint32_t slot);
-
         std::vector<UUID> GetMaterials() const;
+
+        template <typename T>
+        void SetUploadValueForFrame(const std::string& name,
+                                    const T& value,
+                                    uint64_t version,
+                                    uint64_t frameInFlightIndex)
+        {
+            SetUploadValueForFrame(name, &value, sizeof(T), version, frameInFlightIndex);
+        }
+
+        void SetUploadValueForFrame(const std::string& name,
+                                    const void* value,
+                                    uint32_t valueSize,
+                                    uint64_t version,
+                                    uint64_t frameInFlightIndex);
 
         void BuildSignature(const RHIShaderReflection& reflection);
         std::vector<GPUAssetResolveResult> BuildResources();
         std::vector<GPUAssetResolveResult> BuildResourcesForFrame(uint32_t frameInFlightIndex);
+
         RHIBuffer* GetMaterialBuffer() const;
         RHIBuffer* GetMaterialBuffer(uint32_t frameInFlightIndex) const;
+        RHIResourceGroup* GetUserUploadResourceGroup() const;
+        RHIResourceGroup* GetUserUploadResourceGroup(uint32_t frameInFlightIndex) const;
+        RHIResourceLayout* GetUserUploadResourceLayout() const;
         RHIResourceGroup* GetMaterialResourceGroup() const;
         RHIResourceGroup* GetMaterialResourceGroup(uint32_t frameInFlightIndex) const;
         RHIResourceLayout* GetMaterialResourceLayout() const;
         const std::vector<RHIResourceLayout*>& GetShaderResourceLayouts() const;
         RHIResourceSignature* GetShaderResourceSignature() const;
         const RHIShaderReflection& GetShaderReflection() const;
+        uint32_t GetUserUploadValueBufferSize() const;
 
     private:
         bool m_Resized = true;
@@ -79,13 +121,19 @@ namespace Hazel
         RHIShaderReflection m_Reflection{};
         std::vector<UUID> m_Materials;
         std::vector<uint32_t> m_FreeList;
-        std::vector<RHIBuffer*> m_MaterialBuffer;
-        std::vector<RHIResourceGroup*> m_ResourceGroup;
+        std::vector<RHIBuffer*> m_MaterialBuffers;
+        RHIBuffer* m_UserUploadValueBuffer = nullptr;
+        uint32_t m_UserUploadValueBufferSize = 0;
+        std::unordered_map<std::string, UserUploadValueMeta> m_UserUploadValueBufferMemberMap;
+        RHIResourceLayout* m_UserUploadResourceLayout = nullptr;
+        std::vector<RHIResourceGroup*> m_UserUploadResourceGroup;
 
+        std::vector<RHIResourceGroup*> m_ResourceGroup;
         uint32_t m_MaterialStructSize = 0;
         std::vector<RHIResourceLayout*> m_ShaderResourceLayouts;
         RHIResourceSignature* m_ShaderResourceSignature = nullptr;
         RHIResourceLayout* m_MaterialResourceLayout = nullptr;
+
 
         std::vector<uint8_t> m_ShouldRebuild;
         std::vector<std::vector<uint8_t>> m_MaterialIsDirty;
@@ -117,7 +165,10 @@ namespace Hazel
 
         RHIResourceGroup* GetPerViewResourceGroup() const;
 
-        void BindPerViewResources(RHICommandBuffer* cmd, RHIGraphicsPipeline* pipeline);
+        void SetViewProjectionMatrix(const glm::mat4& view, const glm::mat4& projection);
+
+        void BindPerViewResources(RHICommandBuffer* cmd, UUID shader, UUID shaderVersion);
+        void UpdateUserUploadValuesForShader(UUID shader, uint64_t sourceVersion);
 
         // bindless
         uint32_t RegisterTexture(GPUAssetResolveResult textureResult);
@@ -139,8 +190,23 @@ namespace Hazel
 
         void UpdateResourceGroupForPendingOperations(RHIResourceGroup* group);
 
-        // material property resources
-        void CreateOrUpdateMaterialPropertyResources();
+        template <typename T>
+        void SetValue(std::string name, const T& value)
+        {
+            if (!m_UserUploadValueBuffers.contains(name))
+            {
+                UserUploadValueBuffer buffer{};
+                buffer.name = name;
+                std::memcpy(buffer.data, &value, sizeof(T));
+                m_UserUploadValueBuffers[name] = buffer;
+            }
+
+            auto& buffer = m_UserUploadValueBuffers[name];
+            buffer.SetValue(value);
+        }
+
+        // per-shader resources
+        void CreateOrUpdatePerShaderResources();
 
         void RegisterShader(UUID shader, uint64_t sourceVersion, const RHIShaderReflection& reflection);
         void UnregisterShader(UUID shader, uint64_t sourceVersion);
@@ -148,8 +214,11 @@ namespace Hazel
         void UnregisterMaterial(UUID shader, uint64_t sourceVersion, uint32_t slot);
 
         std::vector<UUID> GetMaterialsForShader(UUID shader, uint64_t sourceVersion);
-        RHIBuffer* GetMaterialPropertyBuffer(UUID shader, uint64_t sourceVersion);
-        RHIBuffer* GetMaterialPropertyBuffer(UUID shader, uint64_t sourceVersion, uint32_t frameInFlightIndex);
+        RHIBuffer* GetMaterialBuffer(UUID shader, uint64_t sourceVersion);
+        RHIBuffer* GetMaterialBuffer(UUID shader, uint64_t sourceVersion, uint32_t frameInFlightIndex);
+        RHIResourceGroup* GetUserUploadResourceGroup(UUID shader, uint64_t sourceVersion);
+        RHIResourceGroup* GetUserUploadResourceGroup(UUID shader, uint64_t sourceVersion, uint32_t frameInFlightIndex);
+        RHIResourceLayout* GetUserUploadResourceLayout(UUID shader, uint64_t sourceVersion);
         RHIResourceGroup* GetMaterialPropertyResourceGroup(UUID shader, uint64_t sourceVersion);
         RHIResourceGroup* GetMaterialPropertyResourceGroup(UUID shader,
                                                            uint64_t sourceVersion,
@@ -158,11 +227,9 @@ namespace Hazel
         const std::vector<RHIResourceLayout*>* GetShaderResourceLayouts(UUID shader, uint64_t sourceVersion);
         RHIResourceSignature* GetShaderResourceSignature(UUID shader, uint64_t sourceVersion);
         void BindMaterialPropertyResources(RHICommandBuffer* cmd,
-                                           RHIGraphicsPipeline* pipeline,
                                            UUID shader,
                                            uint64_t sourceVersion);
-
-
+        void BindUserUploadResources(RHICommandBuffer* cmd, UUID shader, uint64_t sourceVersion);
 
     private:
         Renderer* m_Renderer = nullptr;
@@ -196,5 +263,7 @@ namespace Hazel
 
         std::mutex m_PendingResourceOperationMutex;
         std::vector<PendingResourceOperation> m_PendingResourceOperations;
+
+        std::unordered_map<std::string, UserUploadValueBuffer> m_UserUploadValueBuffers;
     };
 } // Hazel

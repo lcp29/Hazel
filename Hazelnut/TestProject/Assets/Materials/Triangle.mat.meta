@@ -1,0 +1,18 @@
+UUID: 12106534316884926528
+Shader: 15126760520232332512
+Version: 645
+PipelineState:
+  PolygonMode: 0
+  CullMode: 2
+  DepthClampEnable: false
+  DepthBiasEnable: false
+  DepthTestEnable: false
+  DepthWriteEnable: false
+  DepthCompareOp: 7
+  StencilTestEnable: false
+Properties:
+  - Name: color
+    Type: Vec4
+    Data: AACAPwAAgD8AAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+    Sampler: 18446744073709551615
+    Texture: 18446744073709551615

@@ -21,7 +21,7 @@ namespace Hazel
             return m_IsValid;
         }
 
-        RHISwapchainAcquireResult AcquireImage();
+        RHISwapchainAcquireResult AcquireImage(uint64_t timeout);
         RHIImage* FetchImage(uint32_t frameNumber) const;
         RHIImageView* FetchImageView(uint32_t frameNumber) const;
         bool SubmitFrame(uint32_t frameNumber, const std::vector<RHISyncPoint>& waitSyncPoints);

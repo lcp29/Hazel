@@ -14,6 +14,7 @@
 namespace Hazel
 {
     constexpr int kPerViewResourceSet = 0;
+    constexpr int kUserResourceSet = 1;
     constexpr int kMaterialResourceSet = 2;
 
     inline std::string ReadTextFile(const std::filesystem::path& filePath)
@@ -21,7 +22,8 @@ namespace Hazel
         std::ifstream fileStream(filePath, std::ios::in | std::ios::binary);
         if (!fileStream)
         {
-            throw std::runtime_error("Failed to open file: " + filePath.string());
+            HZ_WARN("Failed to open file: " + filePath.string());
+            return {};
         }
         fileStream.seekg(0, std::ios::end);
         size_t fileSize = static_cast<size_t>(fileStream.tellg());
@@ -211,6 +213,13 @@ namespace Hazel
                     bindingDesc.type = slot.type;
                     bindingDesc.count = slot.count;
                     bindingDesc.stages = stage;
+
+                    if (group.set == kPerViewResourceSet &&
+                        (slot.slot >= 1 && slot.slot <= 3))
+                    {
+                        bindingDesc.partiallyBound = true;
+                    }
+
                     layoutDesc.bindings.push_back(bindingDesc);
                 }
                 else

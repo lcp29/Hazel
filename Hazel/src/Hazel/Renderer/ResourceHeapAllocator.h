@@ -45,5 +45,8 @@ namespace Hazel
         bool m_IsValid = false;
         std::vector<HeapRecord> m_Heaps;
         std::vector<GroupRecord> m_Groups;
+
+        std::vector<HeapRecord> m_HeapsUpdateAfterBind;
+        std::vector<GroupRecord> m_GroupsUpdateAfterBind;
     };
 } // namespace Hazel

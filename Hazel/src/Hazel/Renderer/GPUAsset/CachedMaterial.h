@@ -67,6 +67,7 @@ namespace Hazel
         }
 
         uint64_t GetPipelineKey(const std::vector<RHIFormat>& colorAttachmentFormats,
+                                const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                 RHIFormat depthStencilFormat = RHIFormat::Undefined) const;
 
         bool IsDirty() const { return m_IsDirty; }

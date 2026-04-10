@@ -17,6 +17,8 @@ namespace Hazel
         RHIResourceBindingType type = RHIResourceBindingType::UniformBuffer;
         uint32_t count = 1;
         RHIShaderStages stages = {};
+        bool updateAfterBind = false;
+        bool partiallyBound = false;
     };
 
     struct RHIPushConstantRangeDesc

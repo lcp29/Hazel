@@ -3,6 +3,7 @@
 #include "GPUAsset/GPUGraphicsPipelineAsset.h"
 #include "Hazel/Asset/ComputeShaderAsset.h"
 #include "Hazel/Asset/MaterialAsset.h"
+#include "Hazel/Asset/MeshAsset.h"
 #include "Hazel/Asset/RenderTextureAsset.h"
 #include "Hazel/Asset/SamplerAsset.h"
 #include "Hazel/Asset/ShaderAsset.h"
@@ -18,6 +19,8 @@
 #include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/ResourceHeapAllocator.h"
 #include "Hazel/RHI/RHI.h"
+#include "Hazel/Scene/Scene.h"
+#include "glm/gtx/iteration.hpp"
 
 #include <algorithm>
 #include <thread>
@@ -44,16 +47,14 @@ namespace Hazel
         m_SwapchainImageFormat = GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
 
         m_ResourceBindingManager = std::make_unique<ResourceBindingRegistry>(this);
-
         CreateSwapchainResources();
         CreatePerFrameData();
         m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
-
         m_ResourceBindingManager->CreatePerViewResources();
-
         m_RenderScene = std::make_unique<RenderScene>(this);
+        m_GeometryDataRegistry = std::make_unique<GeometryDataRegistry>(this);
     }
 
     Renderer::~Renderer() = default;
@@ -100,7 +101,8 @@ namespace Hazel
 
         auto currentAsset = m_GPUAssetRegistry.GetAsset(uuid);
 
-        bool obsoleteMaterial = false;
+        bool shaderObsolete = false;
+        bool materialVersionObsolete = false;
 
         if (type == AssetType::Material)
         {
@@ -112,7 +114,8 @@ namespace Hazel
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                     return GPUAssetResolveResult(currentAsset);
                 }
-                obsoleteMaterial = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
+                shaderObsolete = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
+                materialVersionObsolete = asset->GetVersion() > materialAsset->GetSourceVersion();
             }
         }
 
@@ -120,7 +123,7 @@ namespace Hazel
             auto& gpuState = asset->GetGPUAssetState();
             std::unique_lock lock(gpuState.mutex);
             if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset &&
-                gpuState.resolvedVersion >= asset->GetVersion() && !obsoleteMaterial)
+                gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                 return GPUAssetResolveResult(currentAsset);
@@ -128,7 +131,7 @@ namespace Hazel
 
             if (gpuState.state == GPUAssetLoadState::Loading)
             {
-                if (currentAsset)
+                if (currentAsset && !(type == AssetType::Material && shaderObsolete))
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                     return GPUAssetResolveResult(currentAsset);
@@ -167,7 +170,8 @@ namespace Hazel
 
             auto currentAsset = m_GPUAssetRegistry.GetAsset(uuid);
 
-            bool obsoleteMaterial = false;
+            bool shaderObsolete = false;
+            bool materialVersionObsolete = false;
 
             if (type == AssetType::Material)
             {
@@ -179,12 +183,13 @@ namespace Hazel
                         materialAsset->Return();
                         return GPUAssetResolveResult(nullptr, false);
                     }
-                    obsoleteMaterial = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
+                    shaderObsolete = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
+                    materialVersionObsolete = asset->GetVersion() > materialAsset->GetSourceVersion();
                 }
             }
 
             if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset &&
-                gpuState.resolvedVersion >= asset->GetVersion() && !obsoleteMaterial)
+                gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                 return GPUAssetResolveResult(currentAsset);
@@ -206,6 +211,25 @@ namespace Hazel
                 if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset &&
                     gpuState.resolvedVersion >= asset->GetVersion())
                 {
+                    if (type == AssetType::Material)
+                    {
+                        auto* materialAsset = static_cast<CachedMaterial*>(currentAsset);
+                        auto shader = ResolveGPUAssetBlocked(materialAsset->GetShader(), AssetType::Shader);
+                        if (!shader.asset)
+                        {
+                            currentAsset->Return();
+                            return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()), false);
+                        }
+
+                        const bool loadedShaderObsolete =
+                            shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
+                        if (loadedShaderObsolete)
+                        {
+                            currentAsset->Return();
+                            return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()), false);
+                        }
+                    }
+
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                     return GPUAssetResolveResult(currentAsset);
                 }
@@ -227,22 +251,26 @@ namespace Hazel
     GPUAssetResolveResult Renderer::ResolveGPUGraphicsPipeline(
         UUID material,
         const std::vector<RHIFormat>& colorAttachmentFormats,
+        const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
         RHIFormat depthStencilFormat)
     {
         return ResolveDirectGPUAsset<GPUGraphicsPipelineAsset>(
             material,
             colorAttachmentFormats,
+            colorBlendAttachments,
             depthStencilFormat);
     }
 
     GPUAssetResolveResult Renderer::ResolveGPUGraphicsPipelineBlocked(
         UUID material,
         const std::vector<RHIFormat>& colorAttachmentFormats,
+        const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
         RHIFormat depthStencilFormat)
     {
         return ResolveDirectGPUAssetBlocked<GPUGraphicsPipelineAsset>(
             material,
             colorAttachmentFormats,
+            colorBlendAttachments,
             depthStencilFormat);
     }
 
@@ -405,6 +433,9 @@ namespace Hazel
                 return ImportGPUTextureAsset(this, static_cast<TextureAsset*>(asset));
             case AssetType::Material:
                 return ImportCachedMaterial(this, static_cast<MaterialAsset*>(asset));
+            // TODO: TEMP URGENT INTERVIEW: mesh asset import
+            case AssetType::Mesh:
+                return ImportGPUMeshAsset(this, static_cast<MeshAsset*>(asset));
             default:
                 return nullptr;
         }
@@ -421,7 +452,7 @@ namespace Hazel
             case AssetType::Sampler:
                 return m_DefaultSampler.get();
             case AssetType::RenderTexture:
-                return m_DefaultRenderTexture.get();
+                return nullptr;
             case AssetType::ComputeShader:
                 return nullptr;
             case AssetType::Mesh:
@@ -464,54 +495,50 @@ namespace Hazel
         }
     }
 
-    void Renderer::Render(Camera& camera)
+    void Renderer::Render()
     {
         auto& frameData = GetCurrentFrameData();
-        auto* image = m_DefaultRenderTexture->GetImage();
-        auto* imageView = m_DefaultRenderTexture->GetDefaultImageView();
         auto* cmd = frameData.commandBuffer;
 
-        image->Transition(frameData.commandBuffer, image->GetCurrentState(), RHIImageResourceState::ColorAttachment);
+        GetResourceBindingRegistry()->SetValue<float>("lightStrength", 100.0);
+
         RHIRenderingAttachmentDesc colorAttachmentDesc{};
-        colorAttachmentDesc.imageView = imageView;
+        colorAttachmentDesc.imageView = m_DefaultRenderTexture->GetDefaultImageView();
         colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
         colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
-        colorAttachmentDesc.clearColorValue.float32 = {0.4f, 0.4f, 0.6f, 1.0f};
+        colorAttachmentDesc.clearColorValue.float32 = {0.0f, 0.0f, 0.0f, 1.0f};
         colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
 
-        RHIRenderingInfo renderingInfo{};
-        renderingInfo.colorAttachments = {colorAttachmentDesc};
-        renderingInfo.renderOffset = {0, 0};
-        renderingInfo.renderViewSize = {image->GetDesc().width, image->GetDesc().height};
+        RHIRenderingAttachmentDesc depthStencilAttachmentDesc{};
+        depthStencilAttachmentDesc.imageView = m_DefaultDepthRenderTexture->GetDefaultImageView();
+        depthStencilAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
+        depthStencilAttachmentDesc.storeOp = RHIRenderingStoreOp::DontCare;
+        depthStencilAttachmentDesc.clearDepthStencilValue.depth = 1.0f;
+        depthStencilAttachmentDesc.clearDepthStencilValue.stencil = 0;
+        depthStencilAttachmentDesc.state = RHIImageResourceState::DepthStencilAttachment;
 
-        cmd->BeginRendering(renderingInfo);
+        m_DefaultRenderTexture->GetImage()->Transition(cmd,
+                                                       m_DefaultRenderTexture->GetImage()->GetCurrentState(),
+                                                       RHIImageResourceState::ColorAttachment);
+        m_DefaultDepthRenderTexture->GetImage()->Transition(cmd,
+                                                            m_DefaultDepthRenderTexture->GetImage()->GetCurrentState(),
+                                                            RHIImageResourceState::DepthStencilAttachment);
 
-        auto shader = ResolveGPUAsset(UUID(static_cast<uint64_t>(17413239457703166156)), AssetType::Shader);
-        auto material = ResolveGPUAsset(UUID(static_cast<uint64_t>(6531589879330968622)), AssetType::Material);
-        if (material.asset)
-        {
-            auto pipeline = ResolveGPUGraphicsPipeline(material.asset->GetUUID(),
-                                                       {image->GetDesc().format},
-                                                       RHIFormat::Undefined);
-            if (pipeline.asset)
-            {
-                cmd->BindGraphicsPipeline(static_cast<GPUGraphicsPipelineAsset*>(pipeline.asset)->GetPipeline());
-
-                cmd->SetViewport(0.0f,
-                                 0.0f,
-                                 static_cast<float>(image->GetDesc().width),
-                                 static_cast<float>(image->GetDesc().height));
-                cmd->SetScissor(0, 0, image->GetDesc().width, image->GetDesc().height);
-
-                m_ResourceBindingManager->BindPerViewResources(cmd,
-                                                               static_cast<GPUGraphicsPipelineAsset*>(pipeline.asset)->
-                                                               GetPipeline());
-
-                cmd->Draw(3, 1, 0, 0);
-            }
-        }
-
-        cmd->EndRendering();
+        RunGraphicsPass(cmd,
+                        &m_Cameras[0],
+                        {colorAttachmentDesc},
+                        {RHIColorBlendAttachmentDesc{
+                            .blendEnable = true,
+                            .srcColorBlendFactor = RHIBlendFactor::SrcAlpha,
+                            .dstColorBlendFactor = RHIBlendFactor::OneMinusSrcAlpha,
+                            .colorBlendOp = RHIBlendOp::Add,
+                            .srcAlphaBlendFactor = RHIBlendFactor::One,
+                            .dstAlphaBlendFactor = RHIBlendFactor::Zero,
+                            .alphaBlendOp = RHIBlendOp::Add,
+                        }},
+                        &depthStencilAttachmentDesc,
+                        {0, 0},
+                        {m_ViewportWidth, m_ViewportHeight});
     }
 
     void Renderer::BeginSwapchainTargetRendering()
@@ -571,6 +598,18 @@ namespace Hazel
 
     void Renderer::RecreateDefaultRenderTexture()
     {
+        if (m_DefaultRenderTexture && m_DefaultRenderTexture->IsValid())
+        {
+            m_DefaultRenderTexture->ReleaseImmediate();
+            m_DefaultRenderTexture.reset();
+        }
+
+        if (m_DefaultDepthRenderTexture && m_DefaultDepthRenderTexture->IsValid())
+        {
+            m_DefaultDepthRenderTexture->ReleaseImmediate();
+            m_DefaultDepthRenderTexture.reset();
+        }
+
         RenderTextureDesc renderTextureDesc{};
         renderTextureDesc.width = m_ViewportWidth;
         renderTextureDesc.height = m_ViewportHeight;
@@ -578,17 +617,19 @@ namespace Hazel
         renderTextureDesc.perFrame = true;
         renderTextureDesc.useMipmap = false;
 
-        if (m_DefaultRenderTexture && m_DefaultRenderTexture->IsValid())
-        {
-            m_DefaultRenderTexture->ReleaseImmediate();
-            m_DefaultRenderTexture.reset();
-        }
-
         m_DefaultRenderTexture = CreateGPURenderTextureAsset(this,
                                                              m_DefaultRenderTextureUUID,
                                                              0,
                                                              renderTextureDesc,
                                                              m_CurrentFrame);
+
+        renderTextureDesc.format = RHIFormat::D32SFloatS8Uint;
+
+        m_DefaultDepthRenderTexture = CreateGPURenderTextureAsset(this,
+                                                                  UUID(),
+                                                                  0,
+                                                                  renderTextureDesc,
+                                                                  m_CurrentFrame);
     }
 
     void Renderer::BeginFrame()
@@ -600,12 +641,12 @@ namespace Hazel
 
         GetResourceBindingRegistry()->
             UpdateResourceGroupForPendingOperations(m_ResourceBindingManager->GetPerViewResourceGroup());
-        GetResourceBindingRegistry()->CreateOrUpdateMaterialPropertyResources();
+        GetResourceBindingRegistry()->CreateOrUpdatePerShaderResources();
 
         frameData.commandBuffer->Reset();
         frameData.commandBuffer->Begin(true);
 
-        auto result = m_Swapchain->AcquireImage();
+        auto result = m_Swapchain->AcquireImage(1000000000000ull);
         frameData.imageAvailableSyncPoint = result.availableSyncPoint;
         frameData.frameNumber = result.frameNumber;
     }
@@ -657,9 +698,260 @@ namespace Hazel
         }
     }
 
+    // TODO: TEMP URGENT INTERVIEW: a vanilla forward pass
+    void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
+                                   SceneCameraView* camera,
+                                   const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                                   const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                   const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                                   RHIOffset2D renderOffset,
+                                   RHIExtent2D renderViewSize)
+    {
+        GetResourceBindingRegistry()->SetViewProjectionMatrix(camera->transform.GetView(),
+                                                              camera->camera->GetProjection());
+
+        std::vector<RHIFormat> colorAttachmentFormats;
+        RHIFormat depthStencilFormat = RHIFormat::Undefined;
+
+        RHIRenderingInfo renderingInfo{};
+        renderingInfo.renderOffset = renderOffset;
+        renderingInfo.renderViewSize = renderViewSize;
+
+        for (auto colorDescription : colorAttachmentDescriptions)
+        {
+            renderingInfo.colorAttachments.push_back(colorDescription);
+            colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
+        }
+
+        if (depthStencilAttachmentDescription)
+        {
+            renderingInfo.depthAttachment = *depthStencilAttachmentDescription;
+            renderingInfo.stencilAttachment = *depthStencilAttachmentDescription;
+            depthStencilFormat = depthStencilAttachmentDescription->imageView->GetFormat();
+        }
+
+        bool firstBind = true;
+
+        cmd->BeginRendering(renderingInfo);
+
+        const auto& renderObjects = GetRenderScene()->GetRenderObjectsSortedByShader();
+
+        for (auto it = renderObjects.begin(); it != renderObjects.end();)
+        {
+            auto [begin, end] = renderObjects.equal_range(it->first);
+            if (it->first == UUID(-1))
+            {
+                it = end;
+                continue;
+            }
+
+            auto shaderResult = ResolveGPUAsset(it->first, AssetType::Shader);
+            if (!shaderResult.asset)
+            {
+                it = end;
+                continue;
+            }
+            auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
+
+            GetResourceBindingRegistry()->
+                UpdateUserUploadValuesForShader(shader->GetUUID(), shader->GetSourceVersion());
+
+            if (firstBind)
+            {
+                GetResourceBindingRegistry()->BindPerViewResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
+                firstBind = false;
+            }
+
+            GetResourceBindingRegistry()->BindUserUploadResources(cmd,
+                                                                  shader->GetUUID(),
+                                                                  shader->GetSourceVersion());
+            GetResourceBindingRegistry()->BindMaterialPropertyResources(cmd,
+                                                                        shader->GetUUID(),
+                                                                        shader->GetSourceVersion());
+
+            for (; it != end; ++it)
+            {
+                auto* renderObject = it->second;
+
+                auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
+                if (!meshResult.asset) { continue; }
+                auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
+
+                auto materialResult = ResolveGPUAsset(renderObject->material, AssetType::Material);
+                if (!materialResult.asset) { continue; }
+                auto* material = static_cast<CachedMaterial*>(materialResult.asset);
+
+                auto pipelineResult = ResolveGPUGraphicsPipeline(renderObject->material,
+                                                                 colorAttachmentFormats,
+                                                                 colorBlendAttachments,
+                                                                 depthStencilFormat);
+                if (!pipelineResult.asset) { continue; }
+                auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
+
+                cmd->BindGraphicsPipeline(pipeline->GetPipeline());
+                cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
+                cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
+
+                auto materialID = material->GetMaterialID();
+
+                cmd->PushConstants(
+                    GetResourceBindingRegistry()->GetShaderResourceSignature(
+                        shader->GetUUID(),
+                        shader->GetSourceVersion()),
+                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                    0,
+                    64,
+                    &renderObject->transform);
+
+                cmd->PushConstants(
+                    GetResourceBindingRegistry()->GetShaderResourceSignature(
+                        shader->GetUUID(),
+                        shader->GetSourceVersion()),
+                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                    64,
+                    4,
+                    &materialID);
+
+                uint32_t entityID = renderObject->enttEntity;
+
+                cmd->PushConstants(
+                    GetResourceBindingRegistry()->GetShaderResourceSignature(
+                        shader->GetUUID(),
+                        shader->GetSourceVersion()),
+                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                    68,
+                    4,
+                    &entityID);
+
+                cmd->SetViewport(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+                cmd->SetScissor(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+                cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
+
+                cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);
+            }
+        }
+
+        cmd->EndRendering();
+    }
+
+    void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
+                                   UUID overrideMaterial,
+                                   SceneCameraView* camera,
+                                   const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                                   const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                   const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                                   RHIOffset2D renderOffset,
+                                   RHIExtent2D renderViewSize)
+    {
+        GetResourceBindingRegistry()->SetViewProjectionMatrix(camera->transform.GetView(),
+                                                              camera->camera->GetProjection());
+
+        std::vector<RHIFormat> colorAttachmentFormats;
+        RHIFormat depthStencilFormat = RHIFormat::Undefined;
+
+        auto materialResult = ResolveGPUAsset(overrideMaterial, AssetType::Material);
+        if (!materialResult.asset) { return; }
+        auto shaderResult = ResolveGPUAsset(static_cast<CachedMaterial*>(materialResult.asset)->GetShader(),
+                                            AssetType::Shader);
+
+        auto* material = static_cast<CachedMaterial*>(materialResult.asset);
+        auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
+
+        RHIRenderingInfo renderingInfo{};
+        renderingInfo.renderOffset = renderOffset;
+        renderingInfo.renderViewSize = renderViewSize;
+
+        for (auto colorDescription : colorAttachmentDescriptions)
+        {
+            renderingInfo.colorAttachments.push_back(colorDescription);
+            colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
+        }
+
+        if (depthStencilAttachmentDescription)
+        {
+            renderingInfo.depthAttachment = *depthStencilAttachmentDescription;
+            renderingInfo.stencilAttachment = *depthStencilAttachmentDescription;
+            depthStencilFormat = depthStencilAttachmentDescription->imageView->GetFormat();
+        }
+
+        if (!shaderResult.asset) { return; }
+        auto pipelineResult = ResolveGPUGraphicsPipeline(overrideMaterial,
+                                                         colorAttachmentFormats,
+                                                         colorBlendAttachments,
+                                                         depthStencilFormat);
+        if (!pipelineResult.asset) { return; }
+        auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
+
+        cmd->BeginRendering(renderingInfo);
+
+        cmd->BindGraphicsPipeline(pipeline->GetPipeline());
+
+        GetResourceBindingRegistry()->
+            UpdateUserUploadValuesForShader(shader->GetUUID(), shader->GetSourceVersion());
+        GetResourceBindingRegistry()->BindPerViewResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
+        GetResourceBindingRegistry()->BindUserUploadResources(cmd,
+                                                              shader->GetUUID(),
+                                                              shader->GetSourceVersion());
+        GetResourceBindingRegistry()->BindMaterialPropertyResources(cmd,
+                                                                    shader->GetUUID(),
+                                                                    shader->GetSourceVersion());
+
+        const auto& renderObjects = GetRenderScene()->GetRenderObjectsSortedByShader();
+
+        for (auto* renderObject : renderObjects | std::views::values)
+        {
+            auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
+            if (!meshResult.asset) { continue; }
+            auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
+
+            cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
+            cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
+
+            auto materialID = material->GetMaterialID();
+
+            cmd->PushConstants(
+                GetResourceBindingRegistry()->GetShaderResourceSignature(
+                    shader->GetUUID(),
+                    shader->GetSourceVersion()),
+                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                0,
+                64,
+                &renderObject->transform);
+
+            cmd->PushConstants(
+                GetResourceBindingRegistry()->GetShaderResourceSignature(
+                    shader->GetUUID(),
+                    shader->GetSourceVersion()),
+                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                64,
+                4,
+                &materialID);
+
+            uint32_t entityID = renderObject->enttEntity;
+
+            cmd->PushConstants(
+                GetResourceBindingRegistry()->GetShaderResourceSignature(
+                    shader->GetUUID(),
+                    shader->GetSourceVersion()),
+                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                68,
+                4,
+                &entityID);
+
+            cmd->SetViewport(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+            cmd->SetScissor(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+            cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
+
+            cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);
+        }
+
+        cmd->EndRendering();
+    }
+
     void Renderer::Release()
     {
         m_ResourceBindingManager.reset();
+        m_GeometryDataRegistry.reset();
 
         if (m_ResourceHeapAllocator)
         {

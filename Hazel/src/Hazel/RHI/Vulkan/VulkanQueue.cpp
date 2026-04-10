@@ -64,13 +64,16 @@ namespace Hazel
 
         submitInfo.waitSemaphoreInfoCount = 0;
 
-        submitInfo.waitSemaphoreInfoCount = desc.waitSyncPoints.size();
         std::vector<vk::SemaphoreSubmitInfo> waitSemaphoreInfos;
         waitSemaphoreInfos.reserve(submitInfo.waitSemaphoreInfoCount);
         for (auto& waitSyncPoint : desc.waitSyncPoints)
         {
-            waitSemaphoreInfos.emplace_back(waitSyncPoint.queue->GetSignalSemaphore(), waitSyncPoint.value);
+            if (waitSyncPoint.valid && waitSyncPoint.queue)
+            {
+                waitSemaphoreInfos.emplace_back(waitSyncPoint.queue->GetSignalSemaphore(), waitSyncPoint.value);
+            }
         }
+        submitInfo.waitSemaphoreInfoCount = waitSemaphoreInfos.size();
         submitInfo.pWaitSemaphoreInfos = waitSemaphoreInfos.data();
 
         vk::SemaphoreSubmitInfo signalSemaphoreInfo;

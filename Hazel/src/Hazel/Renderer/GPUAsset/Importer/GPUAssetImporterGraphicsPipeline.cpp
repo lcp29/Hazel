@@ -14,6 +14,7 @@ namespace Hazel
 {
     RHIGraphicsPipeline* CreateGraphicsPipeline(UUID material,
                                                 const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                                 RHIFormat depthStencilFormat,
                                                 Renderer* renderer)
     {
@@ -97,7 +98,7 @@ namespace Hazel
         pipelineDesc.depthWriteEnable = cachedMaterial->GetPipelineState().depthWriteEnable;
         pipelineDesc.depthCompareOp = cachedMaterial->GetPipelineState().depthCompareOp;
         pipelineDesc.stencilTestEnable = cachedMaterial->GetPipelineState().stencilTestEnable;
-        pipelineDesc.colorBlendAttachments = cachedMaterial->GetPipelineState().colorBlendAttachments;
+        pipelineDesc.colorBlendAttachments = colorBlendAttachments;
 
         pipelineDesc.colorAttachmentFormats = colorAttachmentFormats;
         pipelineDesc.depthStencilFormat = depthStencilFormat;
