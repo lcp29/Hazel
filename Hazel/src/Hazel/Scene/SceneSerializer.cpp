@@ -18,6 +18,14 @@ namespace Hazel
         rootNode["Scene"] = m_Scene->GetName();
         rootNode["Entities"] = entities;
         rootNode["ViewportCamera"] = m_Scene->GetViewportCamera().Serialize();
+        {
+            const auto& viewportCameraTransform = m_Scene->GetViewportCameraController().GetCameraTransform();
+            YAML::Node viewportCameraTransformNode;
+            viewportCameraTransformNode["Translation"] = viewportCameraTransform.translation;
+            viewportCameraTransformNode["Rotation"] = viewportCameraTransform.rotation;
+            viewportCameraTransformNode["Scale"] = viewportCameraTransform.scale;
+            rootNode["ViewportCameraTransform"] = viewportCameraTransformNode;
+        }
 
         for (auto& enttEntity : m_Scene->m_Registry.view<entt::entity>())
         {
@@ -53,6 +61,14 @@ namespace Hazel
         HZ_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
         m_Scene->SetViewportCamera(Camera::Deserialize(data["ViewportCamera"]));
+        if (auto viewportCameraTransformNode = data["ViewportCameraTransform"])
+        {
+            Transform viewportCameraTransform;
+            viewportCameraTransform.translation = viewportCameraTransformNode["Translation"].as<glm::vec3>();
+            viewportCameraTransform.rotation = viewportCameraTransformNode["Rotation"].as<glm::vec3>();
+            viewportCameraTransform.scale = viewportCameraTransformNode["Scale"].as<glm::vec3>();
+            m_Scene->GetViewportCameraController().SetCameraTransform(viewportCameraTransform);
+        }
 
         if (auto entities = data["Entities"])
         {

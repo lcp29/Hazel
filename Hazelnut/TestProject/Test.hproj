@@ -7,10 +7,10 @@ GlobalSettings:
   editor.ViewportCamera.MoveSpeed: 5
   editor.ViewportCamera.RotationSpeed: 0.0025
   r.Camera.DefaultPerspectiveFovX: 0.785398
-  r.Camera.DefaultOrthoNear: 0.1
   r.Camera.DefaultPerspectiveNear: 0.01
-  r.Camera.DefaultOrthoFar: 100
+  r.Camera.DefaultOrthoNear: 0.1
   r.Camera.DefaultPerspectiveFar: 1000
+  r.Camera.DefaultOrthoFar: 100
   r.Camera.DefaultOrthoWidth: 10
   asset.MeshImport.HardEdgeDegrees: 45
   asset.MeshImport.DegenerateTriangleEpsilon: 1e-08

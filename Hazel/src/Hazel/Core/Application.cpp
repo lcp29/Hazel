@@ -8,6 +8,9 @@
 
 namespace Hazel
 {
+    constexpr static int DefaultWindowWidth = 1920;
+    constexpr static int DefaultWindowHeight = 1080;
+
     Application* Application::s_Instance = nullptr;
 
     Application::Application(const ApplicationSpecification& specification)
@@ -22,7 +25,7 @@ namespace Hazel
         if (!m_Specification.WorkingDirectory.empty())
             std::filesystem::current_path(m_Specification.WorkingDirectory);
 
-        m_Window = Window::Create(WindowProps(m_Specification.Name));
+        m_Window = Window::Create(WindowProps(m_Specification.Name, DefaultWindowWidth, DefaultWindowHeight));
         m_Window->SetEventCallback(HZ_BIND_EVENT_FN(Application::OnEvent));
 
         m_GraphicsContext = GraphicsContext::Create(m_Specification.Name, m_Window.get());
