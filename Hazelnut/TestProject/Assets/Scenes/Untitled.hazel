@@ -26,7 +26,7 @@ Entities:
         - 4967033768694551770
 ViewportCamera:
   ProjectionType: Perspective
-  FovX: 1.0775948
-  AspectRatio: 1.9053103
+  FovX: 1.0020264
+  AspectRatio: 1.7453839
   NearClip: 0.01
   FarClip: 1000

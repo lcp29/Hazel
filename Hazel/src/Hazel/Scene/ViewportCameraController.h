@@ -13,10 +13,14 @@ namespace Hazel
     class ViewportCameraController
     {
     public:
-        ViewportCameraController() = default;
+        constexpr static auto MoveSpeedString = "editor.ViewportCamera.MoveSpeed";
+        constexpr static auto RotationSpeedString = "editor.ViewportCamera.RotationSpeed";
+        constexpr static float DefaultMoveSpeed = 5.0f;
+        constexpr static float DefaultRotationSpeed = 0.0025f;
 
-        ViewportCameraController(Camera* camera)
-            : m_ViewportCamera(camera) {}
+        ViewportCameraController();
+
+        ViewportCameraController(Camera* camera);
 
         void OnUpdate(Timestep ts);
         void StopControlling();
@@ -47,7 +51,7 @@ namespace Hazel
         Camera* m_ViewportCamera = nullptr;
         glm::vec2 m_LastMousePosition = {0.0f, 0.0f};
         bool m_WasRightMousePressed = false;
-        float m_MoveSpeed = 5.0f;
-        float m_RotationSpeed = 0.0025f;
+        float m_MoveSpeed = DefaultMoveSpeed;
+        float m_RotationSpeed = DefaultRotationSpeed;
     };
 } // namespace Hazel

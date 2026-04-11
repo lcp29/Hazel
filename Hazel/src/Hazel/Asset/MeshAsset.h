@@ -26,6 +26,8 @@ namespace Hazel
         uint32_t indexCount = 0;
         uint32_t vertexStart = 0;
         uint32_t vertexCount = 0;
+        glm::vec3 boundingSphereCenter;
+        float boundingSphereRadius = 0.0f;
     };
 
     struct MeshAssetMeta
@@ -75,6 +77,10 @@ namespace Hazel
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         std::vector<MeshletInfo> meshlets;
+        glm::vec3 aabbMin;
+        glm::vec3 aabbMax;
+        glm::vec3 boundingSphereCenter;
+        float boundingSphereRadius = 0.0f;
     };
 
     class MeshAsset : public Asset

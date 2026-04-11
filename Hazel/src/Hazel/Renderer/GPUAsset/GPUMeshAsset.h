@@ -61,6 +61,8 @@ namespace Hazel
         uint32_t vertexCount;
         uint32_t indexOffset;
         uint32_t indexCount;
+        glm::vec3 boundingSphereCenter;
+        float boundingSphereRadius = 0.0f;
     };
 
     class GPUMeshAsset : public GPUAsset
@@ -74,13 +76,19 @@ namespace Hazel
                      const std::vector<Vertex>& vertices,
                      const std::vector<uint32_t>& indices,
                      const std::vector<GPUMeshletInfo>& meshlets,
+                     const std::array<glm::vec3, 2>& aabb,
+                     const std::pair<glm::vec3, float>& boundingSphere,
                      uint64_t lastReferencedFrame = 0)
             : GPUAsset(uuid, AssetType::Mesh, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
               m_Vertices(vertices),
               m_Indices(indices),
               m_Meshlets(meshlets),
-              m_HasMeshlets(!meshlets.empty()) {}
+              m_HasMeshlets(!meshlets.empty()),
+              m_AabbMin(aabb[0]),
+              m_AabbMax(aabb[1]),
+              m_BoundingSphereCenter(boundingSphere.first),
+              m_BoundingSphereRadius(boundingSphere.second) {}
 
         void Release() override;
         void ReleaseImmediate() override;
@@ -89,6 +97,8 @@ namespace Hazel
         std::vector<uint32_t>& GetIndices() { return m_Indices; }
         bool HasMeshlets() const { return m_HasMeshlets; }
         const std::vector<GPUMeshletInfo>& GetMeshlets() const { return m_Meshlets; }
+        glm::vec3 GetBoundingSphereCenter() const { return m_BoundingSphereCenter; }
+        float GetBoundingSphereRadius() const { return m_BoundingSphereRadius; }
 
         const std::vector<uint32_t>& GetVertexVirtualPages() const { return m_VertexVirtualPages; }
         const std::vector<uint32_t>& GetIndexVirtualPages() const { return m_IndexVirtualPages; }
@@ -118,6 +128,11 @@ namespace Hazel
         std::vector<GPUMeshletInfo> m_Meshlets;
         std::vector<uint32_t> m_MeshletVirtualPages;
         bool m_HasMeshlets = false;
+
+        glm::vec3 m_AabbMin{};
+        glm::vec3 m_AabbMax{};
+        glm::vec3 m_BoundingSphereCenter{};
+        float m_BoundingSphereRadius = 0.0f;
 
         // TODO: TEMP URGENT INTERVIEW: use vertex and index buffers for each mesh
         std::vector<Vertex> m_Vertices;

@@ -15,6 +15,11 @@ namespace Hazel
     class EditorLayer : public Layer
     {
     public:
+        constexpr static auto GizmoTranslateSnapString = "editor.Gizmo.TranslateSnap";
+        constexpr static auto GizmoRotateSnapDegreesString = "editor.Gizmo.RotateSnapDegrees";
+        constexpr static float DefaultGizmoTranslateSnap = 0.5f;
+        constexpr static float DefaultGizmoRotateSnapDegrees = 45.0f;
+
         struct EditorUITexture
         {
             RHIImage* Image = nullptr;

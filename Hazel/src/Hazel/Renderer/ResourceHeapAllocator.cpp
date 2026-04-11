@@ -140,6 +140,8 @@ namespace Hazel
 
     RHIResourceGroup* ResourceHeapAllocator::AllocateGroup(RHIResourceLayout* layout, RHIResourceHeap** outHeap)
     {
+        std::lock_guard lock(m_Mutex);
+
         auto usage = GetGroupUsage(layout);
 
         auto& heaps = usage.updateAfterBind ? m_HeapsUpdateAfterBind : m_Heaps;
@@ -211,6 +213,8 @@ namespace Hazel
 
     void ResourceHeapAllocator::FreeGroup(RHIResourceGroup* group)
     {
+        std::lock_guard lock(m_Mutex);
+
         auto usage = GetGroupUsage(group->GetLayout());
         auto& heaps = usage.updateAfterBind ? m_HeapsUpdateAfterBind : m_Heaps;
         auto& groups = usage.updateAfterBind ? m_GroupsUpdateAfterBind : m_Groups;
@@ -224,7 +228,7 @@ namespace Hazel
             return;
         }
 
-        groupIt->group->Release();
+        groupIt->group->ReleaseImmediate();
 
         auto heapIt = std::ranges::find_if(heaps,
                                            [groupIt](const HeapRecord& heapRecord) {
@@ -244,6 +248,8 @@ namespace Hazel
 
     void ResourceHeapAllocator::Release()
     {
+        std::lock_guard lock(m_Mutex);
+
         if (!m_IsValid)
         {
             return;

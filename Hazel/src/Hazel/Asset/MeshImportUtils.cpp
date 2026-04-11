@@ -3,6 +3,7 @@
 //
 
 #include "MeshImportUtils.h"
+#include "Hazel/Project/GlobalSettingRegistry.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "glm/gtx/compatibility.hpp"
@@ -10,6 +11,7 @@
 #include <tiny_obj_loader.h>
 
 #include <array>
+#include <cmath>
 #include <limits>
 #include <queue>
 #include <unordered_map>
@@ -17,11 +19,63 @@
 
 namespace Hazel
 {
+    std::pair<glm::vec3, float> ComputeRitterBoundingSphere(const std::vector<Vertex>& vertices)
+    {
+        if (vertices.empty())
+        {
+            return {glm::vec3(0.0f), 0.0f};
+        }
+
+        auto findFarthestPosition = [&vertices](const glm::vec3& origin) {
+            const glm::vec3* farthest = &vertices.front().position;
+            glm::vec3 delta = *farthest - origin;
+            float farthestDistanceSquared = glm::dot(delta, delta);
+
+            for (const Vertex& vertex : vertices)
+            {
+                delta = vertex.position - origin;
+                const float distanceSquared = glm::dot(delta, delta);
+                if (distanceSquared > farthestDistanceSquared)
+                {
+                    farthest = &vertex.position;
+                    farthestDistanceSquared = distanceSquared;
+                }
+            }
+
+            return *farthest;
+        };
+
+        const glm::vec3 p1 = findFarthestPosition(vertices.front().position);
+        const glm::vec3 p2 = findFarthestPosition(p1);
+
+        glm::vec3 center = (p1 + p2) * 0.5f;
+        float radius = glm::distance(p1, p2) * 0.5f;
+
+        for (const Vertex& vertex : vertices)
+        {
+            const glm::vec3 centerToPoint = vertex.position - center;
+            const float distanceSquared = glm::dot(centerToPoint, centerToPoint);
+            if (distanceSquared <= radius * radius)
+            {
+                continue;
+            }
+
+            const float distance = std::sqrt(distanceSquared);
+            if (distance <= 0.0f)
+            {
+                continue;
+            }
+
+            const float newRadius = (radius + distance) * 0.5f;
+            center += centerToPoint * ((newRadius - radius) / distance);
+            radius = newRadius;
+        }
+
+        return {center, radius};
+    }
+
     namespace
     {
-        constexpr float kHardEdgeRadians = glm::radians(45.0f);
-        const float kHardEdgeDotThreshold = std::cos(kHardEdgeRadians);
-        constexpr float kDegenerateTriangleEpsilon = 1e-8f;
         constexpr int kMaxMeshletVertices = 64;
         constexpr int kMaxMeshletIndices = 126;
 
@@ -169,24 +223,6 @@ namespace Hazel
                    && lhsA.vertex.texCoord.y == rhsA.vertex.texCoord.y
                    && lhsB.vertex.texCoord.x == rhsB.vertex.texCoord.x
                    && lhsB.vertex.texCoord.y == rhsB.vertex.texCoord.y;
-        }
-
-        bool ShouldKeepAdjacency(const ObjTriangle& lhsTriangle,
-                                 const ObjTriangle& rhsTriangle,
-                                 const std::vector<ObjCorner>& corners,
-                                 const EdgeKey& edge)
-        {
-            if (!AreSharedEdgeTexCoordsCompatible(lhsTriangle, rhsTriangle, corners, edge))
-            {
-                return false;
-            }
-
-            if (lhsTriangle.isDegenerate || rhsTriangle.isDegenerate)
-            {
-                return false;
-            }
-
-            return glm::dot(lhsTriangle.faceNormal, rhsTriangle.faceNormal) >= kHardEdgeDotThreshold;
         }
 
         uint32_t CountSharedVertices(const FinalTriangle& lhs, const FinalTriangle& rhs)
@@ -369,11 +405,20 @@ namespace Hazel
 
     bool ImportMeshAssetData(const std::filesystem::path& filePath, bool generateMeshlets, MeshAssetData& outData)
     {
+        const float hardEdgeDegrees = GlobalSettings.Get(MeshImportHardEdgeDegreesString,
+                                                         DefaultMeshImportHardEdgeDegrees);
+        const float hardEdgeDotThreshold = std::cos(glm::radians(hardEdgeDegrees));
+        const float degenerateTriangleEpsilon = GlobalSettings.Get(
+            MeshImportDegenerateTriangleEpsilonString,
+            DefaultMeshImportDegenerateTriangleEpsilon);
+
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string warn;
         std::string err;
+        outData.aabbMin = glm::vec3(std::numeric_limits<float>::max());
+        outData.aabbMax = glm::vec3(std::numeric_limits<float>::min());
 
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.string().c_str()))
         {
@@ -420,6 +465,18 @@ namespace Hazel
                     corner.triangleIndex = triangleIndex;
                     corner.localCornerIndex = localCorner;
 
+                    for (int component = 0; component < 3; ++component)
+                    {
+                        if (corner.vertex.position[component] < outData.aabbMin[component])
+                        {
+                            outData.aabbMin[component] = corner.vertex.position[component];
+                        }
+                        if (corner.vertex.position[component] > outData.aabbMax[component])
+                        {
+                            outData.aabbMax[component] = corner.vertex.position[component];
+                        }
+                    }
+
                     const PositionKey key{corner.vertex.position};
                     auto [it, inserted] = positionNodeMap.try_emplace(key,
                                                                       static_cast<uint32_t>(positionNodeMap.size()));
@@ -448,7 +505,7 @@ namespace Hazel
                 const glm::vec3 cross = glm::cross(p1 - p0, p2 - p0);
                 const float crossLength = glm::length(cross);
 
-                if (crossLength <= kDegenerateTriangleEpsilon) { triangle.isDegenerate = true; }
+                if (crossLength <= degenerateTriangleEpsilon) { triangle.isDegenerate = true; }
                 else { triangle.faceNormal = cross / crossLength; }
 
                 corner0.angle = glm::acos(glm::clamp(
@@ -521,7 +578,17 @@ namespace Hazel
                 {
                     const ObjTriangle& lhsTriangle = triangles[triangleRefs[i].triangleIndex];
                     const ObjTriangle& rhsTriangle = triangles[triangleRefs[j].triangleIndex];
-                    if (!ShouldKeepAdjacency(lhsTriangle, rhsTriangle, corners, edge))
+                    if (!AreSharedEdgeTexCoordsCompatible(lhsTriangle, rhsTriangle, corners, edge))
+                    {
+                        continue;
+                    }
+
+                    if (lhsTriangle.isDegenerate || rhsTriangle.isDegenerate)
+                    {
+                        continue;
+                    }
+
+                    if (glm::dot(lhsTriangle.faceNormal, rhsTriangle.faceNormal) < hardEdgeDotThreshold)
                     {
                         continue;
                     }
@@ -629,6 +696,9 @@ namespace Hazel
 
         outData.vertices = std::move(finalVertices);
         outData.indices = std::move(finalIndices);
+        auto boundingSphere = ComputeRitterBoundingSphere(outData.vertices);
+        outData.boundingSphereCenter = boundingSphere.first;
+        outData.boundingSphereRadius = boundingSphere.second;
 
         if (!generateMeshlets)
         {
@@ -672,15 +742,24 @@ namespace Hazel
                 }
             }
 
+            const uint32_t vertexCount = static_cast<uint32_t>(meshletVertices.size()) - vertexStart;
+            std::vector<Vertex> meshletBoundingVertices(meshletVertices.begin() + vertexStart, meshletVertices.end());
+            const auto meshletBoundingSphere = ComputeRitterBoundingSphere(meshletBoundingVertices);
+
             meshlets.push_back({indexStart,
                                 static_cast<uint32_t>(meshletIndices.size()) - indexStart,
                                 vertexStart,
-                                static_cast<uint32_t>(meshletVertices.size()) - vertexStart});
+                                vertexCount,
+                                meshletBoundingSphere.first,
+                                meshletBoundingSphere.second});
         }
 
         outData.vertices = std::move(meshletVertices);
         outData.indices = std::move(meshletIndices);
         outData.meshlets = std::move(meshlets);
+        boundingSphere = ComputeRitterBoundingSphere(outData.vertices);
+        outData.boundingSphereCenter = boundingSphere.first;
+        outData.boundingSphereRadius = boundingSphere.second;
         return true;
     }
 }

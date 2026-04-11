@@ -32,7 +32,7 @@ namespace Hazel
         template <typename T>
         static bool TryParseStoredString(const std::string& storedValue, T& outValue);
 
-        std::unordered_map<std::string, std::string> m_Registries;
+        mutable std::unordered_map<std::string, std::string> m_Registries;
     };
 
     extern GlobalSettingRegistry GlobalSettings;
@@ -49,6 +49,7 @@ namespace Hazel
         auto it = m_Registries.find(key);
         if (it == m_Registries.end())
         {
+            m_Registries[key] = ToStoredString(defaultValue);
             return defaultValue;
         }
 

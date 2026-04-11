@@ -6,6 +6,7 @@
 
 #include "Hazel/RHI/RHI.h"
 
+#include <mutex>
 #include <vector>
 
 namespace Hazel
@@ -43,6 +44,7 @@ namespace Hazel
     private:
         Renderer* m_Renderer = nullptr;
         bool m_IsValid = false;
+        std::mutex m_Mutex;
         std::vector<HeapRecord> m_Heaps;
         std::vector<GroupRecord> m_Groups;
 

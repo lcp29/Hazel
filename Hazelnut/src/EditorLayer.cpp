@@ -7,6 +7,7 @@
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
 #include "Hazel/RHI/RHI.h"
+#include "Hazel/Project/GlobalSettingRegistry.h"
 
 #include <imgui.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -747,10 +748,10 @@ namespace Hazel
 
             // Snapping
             bool snap = Input::IsKeyPressed(Key::LeftControl);
-            float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+            float snapValue = GlobalSettings.Get(GizmoTranslateSnapString, DefaultGizmoTranslateSnap);
             // Snap to 45 degrees for rotation
             if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-                snapValue = 45.0f;
+                snapValue = GlobalSettings.Get(GizmoRotateSnapDegreesString, DefaultGizmoRotateSnapDegrees);
 
             float snapValues[3] = {snapValue, snapValue, snapValue};
 

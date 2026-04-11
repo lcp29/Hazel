@@ -77,12 +77,34 @@ namespace Hazel
         indexStagingBuffer->Release();
         graphicsContext->ReleaseDefaultCommandBuffer(cmd);
 
+        std::array<glm::vec3, 2> aabb = {meshData.aabbMin, meshData.aabbMax};
+        std::pair<glm::vec3, float> boundingSphere = {
+            meshData.boundingSphereCenter,
+            meshData.boundingSphereRadius
+        };
+
+        std::vector<GPUMeshletInfo> meshlets;
+        meshlets.reserve(meshData.meshlets.size());
+        for (const auto& meshlet : meshData.meshlets)
+        {
+            meshlets.push_back(GPUMeshletInfo{
+                .vertexOffset = meshlet.vertexStart,
+                .vertexCount = meshlet.vertexCount,
+                .indexOffset = meshlet.indexStart,
+                .indexCount = meshlet.indexCount,
+                .boundingSphereCenter = meshlet.boundingSphereCenter,
+                .boundingSphereRadius = meshlet.boundingSphereRadius,
+            });
+        }
+
         auto meshAsset = std::make_unique<GPUMeshAsset>(asset->GetUUID(),
                                                         asset->GetVersion(),
                                                         renderer,
                                                         meshData.vertices,
                                                         meshData.indices,
-                                                        std::vector<GPUMeshletInfo>{},
+                                                        meshlets,
+                                                        aabb,
+                                                        boundingSphere,
                                                         renderer->GetCurrentFrameIndex());
         meshAsset->SetVertexBuffer(vertexBuffer);
         meshAsset->SetIndexBuffer(indexBuffer);

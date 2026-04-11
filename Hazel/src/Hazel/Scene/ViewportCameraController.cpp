@@ -6,6 +6,7 @@
 
 #include "Hazel/Core/Application.h"
 #include "Hazel/Core/Input.h"
+#include "Hazel/Project/GlobalSettingRegistry.h"
 
 #include <glm/common.hpp>
 #include <glm/gtc/constants.hpp>
@@ -13,6 +14,19 @@
 
 namespace Hazel
 {
+    ViewportCameraController::ViewportCameraController()
+        : m_MoveSpeed(GlobalSettings.Get(MoveSpeedString, DefaultMoveSpeed))
+          , m_RotationSpeed(GlobalSettings.Get(RotationSpeedString, DefaultRotationSpeed))
+    {
+    }
+
+    ViewportCameraController::ViewportCameraController(Camera* camera)
+        : m_ViewportCamera(camera)
+          , m_MoveSpeed(GlobalSettings.Get(MoveSpeedString, DefaultMoveSpeed))
+          , m_RotationSpeed(GlobalSettings.Get(RotationSpeedString, DefaultRotationSpeed))
+    {
+    }
+
     void ViewportCameraController::OnUpdate(Timestep ts)
     {
         const glm::vec2 mousePosition = Input::GetMousePosition();

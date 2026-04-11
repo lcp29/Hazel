@@ -4,11 +4,64 @@
 
 #include "Camera.h"
 
+#include "Hazel/Project/GlobalSettingRegistry.h"
+
 namespace Hazel
 {
+    namespace
+    {
+        float GetDefaultPerspectiveFovX()
+        {
+            return GlobalSettings.Get(Camera::DefaultPerspectiveFovXString, Camera::DefaultPerspectiveFovX);
+        }
+
+        float GetDefaultPerspectiveNear()
+        {
+            return GlobalSettings.Get(Camera::DefaultPerspectiveNearString, Camera::DefaultPerspectiveNear);
+        }
+
+        float GetDefaultPerspectiveFar()
+        {
+            return GlobalSettings.Get(Camera::DefaultPerspectiveFarString, Camera::DefaultPerspectiveFar);
+        }
+
+        float GetDefaultOrthoWidth()
+        {
+            return GlobalSettings.Get(Camera::DefaultOrthoWidthString, Camera::DefaultOrthoWidth);
+        }
+
+        float GetDefaultOrthoNear()
+        {
+            return GlobalSettings.Get(Camera::DefaultOrthoNearString, Camera::DefaultOrthoNear);
+        }
+
+        float GetDefaultOrthoFar()
+        {
+            return GlobalSettings.Get(Camera::DefaultOrthoFarString, Camera::DefaultOrthoFar);
+        }
+    }
+
+    Camera::Camera()
+        : m_FovX(GetDefaultPerspectiveFovX())
+          , m_NearClip(GetDefaultPerspectiveNear())
+          , m_FarClip(GetDefaultPerspectiveFar())
+          , m_OrthoWidth(GetDefaultOrthoWidth())
+          , m_OrthoNearClip(GetDefaultOrthoNear())
+          , m_OrthoFarClip(GetDefaultOrthoFar())
+    {
+        UpdateMatrices();
+    }
+
     Camera Camera::Perspective(float fovX, float aspectRatio, float nearClip, float farClip)
     {
-        Camera camera(fovX, aspectRatio, nearClip, farClip, 10.0f, 1.0f, 0.1f, 100.0f);
+        Camera camera(fovX,
+                      aspectRatio,
+                      nearClip,
+                      farClip,
+                      GetDefaultOrthoWidth(),
+                      1.0f,
+                      GetDefaultOrthoNear(),
+                      GetDefaultOrthoFar());
         camera.m_ProjectionType = ProjectionType::Perspective;
         camera.UpdateMatrices();
         return camera;
@@ -24,7 +77,14 @@ namespace Hazel
 
     Camera Camera::Orthographic(float orthoWidth, float orthoAspectRatio, float orthoNearClip, float orthoFarClip)
     {
-        Camera camera(1.8f, 1.0f, 0.01f, 1000.0f, orthoWidth, orthoAspectRatio, orthoNearClip, orthoFarClip);
+        Camera camera(GetDefaultPerspectiveFovX(),
+                      1.0f,
+                      GetDefaultPerspectiveNear(),
+                      GetDefaultPerspectiveFar(),
+                      orthoWidth,
+                      orthoAspectRatio,
+                      orthoNearClip,
+                      orthoFarClip);
         camera.m_ProjectionType = ProjectionType::Orthographic;
         camera.UpdateMatrices();
         return camera;

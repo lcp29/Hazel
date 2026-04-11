@@ -29,6 +29,8 @@ namespace Hazel
     public:
         constexpr static auto SwapchainFormatString = "r.Swapchain.Format";
         constexpr static auto MaxFramesInFlightString = "r.Swapchain.MaxFramesInFlight";
+        constexpr static auto GPUAssetGarbageCollectFrameThresholdString =
+            "r.GPUAsset.GarbageCollectFrameThreshold";
 
         constexpr static int kDefaultGPUAssetGarbageCollectFrameThreshold = 600;
 
@@ -166,6 +168,7 @@ namespace Hazel
         // synchronized from global setting
         uint32_t m_MaxFramesInFlight = 3;
         RHIFormat m_SwapchainImageFormat = RHIFormat::BGRA8UNorm;
+        uint64_t m_GPUAssetGarbageCollectFrameThreshold = kDefaultGPUAssetGarbageCollectFrameThreshold;
 
         // backup pointers
         GraphicsContext* m_GraphicsContext = nullptr;

@@ -9,13 +9,27 @@ namespace Hazel
     class Camera
     {
     public:
+        constexpr static auto DefaultPerspectiveFovXString = "r.Camera.DefaultPerspectiveFovX";
+        constexpr static auto DefaultPerspectiveNearString = "r.Camera.DefaultPerspectiveNear";
+        constexpr static auto DefaultPerspectiveFarString = "r.Camera.DefaultPerspectiveFar";
+        constexpr static auto DefaultOrthoWidthString = "r.Camera.DefaultOrthoWidth";
+        constexpr static auto DefaultOrthoNearString = "r.Camera.DefaultOrthoNear";
+        constexpr static auto DefaultOrthoFarString = "r.Camera.DefaultOrthoFar";
+
+        constexpr static float DefaultPerspectiveFovX = 0.78539816339f;
+        constexpr static float DefaultPerspectiveNear = 0.01f;
+        constexpr static float DefaultPerspectiveFar = 1000.0f;
+        constexpr static float DefaultOrthoWidth = 10.0f;
+        constexpr static float DefaultOrthoNear = 0.1f;
+        constexpr static float DefaultOrthoFar = 100.0f;
+
         enum class ProjectionType
         {
             Perspective = 0,
             Orthographic = 1
         };
 
-        Camera() = default;
+        Camera();
 
         static Camera Perspective(float fovX, float aspectRatio, float nearClip, float farClip);
         static Camera Perspective(const glm::mat4& projection);
@@ -131,19 +145,20 @@ namespace Hazel
 
         // parameter representation
         // for perspective cameras
-        float m_FovX = glm::radians(45.0f);
+        float m_FovX = DefaultPerspectiveFovX;
         float m_AspectRatio = 1.0f; // width / height
-        float m_NearClip = 0.01f;
-        float m_FarClip = 1000.0f;
+        float m_NearClip = DefaultPerspectiveNear;
+        float m_FarClip = DefaultPerspectiveFar;
 
         // for orthographic cameras
-        float m_OrthoWidth = 10.0f;
+        float m_OrthoWidth = DefaultOrthoWidth;
         float m_OrthoAspectRatio = 1.0f; // width / height
-        float m_OrthoNearClip = 0.1f;
-        float m_OrthoFarClip = 100.0f;
+        float m_OrthoNearClip = DefaultOrthoNear;
+        float m_OrthoFarClip = DefaultOrthoFar;
 
         // projection matrix representation
-        glm::mat4 m_Projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.01f, 1000.0f);
+        glm::mat4 m_Projection = glm::perspective(DefaultPerspectiveFovX, 1.0f, DefaultPerspectiveNear,
+                                                  DefaultPerspectiveFar);
 
         // viewport information
         glm::ivec2 m_ViewportSize{800, 800};

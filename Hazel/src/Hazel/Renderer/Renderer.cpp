@@ -23,6 +23,7 @@
 #include "glm/gtx/iteration.hpp"
 
 #include <algorithm>
+#include <array>
 #include <thread>
 
 namespace Hazel
@@ -45,6 +46,9 @@ namespace Hazel
 
         m_MaxFramesInFlight = GlobalSettings.Get(MaxFramesInFlightString, m_MaxFramesInFlight);
         m_SwapchainImageFormat = GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
+        m_GPUAssetGarbageCollectFrameThreshold = GlobalSettings.Get(
+            GPUAssetGarbageCollectFrameThresholdString,
+            m_GPUAssetGarbageCollectFrameThreshold);
 
         m_ResourceBindingManager = std::make_unique<ResourceBindingRegistry>(this);
         CreateSwapchainResources();
@@ -665,7 +669,7 @@ namespace Hazel
         m_Swapchain->SubmitFrame(frameData.frameNumber, {frameData.renderCompleteSyncPoint});
 
         auto garbage = m_GPUAssetRegistry.AcquireSomeAssetsForGarbageCollection(
-            m_CurrentFrame - kDefaultGPUAssetGarbageCollectFrameThreshold);
+            m_CurrentFrame - m_GPUAssetGarbageCollectFrameThreshold);
         for (auto& asset : garbage)
         {
             m_GPUAssetRegistry.EnqueueForDeferredRelease(std::move(asset));
@@ -707,8 +711,32 @@ namespace Hazel
                                    RHIOffset2D renderOffset,
                                    RHIExtent2D renderViewSize)
     {
-        GetResourceBindingRegistry()->SetViewProjectionMatrix(camera->transform.GetView(),
-                                                              camera->camera->GetProjection());
+        const glm::mat4 view = camera->transform.GetView();
+        const glm::mat4 projection = camera->camera->GetProjection();
+        const glm::mat4 viewProjection = projection * view;
+        GetResourceBindingRegistry()->SetViewProjectionMatrix(view, projection);
+
+        const glm::vec4 row0(viewProjection[0][0], viewProjection[1][0], viewProjection[2][0], viewProjection[3][0]);
+        const glm::vec4 row1(viewProjection[0][1], viewProjection[1][1], viewProjection[2][1], viewProjection[3][1]);
+        const glm::vec4 row2(viewProjection[0][2], viewProjection[1][2], viewProjection[2][2], viewProjection[3][2]);
+        const glm::vec4 row3(viewProjection[0][3], viewProjection[1][3], viewProjection[2][3], viewProjection[3][3]);
+
+        std::array<glm::vec4, 6> worldFrustumPlanes = {
+            row3 + row0,
+            row3 - row0,
+            row3 + row1,
+            row3 - row1,
+            row3 + row2,
+            row3 - row2,
+        };
+        for (auto& plane : worldFrustumPlanes)
+        {
+            const float normalLength = glm::length(glm::vec3(plane));
+            if (normalLength > 0.0f)
+            {
+                plane /= normalLength;
+            }
+        }
 
         std::vector<RHIFormat> colorAttachmentFormats;
         RHIFormat depthStencilFormat = RHIFormat::Undefined;
@@ -777,6 +805,28 @@ namespace Hazel
                 if (!meshResult.asset) { continue; }
                 auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
 
+                bool shouldCull = false;
+                const glm::mat4 worldToObjectPlaneTransform = glm::transpose(renderObject->transform);
+                for (const auto& worldPlane : worldFrustumPlanes)
+                {
+                    glm::vec4 objectPlane = worldToObjectPlaneTransform * worldPlane;
+                    const float normalLength = glm::length(glm::vec3(objectPlane));
+                    if (normalLength <= 0.0f)
+                    {
+                        continue;
+                    }
+                    objectPlane /= normalLength;
+
+                    const float distance = glm::dot(glm::vec3(objectPlane), mesh->GetBoundingSphereCenter()) +
+                                           objectPlane.w;
+                    if (distance < -mesh->GetBoundingSphereRadius())
+                    {
+                        shouldCull = true;
+                        break;
+                    }
+                }
+                if (shouldCull) { continue; }
+
                 auto materialResult = ResolveGPUAsset(renderObject->material, AssetType::Material);
                 if (!materialResult.asset) { continue; }
                 auto* material = static_cast<CachedMaterial*>(materialResult.asset);
@@ -843,8 +893,32 @@ namespace Hazel
                                    RHIOffset2D renderOffset,
                                    RHIExtent2D renderViewSize)
     {
-        GetResourceBindingRegistry()->SetViewProjectionMatrix(camera->transform.GetView(),
-                                                              camera->camera->GetProjection());
+        const glm::mat4 view = camera->transform.GetView();
+        const glm::mat4 projection = camera->camera->GetProjection();
+        const glm::mat4 viewProjection = projection * view;
+        GetResourceBindingRegistry()->SetViewProjectionMatrix(view, projection);
+
+        const glm::vec4 row0(viewProjection[0][0], viewProjection[1][0], viewProjection[2][0], viewProjection[3][0]);
+        const glm::vec4 row1(viewProjection[0][1], viewProjection[1][1], viewProjection[2][1], viewProjection[3][1]);
+        const glm::vec4 row2(viewProjection[0][2], viewProjection[1][2], viewProjection[2][2], viewProjection[3][2]);
+        const glm::vec4 row3(viewProjection[0][3], viewProjection[1][3], viewProjection[2][3], viewProjection[3][3]);
+
+        std::array<glm::vec4, 6> worldFrustumPlanes = {
+            row3 + row0,
+            row3 - row0,
+            row3 + row1,
+            row3 - row1,
+            row3 + row2,
+            row3 - row2,
+        };
+        for (auto& plane : worldFrustumPlanes)
+        {
+            const float normalLength = glm::length(glm::vec3(plane));
+            if (normalLength > 0.0f)
+            {
+                plane /= normalLength;
+            }
+        }
 
         std::vector<RHIFormat> colorAttachmentFormats;
         RHIFormat depthStencilFormat = RHIFormat::Undefined;
@@ -903,6 +977,28 @@ namespace Hazel
             auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
             if (!meshResult.asset) { continue; }
             auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
+
+            bool shouldCull = false;
+            const glm::mat4 worldToObjectPlaneTransform = glm::transpose(renderObject->transform);
+            for (const auto& worldPlane : worldFrustumPlanes)
+            {
+                glm::vec4 objectPlane = worldToObjectPlaneTransform * worldPlane;
+                const float normalLength = glm::length(glm::vec3(objectPlane));
+                if (normalLength <= 0.0f)
+                {
+                    continue;
+                }
+                objectPlane /= normalLength;
+
+                const float distance = glm::dot(glm::vec3(objectPlane), mesh->GetBoundingSphereCenter()) +
+                                       objectPlane.w;
+                if (distance < -mesh->GetBoundingSphereRadius())
+                {
+                    shouldCull = true;
+                    break;
+                }
+            }
+            if (shouldCull) { continue; }
 
             cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
             cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
