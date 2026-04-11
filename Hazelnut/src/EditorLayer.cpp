@@ -743,6 +743,10 @@ namespace Hazel
             ImGui::EndDragDropTarget();
         }
 
+        // Editor camera
+        const glm::mat4& cameraProjection = m_ActiveScene->GetViewportCamera().GetProjection();
+        glm::mat4 cameraView = m_ActiveScene->GetSceneViewportCamera().transform.GetView();
+
         Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
         if (selectedEntity && m_GizmoType != -1)
         {
@@ -762,10 +766,6 @@ namespace Hazel
             // const glm::mat4& cameraProjection = camera.GetProjection();
             // glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
 
-            // Editor camera
-            const glm::mat4& cameraProjection = m_ActiveScene->GetViewportCamera().GetProjection();
-            glm::mat4 cameraView = m_ActiveScene->GetSceneViewportCamera().transform.GetView();
-
             // Entity transform
             auto& tc = selectedEntity.GetComponent<TransformComponent>();
             glm::mat4 transform = tc.GetTransform();
@@ -781,7 +781,7 @@ namespace Hazel
 
             ImGuizmo::Manipulate(glm::value_ptr(cameraView),
                                  glm::value_ptr(cameraProjection),
-                                 (ImGuizmo::OPERATION)m_GizmoType,
+                                 static_cast<ImGuizmo::OPERATION>(m_GizmoType),
                                  ImGuizmo::LOCAL,
                                  glm::value_ptr(transform),
                                  nullptr,
@@ -794,6 +794,33 @@ namespace Hazel
 
                 selectedEntity.SetTransform(translation, rotation, scale);
             }
+        }
+
+        glm::mat3 cameraSpaceWorldFrame = glm::mat3(cameraView);
+
+        glm::vec3 worldFrameX = glm::normalize(cameraSpaceWorldFrame[0]);
+        glm::vec3 worldFrameY = glm::normalize(cameraSpaceWorldFrame[1]);
+        glm::vec3 worldFrameZ = glm::normalize(cameraSpaceWorldFrame[2]);
+
+        auto projectAxis = [](const glm::vec3& axis) {
+            return ImVec2(axis.x, -axis.y);
+        };
+
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 gizmoOrigin = {m_ViewportBounds[1].x - 100, m_ViewportBounds[0].y + 100};
+
+        const std::tuple<glm::vec3, ImU32, const char*> axes[] = {
+            {worldFrameX, IM_COL32(255, 0, 0, 255), "X"},
+            {worldFrameY, IM_COL32(0, 255, 0, 255), "Y"},
+            {worldFrameZ, IM_COL32(0, 0, 255, 255), "Z"}
+        };
+
+        for (const auto& [axis, color, label] : axes)
+        {
+            ImVec2 axisEnd = gizmoOrigin + projectAxis(axis) * 70;
+            drawList->AddLine(gizmoOrigin, axisEnd, color, 2);
+            drawList->AddCircle(axisEnd, 4, color);
+            drawList->AddText(axisEnd, color, label);
         }
 
         ImGui::End();
