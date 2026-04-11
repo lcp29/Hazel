@@ -7,28 +7,28 @@
 
 namespace Hazel
 {
-    struct GPUAssetResolveResult
+    struct GPUAssetHandle
     {
         GPUAsset* asset = nullptr;
         bool returnAfterUse = true;
 
-        GPUAssetResolveResult(const GPUAssetResolveResult&) = delete;
-        GPUAssetResolveResult& operator=(const GPUAssetResolveResult&) = delete;
+        GPUAssetHandle(const GPUAssetHandle&) = delete;
+        GPUAssetHandle& operator=(const GPUAssetHandle&) = delete;
 
-        GPUAssetResolveResult(GPUAsset* asset)
+        GPUAssetHandle(GPUAsset* asset)
             : asset(asset) {}
 
-        GPUAssetResolveResult(GPUAsset* asset, bool returnAfterUse)
+        GPUAssetHandle(GPUAsset* asset, bool returnAfterUse)
             : asset(asset), returnAfterUse(returnAfterUse) {}
 
-        GPUAssetResolveResult(GPUAssetResolveResult&& other) noexcept
+        GPUAssetHandle(GPUAssetHandle&& other) noexcept
             : asset(other.asset), returnAfterUse(other.returnAfterUse)
         {
             other.asset = nullptr;
             other.returnAfterUse = false;
         }
 
-        GPUAssetResolveResult& operator=(GPUAssetResolveResult&& other) noexcept
+        GPUAssetHandle& operator=(GPUAssetHandle&& other) noexcept
         {
             if (this == &other)
             {
@@ -41,6 +41,8 @@ namespace Hazel
             return *this;
         }
 
-        ~GPUAssetResolveResult();
+        void Destroy();
+
+        ~GPUAssetHandle();
     };
 }

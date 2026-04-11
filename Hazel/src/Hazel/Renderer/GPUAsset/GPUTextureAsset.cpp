@@ -7,6 +7,11 @@
 
 namespace Hazel
 {
+    GPUTextureAsset::~GPUTextureAsset()
+    {
+        GPUTextureAsset::ReleaseImmediate();
+    }
+
     void GPUTextureAsset::Release()
     {
         if (!m_IsValid)

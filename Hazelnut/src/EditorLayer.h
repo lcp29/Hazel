@@ -90,9 +90,9 @@ namespace Hazel
         // rendering
         Renderer* m_Renderer = nullptr;
         UUID m_ObjectIDRenderTextureUUID = UUID();
-        GPUAssetResolveResult m_ObjectIDRenderTexture = {nullptr, false};
-        GPUAssetResolveResult m_ObjectIDDepthRenderTexture = {nullptr, false};
-        GPUAssetResolveResult m_ObjectIDRenderTextureBuffer = {nullptr, false};
+        std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTexture = nullptr;
+        std::unique_ptr<GPUAssetHandle> m_ObjectIDDepthRenderTexture = nullptr;
+        std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTextureBuffer = nullptr;
 
         // viewport related
         bool m_ViewportFocused = false, m_ViewportHovered = false;

@@ -3,8 +3,9 @@
 //
 
 #pragma once
+#include "GPUStructure.h"
 #include "Hazel/RHI/RHI.h"
-#include "GPUAsset/GPUAssetResolveResult.h"
+#include "GPUAsset/GPUAssetHandle.h"
 #include "Hazel/Core/UUID.h"
 
 namespace Hazel
@@ -15,6 +16,15 @@ namespace Hazel
     constexpr int kCombinedImageSamplerBindingSlot = 3;
 
     class Renderer;
+
+    struct PerViewUniformBufferInner
+    {
+        glm::mat4 view;
+        glm::mat4 proj;
+        glm::mat4 viewProj;
+    };
+
+    using PerViewUniformBuffer = Padded<PerViewUniformBufferInner, 256>;
 
     struct ShaderRegistryKey
     {
@@ -96,8 +106,8 @@ namespace Hazel
                                     uint64_t frameInFlightIndex);
 
         void BuildSignature(const RHIShaderReflection& reflection);
-        std::vector<GPUAssetResolveResult> BuildResources();
-        std::vector<GPUAssetResolveResult> BuildResourcesForFrame(uint32_t frameInFlightIndex);
+        std::vector<GPUAssetHandle> BuildResources();
+        std::vector<GPUAssetHandle> BuildResourcesForFrame(uint32_t frameInFlightIndex);
 
         RHIBuffer* GetMaterialBuffer() const;
         RHIBuffer* GetMaterialBuffer(uint32_t frameInFlightIndex) const;
@@ -171,19 +181,19 @@ namespace Hazel
         void UpdateUserUploadValuesForShader(UUID shader, uint64_t sourceVersion);
 
         // bindless
-        uint32_t RegisterTexture(GPUAssetResolveResult textureResult);
-        uint32_t RegisterSampler(GPUAssetResolveResult samplerResult);
-        uint32_t RegisterSamplerWithImage(GPUAssetResolveResult textureResult,
-                                          GPUAssetResolveResult samplerResult);
+        uint32_t RegisterTexture(GPUAssetHandle textureResult);
+        uint32_t RegisterSampler(GPUAssetHandle samplerResult);
+        uint32_t RegisterSamplerWithImage(GPUAssetHandle textureResult,
+                                          GPUAssetHandle samplerResult);
 
         void UnregisterTexture(uint32_t index);
         void UnregisterSampler(uint32_t index);
         void UnregisterCombinedImageSampler(uint32_t index);
 
-        const std::vector<GPUAssetResolveResult>& GetTextures() const { return m_Textures; }
-        const std::vector<GPUAssetResolveResult>& GetSamplers() const { return m_Samplers; }
+        const std::vector<GPUAssetHandle>& GetTextures() const { return m_Textures; }
+        const std::vector<GPUAssetHandle>& GetSamplers() const { return m_Samplers; }
 
-        const std::vector<std::pair<GPUAssetResolveResult, GPUAssetResolveResult>>& GetCombinedImageSamplers() const
+        const std::vector<std::pair<GPUAssetHandle, GPUAssetHandle>>& GetCombinedImageSamplers() const
         {
             return m_CombinedImageSamplers;
         }
@@ -231,6 +241,8 @@ namespace Hazel
                                            uint64_t sourceVersion);
         void BindUserUploadResources(RHICommandBuffer* cmd, UUID shader, uint64_t sourceVersion);
 
+        void ClearAllResources();
+
     private:
         Renderer* m_Renderer = nullptr;
 
@@ -247,17 +259,17 @@ namespace Hazel
 
         // bindless mapping
         std::mutex m_TextureMutex;
-        std::vector<GPUAssetResolveResult> m_Textures;
+        std::vector<GPUAssetHandle> m_Textures;
         std::vector<uint32_t> m_TextureFreeList;
         std::vector<uint8_t> m_TextureFreeMap;
 
         std::mutex m_SamplerMutex;
-        std::vector<GPUAssetResolveResult> m_Samplers;
+        std::vector<GPUAssetHandle> m_Samplers;
         std::vector<uint32_t> m_SamplerFreeList;
         std::vector<uint8_t> m_SamplerFreeMap;
 
         std::mutex m_CombinedImageSamplerMutex;
-        std::vector<std::pair<GPUAssetResolveResult, GPUAssetResolveResult>> m_CombinedImageSamplers;
+        std::vector<std::pair<GPUAssetHandle, GPUAssetHandle>> m_CombinedImageSamplers;
         std::vector<uint32_t> m_CombinedImageSamplerFreeList;
         std::vector<uint8_t> m_CombinedImageSamplerFreeMap;
 

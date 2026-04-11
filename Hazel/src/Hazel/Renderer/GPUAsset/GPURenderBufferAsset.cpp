@@ -20,6 +20,7 @@ namespace Hazel
         bufferDesc.allowGpuAddress = desc.allowGpuAddress;
         bufferDesc.cpuAccess = desc.cpuAccess;
         bufferDesc.mapOnCreate = desc.mapOnCreate;
+        bufferDesc.deviceMemory = desc.deviceMemory;
 
         std::vector<RHIBuffer*> buffers;
 
@@ -56,6 +57,11 @@ namespace Hazel
           m_Desc(desc),
           m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
           m_Buffers(std::move(buffers)) {}
+
+    GPURenderBufferAsset::~GPURenderBufferAsset()
+    {
+        GPURenderBufferAsset::ReleaseImmediate();
+    }
 
     void GPURenderBufferAsset::Release()
     {

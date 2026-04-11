@@ -50,30 +50,29 @@ namespace Hazel
             GPUAssetGarbageCollectFrameThresholdString,
             m_GPUAssetGarbageCollectFrameThreshold);
 
-        m_ResourceBindingManager = std::make_unique<ResourceBindingRegistry>(this);
+        m_GPUAssetRegistry = std::make_unique<GPUAssetRegistry>();
+        m_ResourceBindingRegistry = std::make_unique<ResourceBindingRegistry>(this);
         CreateSwapchainResources();
         CreatePerFrameData();
         m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
-        m_ResourceBindingManager->CreatePerViewResources();
+        m_ResourceBindingRegistry->CreatePerViewResources();
         m_RenderScene = std::make_unique<RenderScene>(this);
         m_GeometryDataRegistry = std::make_unique<GeometryDataRegistry>(this);
     }
 
-    Renderer::~Renderer() = default;
-
-    uint32_t Renderer::RegisterBindlessTexture(GPUAssetResolveResult texture)
+    uint32_t Renderer::RegisterBindlessTexture(GPUAssetHandle texture)
     {
         return GetResourceBindingRegistry()->RegisterTexture(std::move(texture));
     }
 
-    uint32_t Renderer::RegisterBindlessSampler(GPUAssetResolveResult sampler)
+    uint32_t Renderer::RegisterBindlessSampler(GPUAssetHandle sampler)
     {
         return GetResourceBindingRegistry()->RegisterSampler(std::move(sampler));
     }
 
-    uint32_t Renderer::RegisterBindlessSamplerWithImage(GPUAssetResolveResult sampler, GPUAssetResolveResult image)
+    uint32_t Renderer::RegisterBindlessSamplerWithImage(GPUAssetHandle sampler, GPUAssetHandle image)
     {
         return GetResourceBindingRegistry()->RegisterSamplerWithImage(std::move(sampler), std::move(image));
     }
@@ -93,17 +92,17 @@ namespace Hazel
         GetResourceBindingRegistry()->UnregisterCombinedImageSampler(slot);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUAsset(UUID uuid, AssetType type)
+    GPUAssetHandle Renderer::ResolveGPUAsset(UUID uuid, AssetType type)
     {
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAsset(uuid);
 
         if (!asset)
         {
-            return GPUAssetResolveResult(GetDefaultGPUAsset(type), false);
+            return GPUAssetHandle(GetDefaultGPUAsset(type), false);
         }
 
-        auto currentAsset = m_GPUAssetRegistry.GetAsset(uuid);
+        auto currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
 
         bool shaderObsolete = false;
         bool materialVersionObsolete = false;
@@ -116,7 +115,7 @@ namespace Hazel
                 if (!shader.asset)
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    return GPUAssetResolveResult(currentAsset);
+                    return GPUAssetHandle(currentAsset);
                 }
                 shaderObsolete = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
                 materialVersionObsolete = asset->GetVersion() > materialAsset->GetSourceVersion();
@@ -130,7 +129,7 @@ namespace Hazel
                 gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                return GPUAssetResolveResult(currentAsset);
+                return GPUAssetHandle(currentAsset);
             }
 
             if (gpuState.state == GPUAssetLoadState::Loading)
@@ -138,9 +137,9 @@ namespace Hazel
                 if (currentAsset && !(type == AssetType::Material && shaderObsolete))
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    return GPUAssetResolveResult(currentAsset);
+                    return GPUAssetHandle(currentAsset);
                 }
-                return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()));
+                return GPUAssetHandle(GetDefaultGPUAsset(asset->GetType()));
             }
 
             gpuState.state = GPUAssetLoadState::Loading;
@@ -153,26 +152,26 @@ namespace Hazel
         if (currentAsset)
         {
             currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-            return GPUAssetResolveResult(currentAsset);
+            return GPUAssetHandle(currentAsset);
         }
-        return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()));
+        return GPUAssetHandle(GetDefaultGPUAsset(asset->GetType()));
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUAssetBlocked(UUID uuid, AssetType type)
+    GPUAssetHandle Renderer::ResolveGPUAssetBlocked(UUID uuid, AssetType type)
     {
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAssetBlocked(uuid);
 
         if (!asset)
         {
-            return GPUAssetResolveResult(GetDefaultGPUAsset(type), false);
+            return GPUAssetHandle(GetDefaultGPUAsset(type), false);
         }
 
         {
             auto& gpuState = asset->GetGPUAssetState();
             std::unique_lock lock(gpuState.mutex);
 
-            auto currentAsset = m_GPUAssetRegistry.GetAsset(uuid);
+            auto currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
 
             bool shaderObsolete = false;
             bool materialVersionObsolete = false;
@@ -185,7 +184,7 @@ namespace Hazel
                     if (!shader.asset)
                     {
                         materialAsset->Return();
-                        return GPUAssetResolveResult(nullptr, false);
+                        return GPUAssetHandle(nullptr, false);
                     }
                     shaderObsolete = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
                     materialVersionObsolete = asset->GetVersion() > materialAsset->GetSourceVersion();
@@ -196,7 +195,7 @@ namespace Hazel
                 gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                return GPUAssetResolveResult(currentAsset);
+                return GPUAssetHandle(currentAsset);
             }
 
             if (currentAsset)
@@ -211,7 +210,7 @@ namespace Hazel
                                             return gpuState.state != GPUAssetLoadState::Loading;
                                         });
 
-                currentAsset = m_GPUAssetRegistry.GetAsset(uuid);
+                currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
                 if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset &&
                     gpuState.resolvedVersion >= asset->GetVersion())
                 {
@@ -222,7 +221,7 @@ namespace Hazel
                         if (!shader.asset)
                         {
                             currentAsset->Return();
-                            return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()), false);
+                            return GPUAssetHandle(GetDefaultGPUAsset(asset->GetType()), false);
                         }
 
                         const bool loadedShaderObsolete =
@@ -230,12 +229,12 @@ namespace Hazel
                         if (loadedShaderObsolete)
                         {
                             currentAsset->Return();
-                            return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()), false);
+                            return GPUAssetHandle(GetDefaultGPUAsset(asset->GetType()), false);
                         }
                     }
 
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
-                    return GPUAssetResolveResult(currentAsset);
+                    return GPUAssetHandle(currentAsset);
                 }
 
                 if (currentAsset)
@@ -243,7 +242,7 @@ namespace Hazel
                     currentAsset->Return();
                 }
 
-                return GPUAssetResolveResult(GetDefaultGPUAsset(asset->GetType()), false);
+                return GPUAssetHandle(GetDefaultGPUAsset(asset->GetType()), false);
             }
 
             gpuState.state = GPUAssetLoadState::Loading;
@@ -252,7 +251,7 @@ namespace Hazel
         return ResolveGPUAssetWhileLoading(asset, type);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUGraphicsPipeline(
+    GPUAssetHandle Renderer::ResolveGPUGraphicsPipeline(
         UUID material,
         const std::vector<RHIFormat>& colorAttachmentFormats,
         const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
@@ -265,7 +264,7 @@ namespace Hazel
             depthStencilFormat);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUGraphicsPipelineBlocked(
+    GPUAssetHandle Renderer::ResolveGPUGraphicsPipelineBlocked(
         UUID material,
         const std::vector<RHIFormat>& colorAttachmentFormats,
         const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
@@ -278,19 +277,19 @@ namespace Hazel
             depthStencilFormat);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPURenderTexture(const RenderTextureDesc& desc,
+    GPUAssetHandle Renderer::ResolveGPURenderTexture(const RenderTextureDesc& desc,
                                                             uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPURenderTextureAsset>(desc, lastReferencedFrame);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPURenderBuffer(const RenderBufferDesc& desc,
+    GPUAssetHandle Renderer::ResolveGPURenderBuffer(const RenderBufferDesc& desc,
                                                            uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPURenderBufferAsset>(desc, lastReferencedFrame);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUSampler(const RHISamplerDesc& desc,
+    GPUAssetHandle Renderer::ResolveGPUSampler(const RHISamplerDesc& desc,
                                                       uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPUSamplerAsset>(desc, lastReferencedFrame);
@@ -316,7 +315,7 @@ namespace Hazel
         GetResourceBindingRegistry()->UnregisterShader(uuid, sourceVersion);
     }
 
-    GPUAssetResolveResult Renderer::ResolveGPUAssetWhileLoading(Asset* asset, AssetType type)
+    GPUAssetHandle Renderer::ResolveGPUAssetWhileLoading(Asset* asset, AssetType type)
     {
         auto& gpuState = asset->GetGPUAssetState();
         auto uuid = asset->GetUUID();
@@ -324,7 +323,7 @@ namespace Hazel
         auto newGPUAsset = LoadGPUAsset(asset);
         if (!newGPUAsset)
         {
-            auto oldGPUAsset = m_GPUAssetRegistry.RemoveAsset(uuid);
+            auto oldGPUAsset = m_GPUAssetRegistry->RemoveAsset(uuid);
 
             {
                 std::unique_lock lock(gpuState.mutex);
@@ -332,14 +331,14 @@ namespace Hazel
                 gpuState.state = GPUAssetLoadState::Unloaded;
             }
 
-            m_GPUAssetRegistry.EnqueueForDeferredRelease(std::move(oldGPUAsset));
+            m_GPUAssetRegistry->EnqueueForDeferredRelease(std::move(oldGPUAsset));
             gpuState.condition.notify_all();
-            return GPUAssetResolveResult(GetDefaultGPUAsset(type), false);
+            return GPUAssetHandle(GetDefaultGPUAsset(type), false);
         }
 
         auto newVersion = newGPUAsset->GetSourceVersion();
         auto [oldGPUAsset, currentGPUAsset] =
-            m_GPUAssetRegistry.SetAssetAndGetTheOldAndTheNewOnes(std::move(newGPUAsset));
+            m_GPUAssetRegistry->SetAssetAndGetTheOldAndTheNewOnes(std::move(newGPUAsset));
 
         {
             std::unique_lock lock(gpuState.mutex);
@@ -347,10 +346,10 @@ namespace Hazel
             gpuState.state = GPUAssetLoadState::Loaded;
         }
 
-        m_GPUAssetRegistry.EnqueueForDeferredRelease(std::move(oldGPUAsset));
+        m_GPUAssetRegistry->EnqueueForDeferredRelease(std::move(oldGPUAsset));
         gpuState.condition.notify_all();
 
-        return GPUAssetResolveResult(currentGPUAsset);
+        return GPUAssetHandle(currentGPUAsset);
     }
 
     void Renderer::CreateDefaultResources()
@@ -384,14 +383,14 @@ namespace Hazel
 
         m_WhiteTexture = std::make_unique<GPUTextureAsset>(m_WhiteTextureUUID, 0, textureDesc, this, image, imageView);
         m_WhiteTextureBindingSlot = GetResourceBindingRegistry()->RegisterTexture(
-            GPUAssetResolveResult(m_WhiteTexture.get(), false));
+            GPUAssetHandle(m_WhiteTexture.get(), false));
 
         data[1] = 0;
         image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
         imageView = m_Device->CreateImageView(image, imageViewDesc);
         m_ErrorTexture = std::make_unique<GPUTextureAsset>(m_ErrorTextureUUID, 0, textureDesc, this, image, imageView);
         m_ErrorTextureBindingSlot = GetResourceBindingRegistry()->RegisterTexture(
-            GPUAssetResolveResult(m_ErrorTexture.get(), false));
+            GPUAssetHandle(m_ErrorTexture.get(), false));
 
         RHISamplerDesc samplerDesc{};
         auto sampler = m_Device->CreateSampler(samplerDesc);
@@ -402,11 +401,11 @@ namespace Hazel
                                                              sampler,
                                                              m_CurrentFrame);
         m_DefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSampler(
-            GPUAssetResolveResult(m_DefaultSampler.get(), false));
+            GPUAssetHandle(m_DefaultSampler.get(), false));
 
         m_WhiteTextureWithDefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSamplerWithImage(
-            GPUAssetResolveResult(m_WhiteTexture.get(), false),
-            GPUAssetResolveResult(m_DefaultSampler.get(), false));
+            GPUAssetHandle(m_WhiteTexture.get(), false),
+            GPUAssetHandle(m_DefaultSampler.get(), false));
 
         cmd->End();
 
@@ -644,7 +643,7 @@ namespace Hazel
             m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint);
 
         GetResourceBindingRegistry()->
-            UpdateResourceGroupForPendingOperations(m_ResourceBindingManager->GetPerViewResourceGroup());
+            UpdateResourceGroupForPendingOperations(m_ResourceBindingRegistry->GetPerViewResourceGroup());
         GetResourceBindingRegistry()->CreateOrUpdatePerShaderResources();
 
         frameData.commandBuffer->Reset();
@@ -668,14 +667,14 @@ namespace Hazel
 
         m_Swapchain->SubmitFrame(frameData.frameNumber, {frameData.renderCompleteSyncPoint});
 
-        auto garbage = m_GPUAssetRegistry.AcquireSomeAssetsForGarbageCollection(
+        auto garbage = m_GPUAssetRegistry->AcquireSomeAssetsForGarbageCollection(
             m_CurrentFrame - m_GPUAssetGarbageCollectFrameThreshold);
         for (auto& asset : garbage)
         {
-            m_GPUAssetRegistry.EnqueueForDeferredRelease(std::move(asset));
+            m_GPUAssetRegistry->EnqueueForDeferredRelease(std::move(asset));
         }
 
-        m_GPUAssetRegistry.FlushGPUAssetReleaseQueue();
+        m_GPUAssetRegistry->FlushGPUAssetReleaseQueue();
 
         Step();
     }
@@ -1046,13 +1045,12 @@ namespace Hazel
 
     void Renderer::Release()
     {
-        m_ResourceBindingManager.reset();
-        m_GeometryDataRegistry.reset();
+        m_Device->WaitIdle();
 
-        if (m_ResourceHeapAllocator)
-        {
-            m_ResourceHeapAllocator->Release();
-            m_ResourceHeapAllocator.reset();
-        }
+        m_ResourceBindingRegistry->ClearAllResources();
+        m_GPUAssetRegistry.reset();
+        m_ResourceBindingRegistry.reset();
+        m_GeometryDataRegistry.reset();
+        m_ResourceHeapAllocator.reset();
     }
 } // namespace Hazel

@@ -44,6 +44,7 @@ namespace Hazel
         AssetType GetType() const { return m_Type; }
         UUID GetUUID() const { return m_UUID; }
 
+        int32_t GetUseCount() const { return m_UseCount.load(); }
         bool IsBeingUsed() const { return m_UseCount.load() > 0; }
         void Use() { m_UseCount.fetch_add(1); }
         void Return() { m_UseCount.fetch_sub(1); }

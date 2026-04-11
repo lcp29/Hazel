@@ -29,6 +29,11 @@ namespace Hazel
         }
     }
 
+    CachedMaterial::~CachedMaterial()
+    {
+        CachedMaterial::ReleaseImmediate();
+    }
+
     uint64_t CachedMaterial::GetPipelineKey(const std::vector<RHIFormat>& colorAttachmentFormats,
                                             const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                             RHIFormat depthStencilFormat) const

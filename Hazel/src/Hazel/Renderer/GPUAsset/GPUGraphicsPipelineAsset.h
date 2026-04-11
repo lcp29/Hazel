@@ -28,6 +28,8 @@ namespace Hazel
               m_Shader(shader),
               m_Pipeline(pipeline) {}
 
+        ~GPUGraphicsPipelineAsset() override;
+
         std::mutex& GetMutex() { return m_Mutex; }
         std::condition_variable& GetCondition() { return m_Condition; }
 

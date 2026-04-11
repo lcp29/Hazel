@@ -41,6 +41,8 @@ namespace Hazel
               m_PipelineState(pipelineState),
               m_Properties(properties) {}
 
+        ~CachedMaterial() override;
+
         uint32_t GetMaterialID() const
         {
             return m_MaterialID;
@@ -80,7 +82,6 @@ namespace Hazel
         bool m_IsValid = false;
         bool m_IsDirty = true;
         uint32_t m_MaterialID = 0;
-        Renderer* m_Renderer = nullptr;
         UUID m_Shader = UUID(-1);
         uint64_t m_ShaderSourceVersion = 0;
         MaterialPipelineState m_PipelineState{};

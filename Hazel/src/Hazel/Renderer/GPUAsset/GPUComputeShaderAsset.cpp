@@ -6,6 +6,11 @@
 
 namespace Hazel
 {
+    GPUComputeShaderAsset::~GPUComputeShaderAsset()
+    {
+        GPUComputeShaderAsset::ReleaseImmediate();
+    }
+
     void GPUComputeShaderAsset::Release()
     {
         if (!m_IsValid)

@@ -5,6 +5,11 @@
 #include "GPUGraphicsPipelineAsset.h"
 
 namespace Hazel {
+    GPUGraphicsPipelineAsset::~GPUGraphicsPipelineAsset()
+    {
+        GPUGraphicsPipelineAsset::ReleaseImmediate();
+    }
+
     void GPUGraphicsPipelineAsset::Release()
     {
         std::unique_lock lock(m_Mutex);

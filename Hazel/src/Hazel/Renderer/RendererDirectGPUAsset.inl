@@ -16,7 +16,7 @@ namespace Hazel
     constexpr bool kDependentFalse = false;
 
     template <typename TAsset, typename... Args>
-    GPUAssetResolveResult Renderer::ResolveDirectGPUAsset(Args&&... args)
+    GPUAssetHandle Renderer::ResolveDirectGPUAsset(Args&&... args)
     {
         if constexpr (std::is_same_v<TAsset, GPUGraphicsPipelineAsset>)
         {
@@ -30,7 +30,7 @@ namespace Hazel
             auto* materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
             if (!materialAsset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
             UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats,
@@ -39,11 +39,11 @@ namespace Hazel
             GPUGraphicsPipelineAsset* pipelineAsset = nullptr;
             bool shouldSpawn = false;
             {
-                auto& mutex = m_GPUAssetRegistry.GetPipelineCacheMutex();
+                auto& mutex = m_GPUAssetRegistry->GetPipelineCacheMutex();
                 std::unique_lock lock(mutex);
-                if (m_GPUAssetRegistry.HasAsset(pipelineUUID))
+                if (m_GPUAssetRegistry->HasAsset(pipelineUUID))
                 {
-                    pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(m_GPUAssetRegistry.GetAsset(pipelineUUID));
+                    pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(m_GPUAssetRegistry->GetAsset(pipelineUUID));
                 }
                 else
                 {
@@ -53,7 +53,7 @@ namespace Hazel
                         materialAsset->GetShader(),
                         this,
                         m_CurrentFrame);
-                    auto [_, asset] = m_GPUAssetRegistry.SetAssetAndGetTheOldAndTheNewOnes(std::move(placeholder));
+                    auto [_, asset] = m_GPUAssetRegistry->SetAssetAndGetTheOldAndTheNewOnes(std::move(placeholder));
                     pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(asset);
                     shouldSpawn = true;
                 }
@@ -66,7 +66,7 @@ namespace Hazel
                 if (!pipelineAsset->IsLoading() && pipelineAsset->GetPipeline() != nullptr)
                 {
                     assetLock.unlock();
-                    return GPUAssetResolveResult(pipelineAsset);
+                    return GPUAssetHandle(pipelineAsset);
                 }
             }
 
@@ -109,11 +109,11 @@ namespace Hazel
                     pipelineAsset->GetCondition().notify_all();
                     pipelineAsset->Return();
                 }).detach();
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
             pipelineAsset->Return();
-            return GPUAssetResolveResult(nullptr, false);
+            return GPUAssetHandle(nullptr, false);
         }
         else if constexpr (std::is_same_v<TAsset, GPURenderTextureAsset>)
         {
@@ -131,12 +131,12 @@ namespace Hazel
             auto* currentAsset = asset.get();
             if (!currentAsset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
-            m_GPUAssetRegistry.AddAsset(std::move(asset));
+            m_GPUAssetRegistry->AddAsset(std::move(asset));
             currentAsset->Use();
-            return GPUAssetResolveResult(currentAsset);
+            return GPUAssetHandle(currentAsset);
         }
         else if constexpr (std::is_same_v<TAsset, GPURenderBufferAsset>)
         {
@@ -154,12 +154,12 @@ namespace Hazel
             auto* currentAsset = asset.get();
             if (!currentAsset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
-            m_GPUAssetRegistry.AddAsset(std::move(asset));
+            m_GPUAssetRegistry->AddAsset(std::move(asset));
             currentAsset->Use();
-            return GPUAssetResolveResult(currentAsset);
+            return GPUAssetHandle(currentAsset);
         }
         else if constexpr (std::is_same_v<TAsset, GPUSamplerAsset>)
         {
@@ -183,12 +183,12 @@ namespace Hazel
             auto* currentAsset = asset.get();
             if (!currentAsset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
-            m_GPUAssetRegistry.AddAsset(std::move(asset));
+            m_GPUAssetRegistry->AddAsset(std::move(asset));
             currentAsset->Use();
-            return GPUAssetResolveResult(currentAsset);
+            return GPUAssetHandle(currentAsset);
         }
         else
         {
@@ -197,7 +197,7 @@ namespace Hazel
     }
 
     template <typename TAsset, typename... Args>
-    GPUAssetResolveResult Renderer::ResolveDirectGPUAssetBlocked(Args&&... args)
+    GPUAssetHandle Renderer::ResolveDirectGPUAssetBlocked(Args&&... args)
     {
         if constexpr (std::is_same_v<TAsset, GPUGraphicsPipelineAsset>)
         {
@@ -211,14 +211,14 @@ namespace Hazel
             auto materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
             if (!materialAsset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
             UUID shaderUUID = materialAsset->GetShader();
             auto shaderResult = ResolveGPUAssetBlocked(shaderUUID, AssetType::Shader);
             if (!shaderResult.asset)
             {
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
             UUID pipelineUUID = materialAsset->GetPipelineKey(colorAttachmentFormats,
@@ -227,11 +227,11 @@ namespace Hazel
             GPUGraphicsPipelineAsset* pipelineAsset = nullptr;
             bool shouldCreate = false;
             {
-                auto& mutex = m_GPUAssetRegistry.GetPipelineCacheMutex();
+                auto& mutex = m_GPUAssetRegistry->GetPipelineCacheMutex();
                 std::unique_lock lock(mutex);
-                if (m_GPUAssetRegistry.HasAsset(pipelineUUID))
+                if (m_GPUAssetRegistry->HasAsset(pipelineUUID))
                 {
-                    pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(m_GPUAssetRegistry.GetAsset(pipelineUUID));
+                    pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(m_GPUAssetRegistry->GetAsset(pipelineUUID));
                 }
                 else
                 {
@@ -241,7 +241,7 @@ namespace Hazel
                         shaderUUID,
                         this,
                         m_CurrentFrame);
-                    auto [_, asset] = m_GPUAssetRegistry.SetAssetAndGetTheOldAndTheNewOnes(std::move(placeholder));
+                    auto [_, asset] = m_GPUAssetRegistry->SetAssetAndGetTheOldAndTheNewOnes(std::move(placeholder));
                     pipelineAsset = static_cast<GPUGraphicsPipelineAsset*>(asset);
                     shouldCreate = true;
                 }
@@ -253,7 +253,7 @@ namespace Hazel
                 std::unique_lock assetLock(pipelineAsset->GetMutex());
                 if (!pipelineAsset->IsLoading() && pipelineAsset->GetPipeline() != nullptr)
                 {
-                    return GPUAssetResolveResult(pipelineAsset);
+                    return GPUAssetHandle(pipelineAsset);
                 }
 
                 if (!shouldCreate && pipelineAsset->IsLoading())
@@ -266,10 +266,10 @@ namespace Hazel
                     assetLock.unlock();
                     if (hasPipeline)
                     {
-                        return GPUAssetResolveResult(pipelineAsset);
+                        return GPUAssetHandle(pipelineAsset);
                     }
                     pipelineAsset->Return();
-                    return GPUAssetResolveResult(nullptr, false);
+                    return GPUAssetHandle(nullptr, false);
                 }
             }
 
@@ -287,14 +287,14 @@ namespace Hazel
                 pipelineAsset->GetCondition().notify_all();
                 if (pipeline)
                 {
-                    return GPUAssetResolveResult(pipelineAsset);
+                    return GPUAssetHandle(pipelineAsset);
                 }
                 pipelineAsset->Return();
-                return GPUAssetResolveResult(nullptr, false);
+                return GPUAssetHandle(nullptr, false);
             }
 
             pipelineAsset->Return();
-            return GPUAssetResolveResult(nullptr, false);
+            return GPUAssetHandle(nullptr, false);
         }
         else
         {

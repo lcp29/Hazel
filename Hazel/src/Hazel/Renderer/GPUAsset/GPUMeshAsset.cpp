@@ -8,6 +8,11 @@
 
 namespace Hazel
 {
+    GPUMeshAsset::~GPUMeshAsset()
+    {
+        GPUMeshAsset::ReleaseImmediate();
+    }
+
     void GPUMeshAsset::Release()
     {
         // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path

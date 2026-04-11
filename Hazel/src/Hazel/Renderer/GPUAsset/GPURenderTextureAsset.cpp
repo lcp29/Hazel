@@ -148,6 +148,11 @@ namespace Hazel
           m_Images(std::move(images)),
           m_ImageViews(std::move(imageViews)) {}
 
+    GPURenderTextureAsset::~GPURenderTextureAsset()
+    {
+        GPURenderTextureAsset::ReleaseImmediate();
+    }
+
     void GPURenderTextureAsset::Release()
     {
         if (!m_IsValid)

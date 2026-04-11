@@ -25,6 +25,16 @@ namespace Hazel
 
         GPUAssetRegistry() = default;
 
+        ~GPUAssetRegistry()
+        {
+            std::unique_lock lock(m_Mutex);
+            FlushGPUAssetReleaseQueue(true);
+            for (auto& it : m_GPUAssets | std::views::values)
+            {
+                it.reset();
+            }
+        }
+
         bool HasAsset(UUID uuid)
         {
             std::unique_lock lock(m_Mutex);
@@ -113,6 +123,22 @@ namespace Hazel
             return {nullptr, newPointer};
         }
 
+        void RemoveAsset(GPUAsset* asset)
+        {
+            if (!asset)
+            {
+                return;
+            }
+            auto uuid = asset->GetUUID();
+            std::unique_lock lock(m_Mutex);
+            auto it = m_GPUAssets.find(uuid);
+            if (it != m_GPUAssets.end() && it->second->GetUseCount() == 1)
+            {
+                asset->Return();
+                m_GPUAssets.erase(it);
+            }
+        }
+
         std::vector<std::unique_ptr<GPUAsset>> AcquireSomeAssetsForGarbageCollection(uint64_t frameUpperBound)
         {
             if (m_GPUAssets.empty())
@@ -174,7 +200,7 @@ namespace Hazel
             m_GPUAssetsToRelease.emplace(syncPoint->queue, std::move(asset));
         }
 
-        void FlushGPUAssetReleaseQueue()
+        void FlushGPUAssetReleaseQueue(bool sync = false)
         {
             {
                 std::unique_lock lock(m_GPUAssetReleaseMutex);
@@ -216,12 +242,14 @@ namespace Hazel
                     it = end;
                 }
                 m_GPUAssetsToRelease = std::move(assetsNotToRelease);
-                std::thread([assetsToRelease = std::move(assetsToRelease)]() mutable {
+                std::thread releaseThread([assetsToRelease = std::move(assetsToRelease)]() mutable {
                     for (auto& asset : assetsToRelease | std::views::values)
                     {
                         asset.reset();
                     }
-                }).detach();
+                });
+                if (sync) { releaseThread.join(); }
+                else { releaseThread.detach(); }
             }
         }
 

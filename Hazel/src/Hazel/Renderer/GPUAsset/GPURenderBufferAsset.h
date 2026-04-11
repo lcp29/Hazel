@@ -22,6 +22,7 @@ namespace Hazel
         bool mapOnCreate = false;
         bool allowGpuAddress = false;
         bool hostCoherent = false;
+        bool deviceMemory = false;
     };
 
     class GPURenderBufferAsset : public GPUAsset
@@ -35,6 +36,8 @@ namespace Hazel
                              const RenderBufferDesc& desc,
                              std::vector<RHIBuffer*> buffers,
                              uint64_t lastReferencedFrame = 0);
+
+        ~GPURenderBufferAsset() override;
 
         void Release() override;
         void ReleaseImmediate() override;

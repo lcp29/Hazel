@@ -31,6 +31,8 @@ namespace Hazel
               m_ResourceSignature(resourceSignature),
               m_CachedPipeline(cachedPipeline) {}
 
+        ~GPUComputeShaderAsset() override;
+
         bool IsValid() const
         {
             return m_IsValid;

@@ -345,7 +345,7 @@ namespace Hazel
 
             int pixelData =
                 *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(
-                      m_ObjectIDRenderTextureBuffer.asset)->GetBuffer()->Map()) + pixelIndex);
+                      m_ObjectIDRenderTextureBuffer->asset)->GetBuffer()->Map()) + pixelIndex);
             m_HoveredEntity = pixelData == -1
                                   ? Entity()
                                   : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
@@ -379,6 +379,26 @@ namespace Hazel
 
     void EditorLayer::RecreateObjectIDRenderData()
     {
+        m_Renderer->GetDevice()->WaitIdle();
+
+        if (m_ObjectIDRenderTexture)
+        {
+            m_ObjectIDRenderTexture->Destroy();
+            m_ObjectIDRenderTexture = nullptr;
+        }
+
+        if (m_ObjectIDDepthRenderTexture)
+        {
+            m_ObjectIDDepthRenderTexture->Destroy();
+            m_ObjectIDDepthRenderTexture = nullptr;
+        }
+
+        if (m_ObjectIDRenderTextureBuffer)
+        {
+            m_ObjectIDRenderTextureBuffer->Destroy();
+            m_ObjectIDRenderTextureBuffer = nullptr;
+        }
+
         RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
         objectIDRenderTextureDesc.height = static_cast<uint32_t>(m_ViewportSize.y);
@@ -387,10 +407,12 @@ namespace Hazel
         objectIDRenderTextureDesc.useMipmap = false;
         objectIDRenderTextureDesc.usages = RHIImageUsageFlagBits::TransferSource;
 
-        m_ObjectIDRenderTexture = m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc);
+        m_ObjectIDRenderTexture = std::make_unique<GPUAssetHandle>(
+            m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
 
         objectIDRenderTextureDesc.format = RHIFormat::D32SFloatS8Uint;
-        m_ObjectIDDepthRenderTexture = m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc);
+        m_ObjectIDDepthRenderTexture = std::make_unique<GPUAssetHandle>(
+            m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
 
         RenderBufferDesc objectIDRenderBufferDesc{};
         objectIDRenderBufferDesc.perFrame = true;
@@ -400,19 +422,21 @@ namespace Hazel
         objectIDRenderBufferDesc.mapOnCreate = true;
         objectIDRenderBufferDesc.hostCoherent = true;
         objectIDRenderBufferDesc.allowGpuAddress = false;
+        objectIDRenderBufferDesc.deviceMemory = true;
 
-        m_ObjectIDRenderTextureBuffer = m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc);
+        m_ObjectIDRenderTextureBuffer = std::make_unique<GPUAssetHandle>(
+            m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc));
     }
 
     void EditorLayer::OnObjectIDMapRender()
     {
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
         auto* objectIDImage =
-            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->GetImage();
+            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->GetImage();
         auto* objectIDImageBuffer =
-            static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer.asset)->GetBuffer();
+            static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
         auto* depthImage =
-            static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture.asset)->GetImage();
+            static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->GetImage();
 
         objectIDImage->Transition(commandBuffer,
                                   objectIDImage->GetCurrentState(),
@@ -426,7 +450,7 @@ namespace Hazel
         auto viewportCamera = m_ActiveScene->GetSceneViewportCamera();
 
         RHIRenderingAttachmentDesc colorAttachmentDesc{};
-        colorAttachmentDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture.asset)->
+        colorAttachmentDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->
             GetDefaultImageView();
         colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
         colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
@@ -434,7 +458,7 @@ namespace Hazel
         colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
 
         RHIRenderingAttachmentDesc depthStencilDesc{};
-        depthStencilDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture.asset)->
+        depthStencilDesc.imageView = static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->
             GetDefaultImageView();
         depthStencilDesc.loadOp = RHIRenderingLoadOp::Clear;
         depthStencilDesc.storeOp = RHIRenderingStoreOp::Store;

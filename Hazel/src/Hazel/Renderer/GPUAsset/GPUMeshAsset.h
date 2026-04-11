@@ -90,6 +90,8 @@ namespace Hazel
               m_BoundingSphereCenter(boundingSphere.first),
               m_BoundingSphereRadius(boundingSphere.second) {}
 
+        ~GPUMeshAsset() override;
+
         void Release() override;
         void ReleaseImmediate() override;
 

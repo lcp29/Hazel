@@ -41,6 +41,8 @@ namespace Hazel
                               std::vector<RHIImageView*> imageViews,
                               uint64_t lastReferencedFrame = 0);
 
+        ~GPURenderTextureAsset() override;
+
         void Release() override;
         void ReleaseImmediate() override;
 

@@ -21,6 +21,11 @@ namespace Hazel
           m_FragmentShader(fragmentShader),
           m_Reflection(reflection) {}
 
+    GPUShaderAsset::~GPUShaderAsset()
+    {
+        GPUShaderAsset::ReleaseImmediate();
+    }
+
     void GPUShaderAsset::Release()
     {
         if (!m_IsValid)

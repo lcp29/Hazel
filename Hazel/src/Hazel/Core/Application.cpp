@@ -8,10 +8,10 @@
 
 namespace Hazel
 {
-    constexpr static int DefaultWindowWidth = 1920;
-    constexpr static int DefaultWindowHeight = 1080;
-
     Application* Application::s_Instance = nullptr;
+
+    constexpr int DefaultWindowWidth = 1920;
+    constexpr int DefaultWindowHeight = 1080;
 
     Application::Application(const ApplicationSpecification& specification)
         : m_Specification(specification)
@@ -46,7 +46,7 @@ namespace Hazel
 
         m_LayerStack.Clear();
 
-        m_Renderer->Release();
+        m_Renderer.reset();
         m_GraphicsContext->ReleaseDefaultCommandBuffers();
 
         m_GraphicsContext->GetInstance()->Release();

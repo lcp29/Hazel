@@ -26,6 +26,8 @@ namespace Hazel
             : GPUAsset(uuid, AssetType::Sampler, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true), m_Desc(desc), m_Sampler(sampler) {}
 
+        ~GPUSamplerAsset() override;
+
         void Release() override;
         void ReleaseImmediate() override;
 

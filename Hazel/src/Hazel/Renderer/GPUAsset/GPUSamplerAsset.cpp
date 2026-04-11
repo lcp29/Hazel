@@ -8,6 +8,11 @@
 
 namespace Hazel
 {
+    GPUSamplerAsset::~GPUSamplerAsset()
+    {
+        GPUSamplerAsset::ReleaseImmediate();
+    }
+
     void GPUSamplerAsset::Release()
     {
         if (!m_IsValid)

@@ -318,15 +318,15 @@ namespace Hazel
             m_Renderer->GetDevice()->CreateResourceSignature(signatureDesc);
     }
 
-    std::vector<GPUAssetResolveResult> ShaderMaterialSlot::BuildResources()
+    std::vector<GPUAssetHandle> ShaderMaterialSlot::BuildResources()
     {
         return BuildResourcesForFrame(m_Renderer->GetCurrentFrameInFlightIndex());
     }
 
-    std::vector<GPUAssetResolveResult> ShaderMaterialSlot::BuildResourcesForFrame(
+    std::vector<GPUAssetHandle> ShaderMaterialSlot::BuildResourcesForFrame(
         uint32_t frameInFlightIndex)
     {
-        std::vector<GPUAssetResolveResult> resourceResults;
+        std::vector<GPUAssetHandle> resourceResults;
 
         if (m_Resized)
         {
@@ -753,6 +753,20 @@ namespace Hazel
                                        offsets.empty() ? nullptr : &offsets);
     }
 
+    void ResourceBindingRegistry::ClearAllResources()
+    {
+        std::unique_lock textureLock(m_TextureMutex);
+        m_Textures.clear();
+        textureLock.unlock();
+        std::unique_lock samplerLock(m_SamplerMutex);
+        m_Samplers.clear();
+        samplerLock.unlock();
+        std::unique_lock combinedLock(m_CombinedImageSamplerMutex);
+        m_CombinedImageSamplers.clear();
+        combinedLock.unlock();
+
+    }
+
     void ResourceBindingRegistry::CreateOrUpdatePerShaderResources()
     {
         for (const auto& [key, slot] : m_ShaderMaterials)
@@ -857,7 +871,7 @@ namespace Hazel
                                        &offsets);
     }
 
-    uint32_t ResourceBindingRegistry::RegisterTexture(GPUAssetResolveResult textureResult)
+    uint32_t ResourceBindingRegistry::RegisterTexture(GPUAssetHandle textureResult)
     {
         if (!textureResult.asset)
         {
@@ -895,7 +909,7 @@ namespace Hazel
         return m_Textures.size() - 1;
     }
 
-    uint32_t ResourceBindingRegistry::RegisterSampler(GPUAssetResolveResult samplerResult)
+    uint32_t ResourceBindingRegistry::RegisterSampler(GPUAssetHandle samplerResult)
     {
         if (!samplerResult.asset)
         {
@@ -933,8 +947,8 @@ namespace Hazel
         return m_Samplers.size() - 1;
     }
 
-    uint32_t ResourceBindingRegistry::RegisterSamplerWithImage(GPUAssetResolveResult textureResult,
-                                                               GPUAssetResolveResult samplerResult)
+    uint32_t ResourceBindingRegistry::RegisterSamplerWithImage(GPUAssetHandle textureResult,
+                                                               GPUAssetHandle samplerResult)
     {
         if (!textureResult.asset || !samplerResult.asset)
         {

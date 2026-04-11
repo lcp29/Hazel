@@ -40,6 +40,16 @@ namespace Hazel
                 allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
             }
 
+            if (desc.deviceMemory)
+            {
+                allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            }
+
+            if (desc.hostCoherent)
+            {
+                allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            }
+
             return allocationCreateInfo;
         }
     } // namespace
@@ -76,11 +86,6 @@ namespace Hazel
 
         auto allocationCreateInfo = VulkanConvertAllocationCreateInfo(desc);
         VmaAllocationInfo allocationInfo{};
-
-        if (desc.hostCoherent)
-        {
-            allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        }
 
         VkBuffer buffer = VK_NULL_HANDLE;
         const VkBufferCreateInfo vkBufferCreateInfo = bufferCreateInfo;

@@ -40,6 +40,8 @@ namespace Hazel
               m_Image(image),
               m_DefaultImageView(imageView) {}
 
+        ~GPUTextureAsset() override;
+
         void Release() override;
         void ReleaseImmediate() override;
 

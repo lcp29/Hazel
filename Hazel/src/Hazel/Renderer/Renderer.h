@@ -4,7 +4,7 @@
 #include "GeometryDataRegistry.h"
 #include "ResourceBindingRegistry.h"
 #include "RenderScene.h"
-#include "GPUAsset/GPUAssetResolveResult.h"
+#include "GPUAsset/GPUAssetHandle.h"
 #include "Hazel/Asset/MaterialAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
 #include "Hazel/Renderer/Camera.h"
@@ -46,7 +46,7 @@ namespace Hazel
         };
 
         Renderer(GraphicsContext* graphicsContext, Window* window);
-        ~Renderer();
+        ~Renderer() { Release(); }
 
         void BeginSwapchainTargetRendering();
         void EndSwapchainTargetRendering();
@@ -88,31 +88,31 @@ namespace Hazel
             return m_WhiteTextureWithDefaultSamplerBindingSlot;
         }
 
-        uint32_t RegisterBindlessTexture(GPUAssetResolveResult texture);
-        uint32_t RegisterBindlessSampler(GPUAssetResolveResult sampler);
-        uint32_t RegisterBindlessSamplerWithImage(GPUAssetResolveResult sampler, GPUAssetResolveResult image);
+        uint32_t RegisterBindlessTexture(GPUAssetHandle texture);
+        uint32_t RegisterBindlessSampler(GPUAssetHandle sampler);
+        uint32_t RegisterBindlessSamplerWithImage(GPUAssetHandle sampler, GPUAssetHandle image);
         void UnregisterBindlessTexture(uint32_t slot);
         void UnregisterBindlessSampler(uint32_t slot);
         void UnregisterBindlessSamplerWithImage(uint32_t slot);
 
-        GPUAssetResolveResult ResolveGPUAsset(UUID uuid, AssetType type);
-        GPUAssetResolveResult ResolveGPUAssetBlocked(UUID uuid, AssetType type);
+        GPUAssetHandle ResolveGPUAsset(UUID uuid, AssetType type);
+        GPUAssetHandle ResolveGPUAssetBlocked(UUID uuid, AssetType type);
 
-        GPUAssetResolveResult ResolveGPUGraphicsPipeline(UUID material,
+        GPUAssetHandle ResolveGPUGraphicsPipeline(UUID material,
                                                          const std::vector<RHIFormat>& colorAttachmentFormats,
                                                          const std::vector<RHIColorBlendAttachmentDesc>&
                                                          colorBlendAttachments,
                                                          RHIFormat depthStencilFormat);
-        GPUAssetResolveResult ResolveGPUGraphicsPipelineBlocked(UUID material,
+        GPUAssetHandle ResolveGPUGraphicsPipelineBlocked(UUID material,
                                                                 const std::vector<RHIFormat>& colorAttachmentFormats,
                                                                 const std::vector<RHIColorBlendAttachmentDesc>&
                                                                 colorBlendAttachments,
                                                                 RHIFormat depthStencilFormat);
-        GPUAssetResolveResult ResolveGPURenderTexture(const RenderTextureDesc& desc,
+        GPUAssetHandle ResolveGPURenderTexture(const RenderTextureDesc& desc,
                                                       uint64_t lastReferencedFrame = -1);
-        GPUAssetResolveResult ResolveGPURenderBuffer(const RenderBufferDesc& desc,
+        GPUAssetHandle ResolveGPURenderBuffer(const RenderBufferDesc& desc,
                                                      uint64_t lastReferencedFrame = -1);
-        GPUAssetResolveResult ResolveGPUSampler(const RHISamplerDesc& desc,
+        GPUAssetHandle ResolveGPUSampler(const RHISamplerDesc& desc,
                                                 uint64_t lastReferencedFrame = -1);
 
         uint32_t RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material);
@@ -120,8 +120,9 @@ namespace Hazel
         void RegisterShader(UUID uuid, uint64_t sourceVersion, const RHIShaderReflection& reflection);
         void UnregisterShader(UUID uuid, uint64_t sourceVersion);
 
+        GPUAssetRegistry* GetGPUAssetRegistry() const { return m_GPUAssetRegistry.get(); }
         ResourceHeapAllocator* GetResourceHeapAllocator() const { return m_ResourceHeapAllocator.get(); }
-        ResourceBindingRegistry* GetResourceBindingRegistry() const { return m_ResourceBindingManager.get(); }
+        ResourceBindingRegistry* GetResourceBindingRegistry() const { return m_ResourceBindingRegistry.get(); }
         GeometryDataRegistry* GetGeometryDataRegistry() const { return m_GeometryDataRegistry.get(); }
 
         RenderScene* GetRenderScene() const { return m_RenderScene.get(); }
@@ -158,11 +159,11 @@ namespace Hazel
         void DestroySwapchainResources();
         void RecreateDefaultRenderTexture();
         void CreateDefaultResources();
-        GPUAssetResolveResult ResolveGPUAssetWhileLoading(Asset* asset, AssetType type);
+        GPUAssetHandle ResolveGPUAssetWhileLoading(Asset* asset, AssetType type);
         template <typename TAsset, typename... Args>
-        GPUAssetResolveResult ResolveDirectGPUAsset(Args&&... args);
+        GPUAssetHandle ResolveDirectGPUAsset(Args&&... args);
         template <typename TAsset, typename... Args>
-        GPUAssetResolveResult ResolveDirectGPUAssetBlocked(Args&&... args);
+        GPUAssetHandle ResolveDirectGPUAssetBlocked(Args&&... args);
         std::unique_ptr<GPUAsset> LoadGPUAsset(Asset* asset);
 
         // synchronized from global setting
@@ -180,16 +181,16 @@ namespace Hazel
         Window* m_Window = nullptr;
         RHISurface* m_WindowSurface = nullptr;
         RHISwapchain* m_Swapchain = nullptr;
-        uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
+        uint32_t m_ViewportWidth = 1920, m_ViewportHeight = 1080;
         std::vector<FrameData> m_Frames;
         UUID m_DefaultRenderTextureUUID = UUID();
         std::unique_ptr<GPURenderTextureAsset> m_DefaultRenderTexture;
         std::unique_ptr<GPURenderTextureAsset> m_DefaultDepthRenderTexture;
 
         // TODO: refactored gpu asset management below
-        GPUAssetRegistry m_GPUAssetRegistry;
+        std::unique_ptr<GPUAssetRegistry> m_GPUAssetRegistry = nullptr;
         std::unique_ptr<ResourceHeapAllocator> m_ResourceHeapAllocator = nullptr;
-        std::unique_ptr<ResourceBindingRegistry> m_ResourceBindingManager = nullptr;
+        std::unique_ptr<ResourceBindingRegistry> m_ResourceBindingRegistry = nullptr;
         std::unique_ptr<GeometryDataRegistry> m_GeometryDataRegistry = nullptr;
         std::unique_ptr<RenderScene> m_RenderScene = nullptr;
 

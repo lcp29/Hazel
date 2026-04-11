@@ -59,5 +59,6 @@ namespace Hazel
         bool mapOnCreate = false;
         bool allowGpuAddress = false;
         bool hostCoherent = false;
+        bool deviceMemory = false;
     };
 } // namespace Hazel

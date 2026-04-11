@@ -27,6 +27,8 @@ namespace Hazel
                        RHIShaderReflection reflection,
                        uint64_t lastReferencedFrame = 0);
 
+        ~GPUShaderAsset() override;
+
         bool IsValid() const
         {
             return m_IsValid;
