@@ -85,7 +85,7 @@ namespace Hazel
         }
 
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-        bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
+        bool opened = ImGui::TreeNodeEx((void*)static_cast<uint64_t>((uint32_t)entity), flags, tag.c_str());
         if (ImGui::IsItemClicked())
         {
             m_SelectionContext = entity;

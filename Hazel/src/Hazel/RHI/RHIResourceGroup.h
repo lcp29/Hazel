@@ -6,4 +6,6 @@
 
 #include "RHIBase.h"
 
-namespace Hazel {} // namespace Hazel
+namespace Hazel
+{
+} // namespace Hazel

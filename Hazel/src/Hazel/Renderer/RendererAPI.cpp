@@ -6,6 +6,6 @@
 namespace Hazel
 {
 #ifdef RHI_USE_VULKAN
-    RendererAPI::API RendererAPI::s_API = RendererAPI::API::Vulkan;
+    RendererAPI::API RendererAPI::s_API = API::Vulkan;
 #endif
 } // namespace Hazel

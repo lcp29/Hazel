@@ -190,15 +190,15 @@ namespace Hazel
             }
 
             RHIImageViewDesc viewDesc{};
-            viewDesc.viewType = RHIImageViewType::Image2D;
+            viewDesc.viewType = Image2D;
             viewDesc.format = m_Format;
             viewDesc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
             viewDesc.subresourceRange.levelCount = 1;
             viewDesc.subresourceRange.layerCount = 1;
-            viewDesc.componentMapping.r = RHIImageViewComponent::Identity;
-            viewDesc.componentMapping.g = RHIImageViewComponent::Identity;
-            viewDesc.componentMapping.b = RHIImageViewComponent::Identity;
-            viewDesc.componentMapping.a = RHIImageViewComponent::Identity;
+            viewDesc.componentMapping.r = Identity;
+            viewDesc.componentMapping.g = Identity;
+            viewDesc.componentMapping.b = Identity;
+            viewDesc.componentMapping.a = Identity;
 
             RHIImageView* imageView = image->CreateView(viewDesc);
             if (!imageView)

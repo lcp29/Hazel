@@ -18,8 +18,8 @@ namespace Hazel
 {
     namespace
     {
-        constexpr const char* s_ProjectFileFilter = "Hazel Project (*.hproj)\0*.hproj\0";
-        constexpr const char* s_SceneFileFilter = "Hazel Scene (*.hazel)\0*.hazel\0";
+        constexpr auto s_ProjectFileFilter = "Hazel Project (*.hproj)\0*.hproj\0";
+        constexpr auto s_SceneFileFilter = "Hazel Scene (*.hazel)\0*.hazel\0";
 
         EditorLayer::EditorUITexture CreateEditorUITexture(Renderer* renderer,
                                                            RHICommandBuffer* commandBuffer,
@@ -42,7 +42,7 @@ namespace Hazel
 
             RHIImageViewDesc viewDesc{};
             viewDesc.format = texture.Image->GetDesc().format;
-            viewDesc.viewType = RHIImageViewType::Image2D;
+            viewDesc.viewType = Image2D;
             viewDesc.subresourceRange.levelCount = 1;
             viewDesc.subresourceRange.layerCount = 1;
             viewDesc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
@@ -130,7 +130,9 @@ namespace Hazel
     }
 
     EditorLayer::EditorLayer(Renderer* renderer)
-        : Layer("EditorLayer"), m_Renderer(renderer) {}
+        : Layer("EditorLayer"), m_Renderer(renderer)
+    {
+    }
 
     void EditorLayer::OnAttach()
     {
@@ -548,7 +550,7 @@ namespace Hazel
     void EditorLayer::DrawProjectSelectionScreen()
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
-        const ImVec2 windowSize(420.0f, 180.0f);
+        constexpr ImVec2 windowSize(420.0f, 180.0f);
         ImGui::SetNextWindowPos(
             ImVec2(viewport->GetCenter().x - windowSize.x * 0.5f, viewport->GetCenter().y - windowSize.y * 0.5f));
         ImGui::SetNextWindowSize(windowSize);
@@ -561,7 +563,7 @@ namespace Hazel
         ImGui::TextWrapped("Create a new Hazel project or open an existing .hproj file.");
         ImGui::Dummy(ImVec2(0.0f, 16.0f));
 
-        const float buttonWidth = 160.0f;
+        constexpr float buttonWidth = 160.0f;
         const float availableWidth = ImGui::GetContentRegionAvail().x;
         ImGui::SetCursorPosX((availableWidth - buttonWidth * 2.0f - 12.0f) * 0.5f);
         if (ImGui::Button("New Project", ImVec2(buttonWidth, 0.0f)))
@@ -751,7 +753,7 @@ namespace Hazel
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
             {
-                const wchar_t* path = static_cast<const wchar_t*>(payload->Data);
+                auto path = static_cast<const wchar_t*>(payload->Data);
                 OpenScene(path);
             }
             ImGui::EndDragDropTarget();
@@ -810,7 +812,7 @@ namespace Hazel
             }
         }
 
-        glm::mat3 cameraSpaceWorldFrame = glm::mat3(cameraView);
+        auto cameraSpaceWorldFrame = glm::mat3(cameraView);
 
         glm::vec3 worldFrameX = glm::normalize(cameraSpaceWorldFrame[0]);
         glm::vec3 worldFrameY = glm::normalize(cameraSpaceWorldFrame[1]);
@@ -860,9 +862,9 @@ namespace Hazel
                      nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-        bool toolbarEnabled = (bool)m_ActiveScene;
+        bool toolbarEnabled = static_cast<bool>(m_ActiveScene);
 
-        ImVec4 tintColor = ImVec4(1, 1, 1, 1);
+        auto tintColor = ImVec4(1, 1, 1, 1);
         if (!toolbarEnabled)
             tintColor.w = 0.5f;
 
@@ -1082,7 +1084,9 @@ namespace Hazel
     void EditorLayer::OnOverlayRender()
     {
         // draw selected entity outline
-        if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity()) {}
+        if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
+        {
+        }
     }
 
     void EditorLayer::NewProject()

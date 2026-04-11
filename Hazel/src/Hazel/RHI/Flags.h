@@ -9,7 +9,9 @@
 namespace Hazel
 {
     template <typename T>
-    struct InRHIFlagScope : std::false_type {};
+    struct InRHIFlagScope : std::false_type
+    {
+    };
 
     template <typename BitType>
         requires InRHIFlagScope<BitType>::value
@@ -21,16 +23,24 @@ namespace Hazel
         UnderlyingType value;
 
         Flags()
-            : value(0) {}
+            : value(0)
+        {
+        }
 
         constexpr Flags(const UnderlyingType& value)
-            : value(value) {}
+            : value(value)
+        {
+        }
 
         constexpr Flags(const BitType& value)
-            : value(static_cast<UnderlyingType>(value)) {}
+            : value(static_cast<UnderlyingType>(value))
+        {
+        }
 
         constexpr Flags(const Flags& other)
-            : value(other.value) {}
+            : value(other.value)
+        {
+        }
 
         constexpr operator UnderlyingType() const
         {

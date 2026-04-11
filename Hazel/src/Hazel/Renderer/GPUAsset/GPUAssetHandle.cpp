@@ -18,7 +18,8 @@ namespace Hazel
         }
     }
 
-    GPUAssetHandle::~GPUAssetHandle() {
+    GPUAssetHandle::~GPUAssetHandle()
+    {
         if (asset && returnAfterUse)
         {
             asset->SetLastReferencedFrame(asset->GetRenderer()->GetCurrentFrameIndex());

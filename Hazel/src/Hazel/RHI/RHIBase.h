@@ -72,11 +72,8 @@ namespace Hazel
                 m_Objects[slotIndex] = std::move(object);
                 return slotIndex;
             }
-            else
-            {
-                m_Objects.push_back(std::move(object));
-                return static_cast<uint32_t>(m_Objects.size() - 1);
-            }
+            m_Objects.push_back(std::move(object));
+            return static_cast<uint32_t>(m_Objects.size() - 1);
         }
 
         T* Get(uint32_t handle) const

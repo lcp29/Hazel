@@ -68,9 +68,11 @@ namespace Hazel
                    heapRecord.used.samplerCount + usage.samplerCount + 1 <= heapRecord.capacity.samplerCount &&
                    heapRecord.used.samplerWithImageCount + usage.samplerWithImageCount + 1 <= heapRecord.capacity.
                    samplerWithImageCount &&
-                   heapRecord.used.sampledImageCount + usage.sampledImageCount + 1 <= heapRecord.capacity.sampledImageCount
+                   heapRecord.used.sampledImageCount + usage.sampledImageCount + 1 <= heapRecord.capacity.
+                   sampledImageCount
                    &&
-                   heapRecord.used.storageImageCount + usage.storageImageCount + 1 <= heapRecord.capacity.storageImageCount
+                   heapRecord.used.storageImageCount + usage.storageImageCount + 1 <= heapRecord.capacity.
+                   storageImageCount
                    &&
                    heapRecord.used.uniformBufferCount + usage.uniformBufferCount + 1 <= heapRecord.capacity.
                    uniformBufferCount &&
@@ -131,7 +133,9 @@ namespace Hazel
     } // namespace
 
     ResourceHeapAllocator::ResourceHeapAllocator(Renderer* renderer)
-        : m_Renderer(renderer), m_IsValid(true) {}
+        : m_Renderer(renderer), m_IsValid(true)
+    {
+    }
 
     ResourceHeapAllocator::~ResourceHeapAllocator()
     {

@@ -31,10 +31,10 @@ namespace Hazel
         template <typename T, typename UIFunction>
         void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
         {
-            const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-                                                     ImGuiTreeNodeFlags_SpanAvailWidth |
-                                                     ImGuiTreeNodeFlags_AllowOverlap |
-                                                     ImGuiTreeNodeFlags_FramePadding;
+            constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                                                         ImGuiTreeNodeFlags_SpanAvailWidth |
+                                                         ImGuiTreeNodeFlags_AllowOverlap |
+                                                         ImGuiTreeNodeFlags_FramePadding;
             if (entity.HasComponent<T>())
             {
                 auto& component = entity.GetComponent<T>();
@@ -168,7 +168,8 @@ namespace Hazel
                                        [](auto& component) {
                                            auto& camera = component.camera;
                                            auto* assetManager = Project::GetActive()->GetAssetManager();
-                                           auto renderTextures = assetManager->GetAssetsByType(AssetType::RenderTexture);
+                                           auto renderTextures = assetManager->
+                                               GetAssetsByType(AssetType::RenderTexture);
                                            ImGui::Checkbox("Primary", &component.isPrimary);
 
                                            const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
@@ -274,7 +275,7 @@ namespace Hazel
                                                auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
                                                for (const auto& [name, field] : fields)
                                                {
-                                                   if (entityFields.find(name) != entityFields.end())
+                                                   if (entityFields.contains(name))
                                                    {
                                                        ScriptFieldInstance& scriptField = entityFields.at(name);
                                                        if (field.Type == ScriptFieldType::Float)
@@ -333,7 +334,7 @@ namespace Hazel
         if (!metaNode["UUID"])
             return;
 
-        UUID uuid = UUID(metaNode["UUID"].as<uint64_t>());
+        auto uuid = UUID(metaNode["UUID"].as<uint64_t>());
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto assetType = assetManager->GetAssetType(uuid);
 

@@ -129,10 +129,10 @@ namespace Hazel
         colorBlendState.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
         colorBlendState.pAttachments = colorBlendAttachments.data();
 
-        const vk::DynamicState dynamicStates[] = {vk::DynamicState::eViewport,
-                                                  vk::DynamicState::eScissor,
-                                                  vk::DynamicState::eBlendConstants,
-                                                  vk::DynamicState::eStencilReference};
+        constexpr vk::DynamicState dynamicStates[] = {vk::DynamicState::eViewport,
+                                                      vk::DynamicState::eScissor,
+                                                      vk::DynamicState::eBlendConstants,
+                                                      vk::DynamicState::eStencilReference};
         vk::PipelineDynamicStateCreateInfo dynamicState;
         dynamicState.dynamicStateCount = 4;
         dynamicState.pDynamicStates = dynamicStates;

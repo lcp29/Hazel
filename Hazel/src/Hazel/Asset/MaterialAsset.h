@@ -230,7 +230,9 @@ namespace Hazel
 
         MaterialAsset(AssetRegistryTerm* registryTerm,
                       const MaterialAssetMeta& meta)
-            : Asset(registryTerm), m_Meta(meta) {}
+            : Asset(registryTerm), m_Meta(meta)
+        {
+        }
 
         uint64_t GetVersion() const final
         {

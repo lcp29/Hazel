@@ -29,7 +29,9 @@ namespace Hazel
               m_ComputeShader(computeShader),
               m_ResourceLayouts(std::move(resourceLayouts)),
               m_ResourceSignature(resourceSignature),
-              m_CachedPipeline(cachedPipeline) {}
+              m_CachedPipeline(cachedPipeline)
+        {
+        }
 
         ~GPUComputeShaderAsset() override;
 

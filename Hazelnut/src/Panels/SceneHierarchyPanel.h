@@ -23,7 +23,6 @@ namespace Hazel
     private:
         void DrawEntityNode(Entity entity);
 
-    private:
         Ref<Scene> m_Context;
         Entity m_SelectionContext;
         uint64_t m_SelectionVersion = 0;

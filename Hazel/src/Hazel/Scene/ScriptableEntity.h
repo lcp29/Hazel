@@ -7,7 +7,9 @@ namespace Hazel
     class ScriptableEntity
     {
     public:
-        virtual ~ScriptableEntity() {}
+        virtual ~ScriptableEntity()
+        {
+        }
 
         template <typename T>
         T& GetComponent()
@@ -16,11 +18,17 @@ namespace Hazel
         }
 
     protected:
-        virtual void OnCreate() {}
+        virtual void OnCreate()
+        {
+        }
 
-        virtual void OnDestroy() {}
+        virtual void OnDestroy()
+        {
+        }
 
-        virtual void OnUpdate(Timestep ts) {}
+        virtual void OnUpdate(Timestep ts)
+        {
+        }
 
     private:
         Entity m_Entity;

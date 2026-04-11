@@ -38,7 +38,9 @@ namespace Hazel
               m_IsValid(true),
               m_Desc(desc),
               m_Image(image),
-              m_DefaultImageView(imageView) {}
+              m_DefaultImageView(imageView)
+        {
+        }
 
         ~GPUTextureAsset() override;
 

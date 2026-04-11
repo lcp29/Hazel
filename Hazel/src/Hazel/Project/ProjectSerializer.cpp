@@ -9,7 +9,9 @@
 namespace Hazel
 {
     ProjectSerializer::ProjectSerializer(Ref<Project> project)
-        : m_Project(project) {}
+        : m_Project(project)
+    {
+    }
 
     bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
     {

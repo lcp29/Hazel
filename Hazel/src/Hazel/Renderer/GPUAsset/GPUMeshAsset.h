@@ -81,14 +81,16 @@ namespace Hazel
                      uint64_t lastReferencedFrame = 0)
             : GPUAsset(uuid, AssetType::Mesh, renderer, sourceVersion, lastReferencedFrame),
               m_IsValid(true),
-              m_Vertices(vertices),
               m_Indices(indices),
               m_Meshlets(meshlets),
               m_HasMeshlets(!meshlets.empty()),
               m_AabbMin(aabb[0]),
               m_AabbMax(aabb[1]),
               m_BoundingSphereCenter(boundingSphere.first),
-              m_BoundingSphereRadius(boundingSphere.second) {}
+              m_BoundingSphereRadius(boundingSphere.second),
+              m_Vertices(vertices)
+        {
+        }
 
         ~GPUMeshAsset() override;
 

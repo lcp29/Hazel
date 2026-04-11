@@ -98,7 +98,7 @@ namespace YAML
         static Node encode(const Hazel::UUID& uuid)
         {
             Node node;
-            node.push_back((uint64_t)uuid);
+            node.push_back(static_cast<uint64_t>(uuid));
             return node;
         }
 
@@ -120,7 +120,9 @@ namespace Hazel
         IDComponent(const IDComponent&) = default;
 
         IDComponent(const UUID& id)
-            : ID(id) {}
+            : ID(id)
+        {
+        }
 
         YAML::Node Serialize() const
         {
@@ -145,7 +147,9 @@ namespace Hazel
         TagComponent(const TagComponent&) = default;
 
         TagComponent(const std::string& tag)
-            : tag(tag) {}
+            : tag(tag)
+        {
+        }
 
         YAML::Node Serialize() const
         {
@@ -172,7 +176,9 @@ namespace Hazel
         TransformComponent(const TransformComponent&) = default;
 
         TransformComponent(const glm::vec3& translation)
-            : translation(translation) {}
+            : translation(translation)
+        {
+        }
 
         TransformComponent(const glm::mat4& transform)
         {
@@ -344,7 +350,9 @@ namespace Hazel
     };
 
     template <typename... Component>
-    struct ComponentGroup {};
+    struct ComponentGroup
+    {
+    };
 
     using AllComponents = ComponentGroup<TransformComponent,
                                          MeshRendererComponent,

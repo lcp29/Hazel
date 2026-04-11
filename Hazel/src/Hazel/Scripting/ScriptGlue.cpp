@@ -59,7 +59,7 @@ namespace Hazel
         HZ_CORE_ASSERT(entity);
 
         MonoType* managedType = mono_reflection_type_get_type(componentType);
-        HZ_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
+        HZ_CORE_ASSERT(s_EntityHasComponentFuncs.contains(managedType));
         return s_EntityHasComponentFuncs.at(managedType)(entity);
     }
 
@@ -107,8 +107,7 @@ namespace Hazel
     static void RegisterComponent()
     {
         (
-            []()
-            {
+            []() {
                 std::string_view typeName = typeid(Component).name();
                 size_t pos = typeName.find_last_of(':');
                 std::string_view structName = typeName.substr(pos + 1);

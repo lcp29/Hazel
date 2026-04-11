@@ -30,13 +30,13 @@ namespace Hazel
         };
 
         EditorLayer(Renderer* renderer);
-        virtual ~EditorLayer() = default;
+        ~EditorLayer() override = default;
 
-        virtual void OnAttach() override;
-        virtual void OnDetach() override;
+        void OnAttach() override;
+        void OnDetach() override;
 
         void OnUpdate(Timestep ts) override;
-        virtual void OnImGuiRender() override;
+        void OnImGuiRender() override;
         void OnEvent(Event& e) override;
 
     private:
@@ -74,7 +74,6 @@ namespace Hazel
         // UI Panels
         void UIToolbar();
 
-    private:
         // editor textures
         RHISampler* m_UISampler = nullptr;
         RHISampler* m_CheckerboardSampler = nullptr;

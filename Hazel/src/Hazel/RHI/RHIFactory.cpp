@@ -44,9 +44,9 @@ namespace Hazel
                 return {};
             }
 
-            std::string contents(static_cast<size_t>(size), '\0');
+            std::string contents(size, '\0');
             input.seekg(0, std::ios::beg);
-            input.read(contents.data(), static_cast<std::streamsize>(size));
+            input.read(contents.data(), size);
             return contents;
         }
 

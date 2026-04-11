@@ -9,7 +9,9 @@
 namespace Hazel
 {
     RenderScene::RenderScene(Renderer* renderer)
-        : m_Renderer(renderer) {}
+        : m_Renderer(renderer)
+    {
+    }
 
     void RenderScene::Update(const std::vector<RenderSceneUpdatePayload>& payload)
     {

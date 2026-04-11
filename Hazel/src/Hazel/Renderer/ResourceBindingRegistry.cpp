@@ -146,16 +146,13 @@ namespace Hazel
             m_MaterialCount++;
             return slot;
         }
-        else
+        m_Materials.push_back(material);
+        m_Resized = true;
+        for (auto& dirtySlot : m_MaterialIsDirty)
         {
-            m_Materials.push_back(material);
-            m_Resized = true;
-            for (auto& dirtySlot : m_MaterialIsDirty)
-            {
-                dirtySlot.push_back(true);
-            }
-            return m_MaterialCount++;
+            dirtySlot.push_back(true);
         }
+        return m_MaterialCount++;
     }
 
     void ShaderMaterialSlot::UnregisterMaterial(uint32_t slot)
@@ -764,7 +761,6 @@ namespace Hazel
         std::unique_lock combinedLock(m_CombinedImageSamplerMutex);
         m_CombinedImageSamplers.clear();
         combinedLock.unlock();
-
     }
 
     void ResourceBindingRegistry::CreateOrUpdatePerShaderResources()

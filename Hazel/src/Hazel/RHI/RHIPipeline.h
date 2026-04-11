@@ -88,7 +88,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIColorComponentFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIColorComponentFlagBits> : std::true_type
+    {
+    };
 
     using RHIColorComponentFlags = Flags<RHIColorComponentFlagBits>;
 
@@ -111,7 +113,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIPipelineStageFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIPipelineStageFlagBits> : std::true_type
+    {
+    };
 
     using RHIPipelineStages = Flags<RHIPipelineStageFlagBits>;
 
@@ -142,7 +146,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIPipelineAccessFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIPipelineAccessFlagBits> : std::true_type
+    {
+    };
 
     using RHIPipelineAccessFlags = Flags<RHIPipelineAccessFlagBits>;
 
@@ -177,7 +183,7 @@ namespace Hazel
         RHIBlendFactor dstAlphaBlendFactor = RHIBlendFactor::Zero;
         RHIBlendOp alphaBlendOp = RHIBlendOp::Add;
         RHIColorComponentFlags colorWriteMask = RHIColorComponentFlagBits::R | RHIColorComponentFlagBits::G
-            | RHIColorComponentFlagBits::B | RHIColorComponentFlagBits::A;
+                                                | RHIColorComponentFlagBits::B | RHIColorComponentFlagBits::A;
 
         bool operator==(const RHIColorBlendAttachmentDesc&) const = default;
     };

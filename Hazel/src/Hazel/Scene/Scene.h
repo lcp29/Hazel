@@ -143,7 +143,6 @@ namespace Hazel
         glm::mat4 GetWorldTransform(entt::entity entity) const;
         void AddTransformPayloadsForSubtree(entt::entity entity, const glm::mat4& globalTransform);
 
-    private:
         entt::registry m_Registry;
         uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
         bool m_IsRunning = false;

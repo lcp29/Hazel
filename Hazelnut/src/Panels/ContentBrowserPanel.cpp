@@ -198,7 +198,7 @@ namespace Hazel
 
         if (ImGui::BeginPopupModal("Create Asset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            const char* assetTypeName = "";
+            auto assetTypeName = "";
             switch (m_PendingAssetType)
             {
                 case AssetType::Material:

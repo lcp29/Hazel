@@ -191,7 +191,7 @@ namespace Hazel
             }
         }
 
-        m_IsUniformQueue = uniqueQueueFamilies.size() == 1 ? true : false;
+        m_IsUniformQueue = uniqueQueueFamilies.size() == 1;
 
         std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
         queueCreateInfos.reserve(uniqueQueueFamilies.size());

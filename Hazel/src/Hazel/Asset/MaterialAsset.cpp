@@ -179,7 +179,7 @@ namespace Hazel
             return;
         }
 
-        ShaderAsset* shaderAsset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(m_Shader));
+        auto shaderAsset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(m_Shader));
         if (!shaderAsset)
         {
             SetShader(-1);

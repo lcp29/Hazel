@@ -146,7 +146,9 @@ namespace Hazel
           m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
           m_Desc(desc),
           m_Images(std::move(images)),
-          m_ImageViews(std::move(imageViews)) {}
+          m_ImageViews(std::move(imageViews))
+    {
+    }
 
     GPURenderTextureAsset::~GPURenderTextureAsset()
     {

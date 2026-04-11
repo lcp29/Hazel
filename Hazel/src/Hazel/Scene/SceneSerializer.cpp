@@ -57,7 +57,7 @@ namespace Hazel
         if (!data["Scene"])
             return false;
 
-        std::string sceneName = data["Scene"].as<std::string>();
+        auto sceneName = data["Scene"].as<std::string>();
         HZ_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
         m_Scene->SetViewportCamera(Camera::Deserialize(data["ViewportCamera"]));
@@ -79,7 +79,7 @@ namespace Hazel
 
             for (auto entityNode : entities)
             {
-                UUID uuid = entityNode["ID"]["ID"][0].as<UUID>();
+                auto uuid = entityNode["ID"]["ID"][0].as<UUID>();
                 Entity entity = m_Scene->GetEntityByUUID(uuid);
                 entity.BuildRelationship(entityNode["Relationship"]);
             }

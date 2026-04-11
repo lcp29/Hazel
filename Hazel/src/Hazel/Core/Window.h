@@ -23,14 +23,16 @@ namespace Hazel
         WindowProps(const std::string& title = "Hazel Engine", uint32_t width = 1600, uint32_t height = 900)
             : Title(title)
               , Width(width)
-              , Height(height) {}
+              , Height(height)
+        {
+        }
     };
 
     // Interface representing a desktop system based Window
     class Window
     {
     public:
-        using EventCallbackFn = std::function<void(Event &)>;
+        using EventCallbackFn = std::function<void(Event&)>;
 
         virtual ~Window() = default;
 

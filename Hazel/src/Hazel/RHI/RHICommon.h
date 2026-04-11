@@ -58,7 +58,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<DebugMessageSeverityFlagBits> : std::true_type {};
+    struct InRHIFlagScope<DebugMessageSeverityFlagBits> : std::true_type
+    {
+    };
 
     using DebugMessageSeverity = Flags<DebugMessageSeverityFlagBits>;
 
@@ -70,7 +72,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<DebugMessageTypeFlagBits> : std::true_type {};
+    struct InRHIFlagScope<DebugMessageTypeFlagBits> : std::true_type
+    {
+    };
 
     using DebugMessageType = Flags<DebugMessageTypeFlagBits>;
 

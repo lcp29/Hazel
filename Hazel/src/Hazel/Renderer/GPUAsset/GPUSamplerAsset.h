@@ -24,7 +24,9 @@ namespace Hazel
                         RHISampler* sampler,
                         uint64_t lastReferencedFrame = 0)
             : GPUAsset(uuid, AssetType::Sampler, renderer, sourceVersion, lastReferencedFrame),
-              m_IsValid(true), m_Desc(desc), m_Sampler(sampler) {}
+              m_IsValid(true), m_Desc(desc), m_Sampler(sampler)
+        {
+        }
 
         ~GPUSamplerAsset() override;
 

@@ -37,7 +37,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIImagePlaneFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIImagePlaneFlagBits> : std::true_type
+    {
+    };
 
     using RHIImagePlanes = Flags<RHIImagePlaneFlagBits>;
 
@@ -52,7 +54,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIImageUsageFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIImageUsageFlagBits> : std::true_type
+    {
+    };
 
     using RHIImageUsages = Flags<RHIImageUsageFlagBits>;
 

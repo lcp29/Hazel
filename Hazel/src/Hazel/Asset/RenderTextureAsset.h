@@ -139,7 +139,9 @@ namespace Hazel
         RenderTextureAsset() = delete;
 
         RenderTextureAsset(AssetRegistryTerm* registryTerm, const RenderTextureAssetMeta& meta)
-            : Asset(registryTerm), m_Meta(meta) {}
+            : Asset(registryTerm), m_Meta(meta)
+        {
+        }
 
         uint64_t GetVersion() const final
         {

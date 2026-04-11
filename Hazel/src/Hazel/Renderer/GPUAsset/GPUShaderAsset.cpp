@@ -19,7 +19,9 @@ namespace Hazel
           m_IsValid(true),
           m_VertexShader(vertexShader),
           m_FragmentShader(fragmentShader),
-          m_Reflection(reflection) {}
+          m_Reflection(reflection)
+    {
+    }
 
     GPUShaderAsset::~GPUShaderAsset()
     {

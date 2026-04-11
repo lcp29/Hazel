@@ -183,7 +183,9 @@ namespace Hazel
     {
     public:
         SamplerAsset(AssetRegistryTerm* registryTerm, SamplerAssetMeta meta)
-            : Asset(registryTerm), m_Meta(std::move(meta)) {}
+            : Asset(registryTerm), m_Meta(std::move(meta))
+        {
+        }
 
         uint64_t GetVersion() const final
         {

@@ -105,7 +105,9 @@ namespace Hazel
 
     private:
         Instrumentor()
-            : m_CurrentSession(nullptr) {}
+            : m_CurrentSession(nullptr)
+        {
+        }
 
         ~Instrumentor()
         {
@@ -137,7 +139,6 @@ namespace Hazel
             }
         }
 
-    private:
         std::mutex m_Mutex;
         InstrumentationSession* m_CurrentSession;
         std::ofstream m_OutputStream;
@@ -197,7 +198,7 @@ namespace Hazel
             {
                 size_t matchIndex = 0;
                 while (matchIndex < K - 1 && srcIndex + matchIndex < N - 1
-                    && expr[srcIndex + matchIndex] == remove[matchIndex])
+                       && expr[srcIndex + matchIndex] == remove[matchIndex])
                     matchIndex++;
                 if (matchIndex == K - 1)
                     srcIndex += matchIndex;
@@ -207,7 +208,7 @@ namespace Hazel
             return result;
         }
     } // namespace InstrumentorUtils
-} // namespace Hazel
+}     // namespace Hazel
 
 #define HZ_PROFILE 0
 #if HZ_PROFILE

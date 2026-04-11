@@ -91,7 +91,9 @@ namespace Hazel
         MeshAsset(AssetRegistryTerm* registryTerm,
                   const MeshAssetMeta& meta,
                   MeshAssetData data)
-            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data)) {}
+            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data))
+        {
+        }
 
         uint64_t GetVersion() const final
         {

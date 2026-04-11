@@ -51,7 +51,9 @@ namespace Hazel
         ComputeShaderAsset(AssetRegistryTerm* registryTerm,
                            const ComputeShaderAssetMeta& meta,
                            ComputeShaderAssetData data)
-            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data)) {}
+            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data))
+        {
+        }
 
         uint64_t GetVersion() const final
         {

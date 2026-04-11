@@ -149,8 +149,7 @@ namespace Hazel
         {
             s_Data->AssemblyReloadPending = true;
 
-            Application::Get().SubmitToMainThread([]()
-            {
+            Application::Get().SubmitToMainThread([]() {
                 s_Data->AppAssemblyFileWatcher.reset();
                 ScriptEngine::ReloadAssembly();
             });
@@ -291,7 +290,7 @@ namespace Hazel
     void ScriptEngine::OnCreateEntity(Entity entity)
     {
         const auto& sc = entity.GetComponent<ScriptComponent>();
-        if (ScriptEngine::EntityClassExists(sc.className))
+        if (EntityClassExists(sc.className))
         {
             UUID entityID = entity.GetUUID();
 
@@ -299,7 +298,7 @@ namespace Hazel
             s_Data->EntityInstances[entityID] = instance;
 
             // Copy field values
-            if (s_Data->EntityScriptFields.find(entityID) != s_Data->EntityScriptFields.end())
+            if (s_Data->EntityScriptFields.contains(entityID))
             {
                 const ScriptFieldMap& fieldMap = s_Data->EntityScriptFields.at(entityID);
                 for (const auto& [name, fieldInstance] : fieldMap)
@@ -313,14 +312,14 @@ namespace Hazel
     void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
     {
         UUID entityUUID = entity.GetUUID();
-        if (s_Data->EntityInstances.find(entityUUID) != s_Data->EntityInstances.end())
+        if (s_Data->EntityInstances.contains(entityUUID))
         {
             Ref<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
-            instance->InvokeOnUpdate((float)ts);
+            instance->InvokeOnUpdate(ts);
         }
         else
         {
-            HZ_CORE_ERROR("Could not find ScriptInstance for entity {}", (uint64_t)entityUUID);
+            HZ_CORE_ERROR("Could not find ScriptInstance for entity {}", static_cast<uint64_t>(entityUUID));
         }
     }
 
@@ -340,7 +339,7 @@ namespace Hazel
 
     Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
     {
-        if (s_Data->EntityClasses.find(name) == s_Data->EntityClasses.end())
+        if (!s_Data->EntityClasses.contains(name))
             return nullptr;
 
         return s_Data->EntityClasses.at(name);
@@ -434,7 +433,7 @@ namespace Hazel
 
     MonoObject* ScriptEngine::GetManagedInstance(UUID uuid)
     {
-        HZ_CORE_ASSERT(s_Data->EntityInstances.find(uuid) != s_Data->EntityInstances.end());
+        HZ_CORE_ASSERT(s_Data->EntityInstances.contains(uuid));
         return s_Data->EntityInstances.at(uuid)->GetManagedObject();
     }
 
@@ -455,7 +454,9 @@ namespace Hazel
           , m_ClassName(className)
     {
         m_MonoClass = mono_class_from_name(
-            isCore ? s_Data->CoreAssemblyImage : s_Data->AppAssemblyImage, classNamespace.c_str(), className.c_str());
+            isCore ? s_Data->CoreAssemblyImage : s_Data->AppAssemblyImage,
+            classNamespace.c_str(),
+            className.c_str());
     }
 
     MonoObject* ScriptClass::Instantiate()

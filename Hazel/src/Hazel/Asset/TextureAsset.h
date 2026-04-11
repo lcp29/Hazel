@@ -105,7 +105,9 @@ namespace Hazel
         TextureAsset(AssetRegistryTerm* registryTerm,
                      const TextureAssetMeta& meta,
                      TextureAssetData textureData)
-            : Asset(registryTerm), m_Meta(meta), m_TextureData(std::move(textureData)) {}
+            : Asset(registryTerm), m_Meta(meta), m_TextureData(std::move(textureData))
+        {
+        }
 
         uint64_t GetVersion() const final
         {

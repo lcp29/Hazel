@@ -26,7 +26,9 @@ namespace Hazel
             : GPUAsset(uuid, assetType, renderer, 0, lastReferencedFrame),
               m_Isvalid(true),
               m_Shader(shader),
-              m_Pipeline(pipeline) {}
+              m_Pipeline(pipeline)
+        {
+        }
 
         ~GPUGraphicsPipelineAsset() override;
 

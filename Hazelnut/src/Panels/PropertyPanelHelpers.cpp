@@ -117,7 +117,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawFormatCombo(const char* label, RHIFormat& format)
     {
-        static const RHIFormat formats[] = {
+        static constexpr RHIFormat formats[] = {
             RHIFormat::R8UNorm, RHIFormat::R32SInt, RHIFormat::RG8UNorm,
             RHIFormat::R32SFloat, RHIFormat::RG32SFloat, RHIFormat::RGB32SFloat, RHIFormat::RG16UNorm,
             RHIFormat::BGRA8UNorm, RHIFormat::BGRA8SRGB, RHIFormat::RGBA8UNorm, RHIFormat::RGBA8SRGB,
@@ -160,7 +160,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawPolygonModeCombo(const char* label, RHIPolygonMode& polygonMode)
     {
-        static const RHIPolygonMode polygonModes[] = {RHIPolygonMode::Fill, RHIPolygonMode::Line};
+        static constexpr RHIPolygonMode polygonModes[] = {RHIPolygonMode::Fill, RHIPolygonMode::Line};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetPolygonModeName(polygonMode)))
@@ -201,7 +201,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawCullModeCombo(const char* label, RHICullMode& cullMode)
     {
-        static const RHICullMode cullModes[] = {RHICullMode::None, RHICullMode::Front, RHICullMode::Back};
+        static constexpr RHICullMode cullModes[] = {RHICullMode::None, RHICullMode::Front, RHICullMode::Back};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetCullModeName(cullMode)))
@@ -250,7 +250,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawViewTypeCombo(const char* label, RHIImageViewType& viewType)
     {
-        static const RHIImageViewType viewTypes[] = {
+        static constexpr RHIImageViewType viewTypes[] = {
             Image1D, Image2D, Image3D, Cube, Image1DArray, Image2DArray, CubeArray
         };
 
@@ -281,7 +281,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawFilterCombo(const char* label, RHISamplerFilter& filter)
     {
-        static const RHISamplerFilter filters[] = {RHISamplerFilter::Nearest, RHISamplerFilter::Linear};
+        static constexpr RHISamplerFilter filters[] = {RHISamplerFilter::Nearest, RHISamplerFilter::Linear};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetFilterName(filter)))
@@ -322,7 +322,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawAddressModeCombo(const char* label, RHISamplerAddressMode& addressMode)
     {
-        static const RHISamplerAddressMode modes[] = {
+        static constexpr RHISamplerAddressMode modes[] = {
             RHISamplerAddressMode::Repeat,
             RHISamplerAddressMode::MirroredRepeat,
             RHISamplerAddressMode::ClampToEdge,
@@ -376,7 +376,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawCompareOpCombo(const char* label, RHICompareOp& compareOp)
     {
-        static const RHICompareOp compareOps[] = {
+        static constexpr RHICompareOp compareOps[] = {
             RHICompareOp::Never, RHICompareOp::Less, RHICompareOp::Equal, RHICompareOp::LessOrEqual,
             RHICompareOp::Greater, RHICompareOp::NotEqual, RHICompareOp::GreaterOrEqual, RHICompareOp::Always
         };
@@ -403,7 +403,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawImageUsageCheckbox(const char* label, RHIImageUsages& usages, RHIImageUsageFlagBits flag)
     {
-        bool enabled = static_cast<bool>(usages & flag);
+        bool enabled = usages & flag;
         if (ImGui::Checkbox(label, &enabled))
         {
             if (enabled)

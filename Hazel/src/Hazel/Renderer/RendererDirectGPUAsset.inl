@@ -72,43 +72,44 @@ namespace Hazel
 
             if (shouldSpawn)
             {
-                std::thread([this, material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat, pipelineAsset] {
-                    auto materialResult = ResolveGPUAssetBlocked(material, AssetType::Material);
-                    auto materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
-                    if (!materialAsset)
-                    {
+                std::thread(
+                    [this, material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat, pipelineAsset] {
+                        auto materialResult = ResolveGPUAssetBlocked(material, AssetType::Material);
+                        auto materialAsset = static_cast<CachedMaterial*>(materialResult.asset);
+                        if (!materialAsset)
+                        {
+                            std::unique_lock assetLock(pipelineAsset->GetMutex());
+                            pipelineAsset->SetLoading(false);
+                            assetLock.unlock();
+                            pipelineAsset->GetCondition().notify_all();
+                            pipelineAsset->Return();
+                            return;
+                        }
+
+                        UUID shaderUUID = materialAsset->GetShader();
+                        auto shaderResult = ResolveGPUAssetBlocked(shaderUUID, AssetType::Shader);
+                        if (!shaderResult.asset)
+                        {
+                            std::unique_lock assetLock(pipelineAsset->GetMutex());
+                            pipelineAsset->SetLoading(false);
+                            assetLock.unlock();
+                            pipelineAsset->GetCondition().notify_all();
+                            pipelineAsset->Return();
+                            return;
+                        }
+
+                        auto pipeline = CreateGraphicsPipeline(material,
+                                                               colorAttachmentFormats,
+                                                               colorBlendAttachments,
+                                                               depthStencilFormat,
+                                                               this);
                         std::unique_lock assetLock(pipelineAsset->GetMutex());
+                        pipelineAsset->SetPipeline(pipeline);
                         pipelineAsset->SetLoading(false);
                         assetLock.unlock();
                         pipelineAsset->GetCondition().notify_all();
                         pipelineAsset->Return();
-                        return;
-                    }
-
-                    UUID shaderUUID = materialAsset->GetShader();
-                    auto shaderResult = ResolveGPUAssetBlocked(shaderUUID, AssetType::Shader);
-                    if (!shaderResult.asset)
-                    {
-                        std::unique_lock assetLock(pipelineAsset->GetMutex());
-                        pipelineAsset->SetLoading(false);
-                        assetLock.unlock();
-                        pipelineAsset->GetCondition().notify_all();
-                        pipelineAsset->Return();
-                        return;
-                    }
-
-                    auto pipeline = CreateGraphicsPipeline(material,
-                                                           colorAttachmentFormats,
-                                                           colorBlendAttachments,
-                                                           depthStencilFormat,
-                                                           this);
-                    std::unique_lock assetLock(pipelineAsset->GetMutex());
-                    pipelineAsset->SetPipeline(pipeline);
-                    pipelineAsset->SetLoading(false);
-                    assetLock.unlock();
-                    pipelineAsset->GetCondition().notify_all();
-                    pipelineAsset->Return();
-                }).detach();
+                    }).detach();
                 return GPUAssetHandle(nullptr, false);
             }
 

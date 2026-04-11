@@ -31,7 +31,6 @@ namespace Hazel
         void DrawEntityProperties(Entity entity);
         void DrawAssetProperties();
 
-    private:
         Ref<Scene> m_Context;
         Entity m_SelectedEntity;
         std::filesystem::path m_SelectedMetaPath;

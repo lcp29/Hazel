@@ -16,7 +16,9 @@
 namespace Hazel
 {
     AssetManager::AssetManager(Project* project, Renderer* renderer)
-        : m_Project(project), m_Renderer(renderer) {}
+        : m_Project(project), m_Renderer(renderer)
+    {
+    }
 
     void AssetManager::WriteAllMetaFiles() const
     {
@@ -100,7 +102,7 @@ namespace Hazel
                     }
                 }
 
-                std::unique_ptr<AssetRegistryTerm> registryTerm = std::make_unique<AssetRegistryTerm>();
+                auto registryTerm = std::make_unique<AssetRegistryTerm>();
                 registryTerm->type = assetType;
                 registryTerm->filePath = assetPath;
                 registryTerm->state = AssetState::Unloaded;

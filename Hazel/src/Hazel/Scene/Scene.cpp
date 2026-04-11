@@ -26,7 +26,9 @@ namespace Hazel
         m_ViewportCameraController.SetCamera(&m_ViewportCamera);
     }
 
-    Scene::~Scene() {}
+    Scene::~Scene()
+    {
+    }
 
     template <typename... Component>
     static void
@@ -243,7 +245,9 @@ namespace Hazel
         }
     }
 
-    void Scene::OnUpdateEditor(Timestep ts) {}
+    void Scene::OnUpdateEditor(Timestep ts)
+    {
+    }
 
     void Scene::OnViewportResize(uint32_t width, uint32_t height)
     {
@@ -285,7 +289,7 @@ namespace Hazel
     Entity Scene::GetEntityByUUID(UUID uuid)
     {
         // TODO(Yan): Maybe should be assert
-        if (m_EntityMap.find(uuid) != m_EntityMap.end())
+        if (m_EntityMap.contains(uuid))
             return {m_EntityMap.at(uuid), this};
 
         return {};
@@ -414,26 +418,42 @@ namespace Hazel
     }
 
     template <>
-    void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component) {}
+    void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component) {}
+    void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<EntityRelationshipComponent>(Entity entity, EntityRelationshipComponent& component) {}
+    void Scene::OnComponentAdded<EntityRelationshipComponent>(Entity entity, EntityRelationshipComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component) {}
+    void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<MeshRendererComponent>(Entity entity, MeshRendererComponent& component) {}
+    void Scene::OnComponentAdded<MeshRendererComponent>(Entity entity, MeshRendererComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component) {}
+    void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component) {}
+    void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
+    {
+    }
 
     template <>
-    void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component) {}
+    void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+    {
+    }
 } // namespace Hazel

@@ -45,22 +45,26 @@ namespace Hazel
         template <typename T>
         T* As()
         {
-            return (T*)Data;
+            return reinterpret_cast<T*>(Data);
         }
 
         operator bool() const
         {
-            return (bool)Data;
+            return static_cast<bool>(Data);
         }
     };
 
     struct ScopedBuffer
     {
         ScopedBuffer(Buffer buffer)
-            : m_Buffer(buffer) {}
+            : m_Buffer(buffer)
+        {
+        }
 
         ScopedBuffer(uint64_t size)
-            : m_Buffer(size) {}
+            : m_Buffer(size)
+        {
+        }
 
         ~ScopedBuffer()
         {

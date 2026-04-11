@@ -33,16 +33,16 @@ namespace Hazel
 
     struct RHIImageViewComponentMapping
     {
-        RHIImageViewComponent r = RHIImageViewComponent::Identity;
-        RHIImageViewComponent g = RHIImageViewComponent::Identity;
-        RHIImageViewComponent b = RHIImageViewComponent::Identity;
-        RHIImageViewComponent a = RHIImageViewComponent::Identity;
+        RHIImageViewComponent r = Identity;
+        RHIImageViewComponent g = Identity;
+        RHIImageViewComponent b = Identity;
+        RHIImageViewComponent a = Identity;
     };
 
     struct RHIImageViewDesc
     {
         RHIFormat format = RHIFormat::Undefined;
-        RHIImageViewType viewType = RHIImageViewType::Image2D;
+        RHIImageViewType viewType = Image2D;
         RHIImageViewComponentMapping componentMapping;
         RHIImageSubresourceRange subresourceRange;
     };

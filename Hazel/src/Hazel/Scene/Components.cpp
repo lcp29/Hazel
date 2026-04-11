@@ -86,8 +86,8 @@ namespace Hazel
 
                 for (auto scriptField : scriptFields)
                 {
-                    std::string name = scriptField["Name"].as<std::string>();
-                    std::string typeString = scriptField["Type"].as<std::string>();
+                    auto name = scriptField["Name"].as<std::string>();
+                    auto typeString = scriptField["Type"].as<std::string>();
                     ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
                     ScriptFieldInstance& fieldInstance = entityFields[name];

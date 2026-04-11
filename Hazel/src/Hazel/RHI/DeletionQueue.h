@@ -25,14 +25,18 @@ namespace Hazel
             Operation() = default;
 
             Operation(std::function<void()> func)
-                : func(std::move(func)) {}
+                : func(std::move(func))
+            {
+            }
 
             template <typename F>
                 requires(!std::same_as<std::remove_cvref_t<F>, Operation>
-                    && !std::same_as<std::remove_cvref_t<F>, std::function<void()>>
-                    && std::is_invocable_r_v<void, F>)
+                         && !std::same_as<std::remove_cvref_t<F>, std::function<void()>>
+                         && std::is_invocable_r_v<void, F>)
             Operation(F&& f)
-                : func(std::forward<F>(f)) {}
+                : func(std::forward<F>(f))
+            {
+            }
 
             void operator()() const
             {

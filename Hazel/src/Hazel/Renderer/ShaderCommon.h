@@ -26,7 +26,7 @@ namespace Hazel
             return {};
         }
         fileStream.seekg(0, std::ios::end);
-        size_t fileSize = static_cast<size_t>(fileStream.tellg());
+        size_t fileSize = fileStream.tellg();
         fileStream.seekg(0, std::ios::beg);
         std::string fileContent(fileSize, '\0');
         fileStream.read(fileContent.data(), fileSize);

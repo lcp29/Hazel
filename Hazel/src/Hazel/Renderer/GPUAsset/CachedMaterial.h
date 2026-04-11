@@ -39,7 +39,9 @@ namespace Hazel
               m_Shader(shader),
               m_ShaderSourceVersion(shaderSourceVersion),
               m_PipelineState(pipelineState),
-              m_Properties(properties) {}
+              m_Properties(properties)
+        {
+        }
 
         ~CachedMaterial() override;
 

@@ -9,13 +9,13 @@
 #include <string>
 
 extern "C" {
-typedef struct _MonoClass MonoClass;
-typedef struct _MonoObject MonoObject;
-typedef struct _MonoMethod MonoMethod;
-typedef struct _MonoAssembly MonoAssembly;
-typedef struct _MonoImage MonoImage;
-typedef struct _MonoClassField MonoClassField;
-typedef struct _MonoString MonoString;
+using MonoClass = struct _MonoClass;
+using MonoObject = struct _MonoObject;
+using MonoMethod = struct _MonoMethod;
+using MonoAssembly = struct _MonoAssembly;
+using MonoImage = struct _MonoImage;
+using MonoClassField = struct _MonoClassField;
+using MonoString = struct _MonoString;
 }
 
 namespace Hazel
@@ -63,7 +63,7 @@ namespace Hazel
         T GetValue()
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
-            return *(T*)m_Buffer;
+            return *reinterpret_cast<T*>(m_Buffer);
         }
 
         template <typename T>
@@ -130,7 +130,7 @@ namespace Hazel
             if (!success)
                 return T();
 
-            return *(T*)s_FieldValueBuffer;
+            return *reinterpret_cast<T*>(s_FieldValueBuffer);
         }
 
         template <typename T>
@@ -150,7 +150,6 @@ namespace Hazel
         bool GetFieldValueInternal(const std::string& name, void* buffer);
         bool SetFieldValueInternal(const std::string& name, const void* value);
 
-    private:
         Ref<ScriptClass> m_ScriptClass;
 
         MonoObject* m_Instance = nullptr;
@@ -212,40 +211,40 @@ namespace Hazel
         {
             switch (fieldType)
             {
-            case ScriptFieldType::None:
-                return "None";
-            case ScriptFieldType::Float:
-                return "Float";
-            case ScriptFieldType::Double:
-                return "Double";
-            case ScriptFieldType::Bool:
-                return "Bool";
-            case ScriptFieldType::Char:
-                return "Char";
-            case ScriptFieldType::Byte:
-                return "Byte";
-            case ScriptFieldType::Short:
-                return "Short";
-            case ScriptFieldType::Int:
-                return "Int";
-            case ScriptFieldType::Long:
-                return "Long";
-            case ScriptFieldType::UByte:
-                return "UByte";
-            case ScriptFieldType::UShort:
-                return "UShort";
-            case ScriptFieldType::UInt:
-                return "UInt";
-            case ScriptFieldType::ULong:
-                return "ULong";
-            case ScriptFieldType::Vector2:
-                return "Vector2";
-            case ScriptFieldType::Vector3:
-                return "Vector3";
-            case ScriptFieldType::Vector4:
-                return "Vector4";
-            case ScriptFieldType::Entity:
-                return "Entity";
+                case ScriptFieldType::None:
+                    return "None";
+                case ScriptFieldType::Float:
+                    return "Float";
+                case ScriptFieldType::Double:
+                    return "Double";
+                case ScriptFieldType::Bool:
+                    return "Bool";
+                case ScriptFieldType::Char:
+                    return "Char";
+                case ScriptFieldType::Byte:
+                    return "Byte";
+                case ScriptFieldType::Short:
+                    return "Short";
+                case ScriptFieldType::Int:
+                    return "Int";
+                case ScriptFieldType::Long:
+                    return "Long";
+                case ScriptFieldType::UByte:
+                    return "UByte";
+                case ScriptFieldType::UShort:
+                    return "UShort";
+                case ScriptFieldType::UInt:
+                    return "UInt";
+                case ScriptFieldType::ULong:
+                    return "ULong";
+                case ScriptFieldType::Vector2:
+                    return "Vector2";
+                case ScriptFieldType::Vector3:
+                    return "Vector3";
+                case ScriptFieldType::Vector4:
+                    return "Vector4";
+                case ScriptFieldType::Entity:
+                    return "Entity";
             }
             HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
@@ -292,4 +291,4 @@ namespace Hazel
             return ScriptFieldType::None;
         }
     } // namespace Utils
-} // namespace Hazel
+}     // namespace Hazel

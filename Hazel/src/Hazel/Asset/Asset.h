@@ -47,7 +47,9 @@ namespace Hazel
         AssetRegistryTerm() = default;
 
         AssetRegistryTerm(UUID uuid, AssetType type, std::filesystem::path filePath)
-            : uuid(uuid), type(type), filePath(std::move(filePath)) {}
+            : uuid(uuid), type(type), filePath(std::move(filePath))
+        {
+        }
     };
 
     enum class GPUAssetLoadState
@@ -71,7 +73,9 @@ namespace Hazel
         Asset() = delete;
 
         explicit Asset(AssetRegistryTerm* registryTerm)
-            : m_RegistryTerm(registryTerm) {}
+            : m_RegistryTerm(registryTerm)
+        {
+        }
 
         virtual ~Asset() = default;
 

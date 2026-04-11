@@ -22,7 +22,9 @@ namespace Hazel
 {
     ImGuiLayer::ImGuiLayer(Renderer* renderer)
         : Layer("ImGuiLayer")
-          , m_Renderer(renderer) {}
+          , m_Renderer(renderer)
+    {
+    }
 
     void ImGuiLayer::OnAttach()
     {
@@ -60,7 +62,7 @@ namespace Hazel
         SetDarkThemeColors();
 
         Application& app = Application::Get();
-        GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
+        auto window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
 
         // Setup Platform/Renderer bindings
         RHIInstance* instance = m_Renderer->GetInstance();
@@ -93,13 +95,13 @@ namespace Hazel
         initInfo.UseDynamicRendering = true;
         initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         vk::ImageUsageFlags imageUsage = VulkanConvertImageUsages(RHIImageUsageFlagBits::ColorAttachment
-            | RHIImageUsageFlagBits::TransferDestination);
+                                                                  | RHIImageUsageFlagBits::TransferDestination);
         initInfo.PipelineInfoMain.SwapChainImageUsage = static_cast<VkImageUsageFlags>(imageUsage);
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {
             VkPipelineRenderingCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}
         };
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        VkFormat swapchainColorFormat =
+        auto swapchainColorFormat =
             static_cast<VkFormat>(VulkanConvertFormat(m_Renderer->GetSwapchain()->GetFormat()));
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainColorFormat;
 

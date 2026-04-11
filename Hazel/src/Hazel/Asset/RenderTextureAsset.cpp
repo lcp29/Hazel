@@ -156,8 +156,8 @@ namespace Hazel
             meta.m_Desc.depth = descNode["Depth"] ? descNode["Depth"].as<uint32_t>() : 1;
             meta.m_Desc.arrayLayers = descNode["ArrayLayers"] ? descNode["ArrayLayers"].as<uint32_t>() : 1;
             meta.m_Desc.viewType = descNode["ViewType"]
-                                     ? static_cast<RHIImageViewType>(descNode["ViewType"].as<int>())
-                                     : Image2D;
+                                       ? static_cast<RHIImageViewType>(descNode["ViewType"].as<int>())
+                                       : Image2D;
             meta.m_Desc.useMipmap = descNode["UseMipmap"] ? descNode["UseMipmap"].as<bool>() : false;
             meta.m_Desc.perFrame = descNode["PerFrame"] ? descNode["PerFrame"].as<bool>() : true;
             meta.m_Desc.format = descNode["Format"] ? TryParseFormat(descNode["Format"]) : RHIFormat::BGRA8UNorm;
@@ -175,7 +175,7 @@ namespace Hazel
         meta.m_Desc.height = 1;
         meta.m_Desc.depth = 1;
         meta.m_Desc.arrayLayers = 1;
-        meta.m_Desc.viewType = RHIImageViewType::Image2D;
+        meta.m_Desc.viewType = Image2D;
         meta.m_Desc.useMipmap = false;
         meta.m_Desc.perFrame = false;
         meta.m_Desc.format = RHIFormat::BGRA8UNorm;

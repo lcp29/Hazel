@@ -4,7 +4,8 @@
 
 #include "GPUGraphicsPipelineAsset.h"
 
-namespace Hazel {
+namespace Hazel
+{
     GPUGraphicsPipelineAsset::~GPUGraphicsPipelineAsset()
     {
         GPUGraphicsPipelineAsset::ReleaseImmediate();

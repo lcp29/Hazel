@@ -56,7 +56,9 @@ namespace Hazel
           m_PerFrame(desc.perFrame),
           m_Desc(desc),
           m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
-          m_Buffers(std::move(buffers)) {}
+          m_Buffers(std::move(buffers))
+    {
+    }
 
     GPURenderBufferAsset::~GPURenderBufferAsset()
     {

@@ -19,7 +19,9 @@ namespace Hazel
         Transform(const Transform&) = default;
 
         Transform(const glm::vec3& translation)
-            : translation(translation) {}
+            : translation(translation)
+        {
+        }
 
         Transform(const glm::mat4& transform)
         {

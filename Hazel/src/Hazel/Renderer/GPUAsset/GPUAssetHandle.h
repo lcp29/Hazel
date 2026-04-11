@@ -16,10 +16,14 @@ namespace Hazel
         GPUAssetHandle& operator=(const GPUAssetHandle&) = delete;
 
         GPUAssetHandle(GPUAsset* asset)
-            : asset(asset) {}
+            : asset(asset)
+        {
+        }
 
         GPUAssetHandle(GPUAsset* asset, bool returnAfterUse)
-            : asset(asset), returnAfterUse(returnAfterUse) {}
+            : asset(asset), returnAfterUse(returnAfterUse)
+        {
+        }
 
         GPUAssetHandle(GPUAssetHandle&& other) noexcept
             : asset(other.asset), returnAfterUse(other.returnAfterUse)

@@ -21,7 +21,9 @@ namespace Hazel
                           uint64_t lastReferencedFrame)
             : m_UUID(uuid), m_Renderer(renderer), m_SourceVersion(sourceVersion),
               m_LastReferencedFrame(lastReferencedFrame),
-              m_Type(assetType) {}
+              m_Type(assetType)
+        {
+        }
 
         virtual ~GPUAsset() = default;
 

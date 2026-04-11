@@ -208,14 +208,11 @@ namespace Hazel
             float farClip = node["FarClip"].as<float>();
             return Perspective(fovX, aspectRatio, nearClip, farClip);
         }
-        else
-        {
-            float orthoWidth = node["OrthoWidth"].as<float>();
-            float orthoAspectRatio = node["OrthoAspectRatio"].as<float>();
-            float orthoNearClip = node["OrthoNearClip"].as<float>();
-            float orthoFarClip = node["OrthoFarClip"].as<float>();
-            return Orthographic(orthoWidth, orthoAspectRatio, orthoNearClip, orthoFarClip);
-        }
+        float orthoWidth = node["OrthoWidth"].as<float>();
+        float orthoAspectRatio = node["OrthoAspectRatio"].as<float>();
+        float orthoNearClip = node["OrthoNearClip"].as<float>();
+        float orthoFarClip = node["OrthoFarClip"].as<float>();
+        return Orthographic(orthoWidth, orthoAspectRatio, orthoNearClip, orthoFarClip);
     }
 
     void Camera::UpdateMatrices()

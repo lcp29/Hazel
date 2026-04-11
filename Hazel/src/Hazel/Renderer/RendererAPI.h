@@ -13,7 +13,6 @@ namespace Hazel
             Vulkan = 1
         };
 
-    public:
         static API GetAPI()
         {
             return s_API;

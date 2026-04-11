@@ -20,7 +20,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIShaderStageFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIShaderStageFlagBits> : std::true_type
+    {
+    };
 
     using RHIShaderStages = Flags<RHIShaderStageFlagBits>;
 

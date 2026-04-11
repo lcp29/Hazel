@@ -23,13 +23,13 @@ namespace Hazel
     inline RHIBufferCpuAccess operator|(RHIBufferCpuAccess lhs, RHIBufferCpuAccess rhs)
     {
         return static_cast<RHIBufferCpuAccess>(static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(lhs)
-            | static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
+                                               | static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
     }
 
     inline RHIBufferCpuAccess operator&(RHIBufferCpuAccess lhs, RHIBufferCpuAccess rhs)
     {
         return static_cast<RHIBufferCpuAccess>(static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(lhs)
-            & static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
+                                               & static_cast<std::underlying_type_t<RHIBufferCpuAccess>>(rhs));
     }
 
     enum class RHIBufferUsageFlagBits : uint16_t
@@ -47,7 +47,9 @@ namespace Hazel
     };
 
     template <>
-    struct InRHIFlagScope<RHIBufferUsageFlagBits> : std::true_type {};
+    struct InRHIFlagScope<RHIBufferUsageFlagBits> : std::true_type
+    {
+    };
 
     using RHIBufferUsages = Flags<RHIBufferUsageFlagBits>;
 

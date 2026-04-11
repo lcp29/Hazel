@@ -132,10 +132,14 @@ namespace Hazel
               , m_OrthoWidth(orthoWidth)
               , m_OrthoAspectRatio(orthoAspectRatio)
               , m_OrthoNearClip(orthoNearClip)
-              , m_OrthoFarClip(orthoFarClip) {}
+              , m_OrthoFarClip(orthoFarClip)
+        {
+        }
 
         Camera(const glm::mat4& projection)
-            : m_Projection(projection) {}
+            : m_Projection(projection)
+        {
+        }
 
         // functions for updating one representation from another
         void UpdateMatrices();
@@ -157,7 +161,9 @@ namespace Hazel
         float m_OrthoFarClip = DefaultOrthoFar;
 
         // projection matrix representation
-        glm::mat4 m_Projection = glm::perspective(DefaultPerspectiveFovX, 1.0f, DefaultPerspectiveNear,
+        glm::mat4 m_Projection = glm::perspective(DefaultPerspectiveFovX,
+                                                  1.0f,
+                                                  DefaultPerspectiveNear,
                                                   DefaultPerspectiveFar);
 
         // viewport information
