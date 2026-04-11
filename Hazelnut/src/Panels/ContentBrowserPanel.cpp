@@ -62,8 +62,7 @@ namespace Hazel
 
         float panelWidth = ImGui::GetContentRegionAvail().x;
         int columnCount = static_cast<int>(panelWidth / cellSize);
-        if (columnCount < 1)
-            columnCount = 1;
+        columnCount = std::max(columnCount, 1);
 
         ImGui::Columns(columnCount, nullptr, false);
 

@@ -6,7 +6,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 option(HAZEL_BUILD_SCRIPTCORE "Build Hazel-ScriptCore" ON)
 option(HAZEL_BUILD_HAZELNUT "Build Hazelnut" ON)
-option(HAZEL_BUILD_SANDBOX "Build Sandbox" ON)
 
 set(HAZEL_VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/vendor)
 
@@ -33,12 +32,10 @@ add_subdirectory(Hazel)
 add_subdirectory(Hazelnut/SandboxProject/Assets/Scripts)
 add_subdirectory(Hazel-ScriptCore)
 add_subdirectory(Hazelnut)
-add_subdirectory(Sandbox)
 
 set_property(TARGET Hazel PROPERTY FOLDER "Core")
 set_property(TARGET Hazel-ScriptCore PROPERTY FOLDER "Core")
 set_property(TARGET Hazelnut PROPERTY FOLDER "Tools")
-set_property(TARGET Sandbox PROPERTY FOLDER "Misc")
 
 if(MSVC AND TARGET Hazelnut)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Hazelnut)
