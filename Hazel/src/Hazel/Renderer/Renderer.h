@@ -99,21 +99,21 @@ namespace Hazel
         GPUAssetHandle ResolveGPUAssetBlocked(UUID uuid, AssetType type);
 
         GPUAssetHandle ResolveGPUGraphicsPipeline(UUID material,
+                                                  const std::vector<RHIFormat>& colorAttachmentFormats,
+                                                  const std::vector<RHIColorBlendAttachmentDesc>&
+                                                  colorBlendAttachments,
+                                                  RHIFormat depthStencilFormat);
+        GPUAssetHandle ResolveGPUGraphicsPipelineBlocked(UUID material,
                                                          const std::vector<RHIFormat>& colorAttachmentFormats,
                                                          const std::vector<RHIColorBlendAttachmentDesc>&
                                                          colorBlendAttachments,
                                                          RHIFormat depthStencilFormat);
-        GPUAssetHandle ResolveGPUGraphicsPipelineBlocked(UUID material,
-                                                                const std::vector<RHIFormat>& colorAttachmentFormats,
-                                                                const std::vector<RHIColorBlendAttachmentDesc>&
-                                                                colorBlendAttachments,
-                                                                RHIFormat depthStencilFormat);
         GPUAssetHandle ResolveGPURenderTexture(const RenderTextureDesc& desc,
-                                                      uint64_t lastReferencedFrame = -1);
+                                               uint64_t lastReferencedFrame = -1);
         GPUAssetHandle ResolveGPURenderBuffer(const RenderBufferDesc& desc,
-                                                     uint64_t lastReferencedFrame = -1);
+                                              uint64_t lastReferencedFrame = -1);
         GPUAssetHandle ResolveGPUSampler(const RHISamplerDesc& desc,
-                                                uint64_t lastReferencedFrame = -1);
+                                         uint64_t lastReferencedFrame = -1);
 
         uint32_t RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material);
         void UnregisterMaterial(UUID shader, uint64_t shaderSourceVersion, uint32_t materialID);
@@ -133,8 +133,9 @@ namespace Hazel
                              const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                              const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                              const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
-                             RHIOffset2D renderOffset,
-                             RHIExtent2D renderViewSize);
+                             RHIRect2D renderArea,
+                             RHIRect2D viewportArea,
+                             RHIRect2D scissorArea);
 
         void RunGraphicsPass(RHICommandBuffer* cmd,
                              UUID overrideMaterial,
@@ -142,8 +143,9 @@ namespace Hazel
                              const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                              const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                              const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
-                             RHIOffset2D renderOffset,
-                             RHIExtent2D renderViewSize);
+                             RHIRect2D renderArea,
+                             RHIRect2D viewportArea,
+                             RHIRect2D scissorArea);
 
         // TODO: TEMP URGENT INTERVIEW
         void SetCameras(const std::vector<SceneCameraView> cameras) { m_Cameras = cameras; }

@@ -322,35 +322,36 @@ namespace Hazel
             image->GetCurrentState(),
             RHIImageResourceState::ShaderRead);
 
-        // separate object id map pass
-        OnObjectIDMapRender();
-
-        auto [mx, my] = ImGui::GetMousePos();
-
-        mx -= m_ViewportBounds[0].x;
-        my -= m_ViewportBounds[0].y;
-
-        glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-        my = viewportSize.y - my;
-
-        int mouseX = static_cast<int>(mx);
-        int mouseY = static_cast<int>(my);
-
-        uint64_t currentFrameIndex = m_Renderer->GetCurrentFrameIndex();
-        if (mouseX >= 0 && mouseY >= 0 && mouseX < static_cast<int>(viewportSize.x) &&
-            mouseY < static_cast<int>(viewportSize.y) &&
-            currentFrameIndex > 0)
+        if (m_ObjectIDNeedsPulling[m_Renderer->GetCurrentFrameInFlightIndex()])
         {
-            size_t pixelIndex = mouseY * static_cast<size_t>(viewportSize.x) + mouseX;
-
-            int pixelData =
-                *(static_cast<uint32_t*>(static_cast<GPURenderBufferAsset*>(
-                      m_ObjectIDRenderTextureBuffer->asset)->GetBuffer()->Map()) + pixelIndex);
-            m_HoveredEntity = pixelData == -1
+            auto* buffer = static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
+            auto idPointer = static_cast<int32_t*>(buffer->Map());
+            m_ClickedEntity = *idPointer == -1
                                   ? Entity()
-                                  : Entity(static_cast<entt::entity>(pixelData), m_ActiveScene.get());
+                                  : Entity(static_cast<entt::entity>(*idPointer), m_ActiveScene.get());
+            m_SceneHierarchyPanel.SetSelectedEntity(m_ClickedEntity);
+            m_ObjectIDNeedsPulling[m_Renderer->GetCurrentFrameInFlightIndex()] = false;
         }
 
+        int32_t mouseX = -1;
+        int32_t mouseY = -1;
+        std::unique_lock lock(m_ObjectIDRenderMutex);
+        if (m_ObjectIDPullingQueueBack < m_ObjectIDPullingQueueFront)
+        {
+            uint32_t queueIndex = m_ObjectIDPullingQueueBack % DefaultMouseObjectIDEventQueueSize;
+            mouseX = m_ObjectIDPullPositions[queueIndex][0];
+            mouseY = m_ObjectIDPullPositions[queueIndex][1];
+            m_ObjectIDNeedsPulling[m_Renderer->GetCurrentFrameInFlightIndex()] = true;
+            m_ObjectIDPullingQueueBack++;
+        }
+        lock.unlock();
+        if (m_ObjectIDNeedsPulling[m_Renderer->GetCurrentFrameInFlightIndex()])
+        {
+            if (mouseX >= 0 && mouseY >= 0)
+            {
+                OnObjectIDMapRender(mouseX, mouseY);
+            }
+        }
         OnOverlayRender();
     }
 
@@ -399,6 +400,9 @@ namespace Hazel
             m_ObjectIDRenderTextureBuffer = nullptr;
         }
 
+        m_ObjectIDNeedsPulling.clear();
+        m_ObjectIDPullPositions.clear();
+
         RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
         objectIDRenderTextureDesc.height = static_cast<uint32_t>(m_ViewportSize.y);
@@ -416,7 +420,7 @@ namespace Hazel
 
         RenderBufferDesc objectIDRenderBufferDesc{};
         objectIDRenderBufferDesc.perFrame = true;
-        objectIDRenderBufferDesc.size = objectIDRenderTextureDesc.width * objectIDRenderTextureDesc.height * 4;
+        objectIDRenderBufferDesc.size = 4;
         objectIDRenderBufferDesc.usages = RHIBufferUsageFlagBits::TransferDestination;
         objectIDRenderBufferDesc.cpuAccess = RHIBufferCpuAccess::Read;
         objectIDRenderBufferDesc.mapOnCreate = true;
@@ -426,9 +430,14 @@ namespace Hazel
 
         m_ObjectIDRenderTextureBuffer = std::make_unique<GPUAssetHandle>(
             m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc));
+
+        m_ObjectIDNeedsPulling.resize(m_Renderer->GetMaxFramesInFlight(), false);
+        m_ObjectIDPullPositions.resize(DefaultMouseObjectIDEventQueueSize, {-1, -1});
+        m_ObjectIDPullingQueueBack = 0;
+        m_ObjectIDPullingQueueFront = 0;
     }
 
-    void EditorLayer::OnObjectIDMapRender()
+    void EditorLayer::OnObjectIDMapRender(uint32_t x, uint32_t y)
     {
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
         auto* objectIDImage =
@@ -466,6 +475,18 @@ namespace Hazel
         depthStencilDesc.clearDepthStencilValue.stencil = 0;
         depthStencilDesc.state = RHIImageResourceState::DepthStencilAttachment;
 
+        RHIRect2D scissorArea;
+        scissorArea.offset.x = x;
+        scissorArea.offset.y = y;
+        scissorArea.extent.width = 1;
+        scissorArea.extent.height = 1;
+
+        RHIRect2D viewportArea;
+        viewportArea.offset.x = 0;
+        viewportArea.offset.y = 0;
+        viewportArea.extent.width = static_cast<int32_t>(m_ViewportSize.x);
+        viewportArea.extent.height = static_cast<int32_t>(m_ViewportSize.y);
+
         m_Renderer->RunGraphicsPass(
             commandBuffer,
             objectIDMaterialID,
@@ -473,8 +494,9 @@ namespace Hazel
             {colorAttachmentDesc},
             {RHIColorBlendAttachmentDesc{}},
             &depthStencilDesc,
-            {0, 0},
-            {static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y)});
+            scissorArea,
+            viewportArea,
+            scissorArea);
 
         objectIDImage->Transition(commandBuffer,
                                   objectIDImage->GetCurrentState(),
@@ -484,11 +506,10 @@ namespace Hazel
                                          objectIDImageBuffer,
                                          0,
                                          {
-                                             static_cast<uint32_t>(m_ViewportSize.x),
-                                             static_cast<uint32_t>(m_ViewportSize.y)
+                                             1, 1
                                          },
-                                         {0, 0, 0},
-                                         {objectIDImage->GetDesc().width, objectIDImage->GetDesc().height, 1},
+                                         {static_cast<int32_t>(x), static_cast<int32_t>(y), 0},
+                                         {1, 1, 1},
                                          {
                                              0, 0, 1, RHIImagePlaneFlagBits::Color
                                          });
@@ -509,7 +530,7 @@ namespace Hazel
 
         m_ContentBrowserPanel.reset();
         m_EditorScenePath.clear();
-        m_HoveredEntity = {};
+        m_ClickedEntity = {};
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
@@ -682,13 +703,6 @@ namespace Hazel
         m_PropertyPanel.OnImGuiRender();
 
         ImGui::Begin("Stats");
-
-#if 0
-        std::string name = "None";
-        if (m_HoveredEntity)
-            name = m_HoveredEntity.GetComponent<TagComponent>().tag;
-        ImGui::Text("Hovered Entity: %s", name.c_str());
-#endif
 
         // auto stats = Renderer2D::GetStats();
         // ImGui::Text("Renderer2D Stats:");
@@ -1041,7 +1055,26 @@ namespace Hazel
         if (e.GetMouseButton() == Mouse::ButtonLeft)
         {
             if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
-                m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+            {
+                std::unique_lock lock(m_ObjectIDRenderMutex);
+                auto [mx, my] = ImGui::GetMousePos();
+
+                mx -= m_ViewportBounds[0].x;
+                my -= m_ViewportBounds[0].y;
+
+                glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+                my = viewportSize.y - my;
+
+                int mouseX = static_cast<int>(mx);
+                int mouseY = static_cast<int>(my);
+
+                auto& queuePosition = m_ObjectIDPullPositions[
+                    m_ObjectIDPullingQueueFront % DefaultMouseObjectIDEventQueueSize];
+                m_ObjectIDPullingQueueFront++;
+                auto mousePosition = ImGui::GetMousePos();
+                queuePosition[0] = mouseX;
+                queuePosition[1] = mouseY;
+            }
         }
         return false;
     }
@@ -1181,7 +1214,7 @@ namespace Hazel
         m_SceneHierarchyPanel.SetContext(m_EditorScene);
         m_PropertyPanel.SetContext(m_EditorScene);
         m_EditorScenePath.clear();
-        m_HoveredEntity = {};
+        m_ClickedEntity = {};
     }
 
     void EditorLayer::OpenScene()
@@ -1224,7 +1257,7 @@ namespace Hazel
             m_SceneHierarchyPanel.SetContext(m_EditorScene);
             m_PropertyPanel.SetContext(m_EditorScene);
             m_EditorScenePath = path;
-            m_HoveredEntity = {};
+            m_ClickedEntity = {};
         }
         auto initialRenderScenePayload = newScene->GetInitialRenderSceneUpdatePayloads();
         m_Renderer->GetRenderScene()->Update(std::move(initialRenderScenePayload));

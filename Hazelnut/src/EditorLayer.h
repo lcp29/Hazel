@@ -20,6 +20,8 @@ namespace Hazel
         constexpr static float DefaultGizmoTranslateSnap = 0.5f;
         constexpr static float DefaultGizmoRotateSnapDegrees = 45.0f;
 
+        constexpr static int DefaultMouseObjectIDEventQueueSize = 1 << 2;
+
         struct EditorUITexture
         {
             RHIImage* Image = nullptr;
@@ -45,7 +47,7 @@ namespace Hazel
 
         void RecreateDefaultRenderTextureData();
         void RecreateObjectIDRenderData();
-        void OnObjectIDMapRender();
+        void OnObjectIDMapRender(uint32_t x, uint32_t y);
         void ResetProjectContext();
         bool HasOpenProject() const;
         void DrawProjectSelectionScreen();
@@ -85,11 +87,16 @@ namespace Hazel
         Ref<Scene> m_ActiveScene;
         Ref<Scene> m_EditorScene;
         std::filesystem::path m_EditorScenePath;
-        Entity m_HoveredEntity;
+        Entity m_ClickedEntity;
 
         // rendering
         Renderer* m_Renderer = nullptr;
         UUID m_ObjectIDRenderTextureUUID = UUID();
+        std::mutex m_ObjectIDRenderMutex;
+        std::vector<bool> m_ObjectIDNeedsPulling;
+        std::vector<std::array<int32_t, 2>> m_ObjectIDPullPositions;
+        uint32_t m_ObjectIDPullingQueueFront;
+        uint32_t m_ObjectIDPullingQueueBack;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTexture = nullptr;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDDepthRenderTexture = nullptr;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTextureBuffer = nullptr;

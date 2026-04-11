@@ -62,6 +62,12 @@ namespace Hazel
         uint32_t height = 0;
     };
 
+    struct RHIRect2D
+    {
+        RHIOffset2D offset;
+        RHIExtent2D extent;
+    };
+
     struct RHIOffset3D
     {
         int32_t x = 0;

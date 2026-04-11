@@ -105,7 +105,6 @@ namespace Hazel
         auto currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
 
         bool shaderObsolete = false;
-        bool materialVersionObsolete = false;
 
         if (type == AssetType::Material)
         {
@@ -118,7 +117,6 @@ namespace Hazel
                     return GPUAssetHandle(currentAsset);
                 }
                 shaderObsolete = shader.asset->GetSourceVersion() > materialAsset->GetShaderSourceVersion();
-                materialVersionObsolete = asset->GetVersion() > materialAsset->GetSourceVersion();
             }
         }
 
@@ -278,19 +276,19 @@ namespace Hazel
     }
 
     GPUAssetHandle Renderer::ResolveGPURenderTexture(const RenderTextureDesc& desc,
-                                                            uint64_t lastReferencedFrame)
+                                                     uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPURenderTextureAsset>(desc, lastReferencedFrame);
     }
 
     GPUAssetHandle Renderer::ResolveGPURenderBuffer(const RenderBufferDesc& desc,
-                                                           uint64_t lastReferencedFrame)
+                                                    uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPURenderBufferAsset>(desc, lastReferencedFrame);
     }
 
     GPUAssetHandle Renderer::ResolveGPUSampler(const RHISamplerDesc& desc,
-                                                      uint64_t lastReferencedFrame)
+                                               uint64_t lastReferencedFrame)
     {
         return ResolveDirectGPUAsset<GPUSamplerAsset>(desc, lastReferencedFrame);
     }
@@ -527,6 +525,11 @@ namespace Hazel
                                                             m_DefaultDepthRenderTexture->GetImage()->GetCurrentState(),
                                                             RHIImageResourceState::DepthStencilAttachment);
 
+        RHIRect2D viewportArea = {
+            {0, 0},
+            {m_ViewportWidth, m_ViewportHeight}
+        };
+
         RunGraphicsPass(cmd,
                         &m_Cameras[0],
                         {colorAttachmentDesc},
@@ -540,8 +543,9 @@ namespace Hazel
                             .alphaBlendOp = RHIBlendOp::Add,
                         }},
                         &depthStencilAttachmentDesc,
-                        {0, 0},
-                        {m_ViewportWidth, m_ViewportHeight});
+                        viewportArea,
+                        viewportArea,
+                        viewportArea);
     }
 
     void Renderer::BeginSwapchainTargetRendering()
@@ -707,8 +711,9 @@ namespace Hazel
                                    const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                                    const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                    const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
-                                   RHIOffset2D renderOffset,
-                                   RHIExtent2D renderViewSize)
+                                   RHIRect2D renderArea,
+                                   RHIRect2D viewportArea,
+                                   RHIRect2D scissorArea)
     {
         const glm::mat4 view = camera->transform.GetView();
         const glm::mat4 projection = camera->camera->GetProjection();
@@ -741,8 +746,8 @@ namespace Hazel
         RHIFormat depthStencilFormat = RHIFormat::Undefined;
 
         RHIRenderingInfo renderingInfo{};
-        renderingInfo.renderOffset = renderOffset;
-        renderingInfo.renderViewSize = renderViewSize;
+        renderingInfo.renderOffset = renderArea.offset;
+        renderingInfo.renderViewSize = renderArea.extent;
 
         for (auto colorDescription : colorAttachmentDescriptions)
         {
@@ -872,8 +877,14 @@ namespace Hazel
                     4,
                     &entityID);
 
-                cmd->SetViewport(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
-                cmd->SetScissor(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+                cmd->SetViewport(viewportArea.offset.x,
+                                 viewportArea.offset.y,
+                                 viewportArea.extent.width,
+                                 viewportArea.extent.height);
+                cmd->SetScissor(scissorArea.offset.x,
+                                scissorArea.offset.y,
+                                scissorArea.extent.width,
+                                scissorArea.extent.height);
                 cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
 
                 cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);
@@ -889,8 +900,9 @@ namespace Hazel
                                    const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                                    const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                    const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
-                                   RHIOffset2D renderOffset,
-                                   RHIExtent2D renderViewSize)
+                                   RHIRect2D renderArea,
+                                   RHIRect2D viewportArea,
+                                   RHIRect2D scissorArea)
     {
         const glm::mat4 view = camera->transform.GetView();
         const glm::mat4 projection = camera->camera->GetProjection();
@@ -931,8 +943,8 @@ namespace Hazel
         auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
 
         RHIRenderingInfo renderingInfo{};
-        renderingInfo.renderOffset = renderOffset;
-        renderingInfo.renderViewSize = renderViewSize;
+        renderingInfo.renderOffset = renderArea.offset;
+        renderingInfo.renderViewSize = renderArea.extent;
 
         for (auto colorDescription : colorAttachmentDescriptions)
         {
@@ -1033,8 +1045,14 @@ namespace Hazel
                 4,
                 &entityID);
 
-            cmd->SetViewport(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
-            cmd->SetScissor(0, 0, renderingInfo.renderViewSize.width, renderingInfo.renderViewSize.height);
+            cmd->SetViewport(viewportArea.offset.x,
+                             viewportArea.offset.y,
+                             viewportArea.extent.width,
+                             viewportArea.extent.height);
+            cmd->SetScissor(scissorArea.offset.x,
+                            scissorArea.offset.y,
+                            scissorArea.extent.width,
+                            scissorArea.extent.height);
             cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
 
             cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);

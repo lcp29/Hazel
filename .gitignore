@@ -25,6 +25,9 @@ cmake-build-debug/
 cmake-build-release/
 .idea/
 
+# VS
+out/
+
 # DLL files
 **.dll
 **.pdb
