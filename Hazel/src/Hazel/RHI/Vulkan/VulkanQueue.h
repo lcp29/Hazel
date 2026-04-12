@@ -50,6 +50,7 @@ namespace Hazel
         uint32_t m_QueueIndex;
         uint64_t m_TimelineValue;
         vk::Queue m_Queue;
+        std::mutex m_QueueSubmitMutex;
         RHIDevice* m_DeviceOwner = nullptr;
     };
 } // namespace Hazel

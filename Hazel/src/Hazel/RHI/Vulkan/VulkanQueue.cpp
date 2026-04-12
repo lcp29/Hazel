@@ -73,8 +73,11 @@ namespace Hazel
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        auto result = m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE);
-        if (result != vk::Result::eSuccess) { return RHISyncPoint(); }
+        {
+            std::lock_guard lock(m_QueueSubmitMutex);
+            auto result = m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE);
+            if (result != vk::Result::eSuccess) { return {}; }
+        }
 
         RHISyncPoint syncPoint;
         syncPoint.value = m_TimelineValue;
