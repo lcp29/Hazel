@@ -14,7 +14,7 @@ namespace Hazel
     }
 
     RHI_VK_FUNC_IMPL(RHIQueue, RHIQueueImpl)(
-        RHIDevice* device, RHIQueueType type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex)
+        RHIDevice* device, RHIQueueTypes type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex)
         : m_Type(type)
         , m_FamilyIndex(familyIndex)
         , m_QueueIndex(queueIndex)
@@ -41,6 +41,7 @@ namespace Hazel
 
     RHISyncPoint RHI_VK_FUNC_IMPL(RHIQueue, Submit)(const RHIQueueSubmitDesc& desc)
     {
+        std::scoped_lock lock(m_QueueSubmitMutex);
         m_TimelineValue++;
 
         vk::SubmitInfo2 submitInfo;
@@ -73,11 +74,8 @@ namespace Hazel
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        {
-            std::lock_guard lock(m_QueueSubmitMutex);
-            auto result = m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE);
-            if (result != vk::Result::eSuccess) { return {}; }
-        }
+        auto result = m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE);
+        if (result != vk::Result::eSuccess) { return {}; }
 
         RHISyncPoint syncPoint;
         syncPoint.value = m_TimelineValue;

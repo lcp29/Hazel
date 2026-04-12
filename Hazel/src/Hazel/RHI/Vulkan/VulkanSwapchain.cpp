@@ -233,6 +233,7 @@ namespace Hazel
         presentInfo.pSwapchains = &m_Swapchain;
         presentInfo.pImageIndices = &frameNumber;
 
+        auto lock = presentQueue->AcquireQueueSubmitLock();
         const auto result = presentQueue->GetHandle().presentKHR(presentInfo);
         return result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR;
     }

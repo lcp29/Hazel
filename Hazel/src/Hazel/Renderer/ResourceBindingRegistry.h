@@ -62,6 +62,28 @@ namespace Hazel
         }
     };
 
+	struct UserUploadAssetBuffer
+	{
+        std::string name{};
+        RHIBuffer* buffer = nullptr;
+        RHIImageView* image = nullptr;
+	};
+
+	struct UserUploadAssetMeta
+    {
+		enum class Type
+		{
+			Buffer,
+			SampledImage,
+			StorageImage
+        };
+        std::string name{};
+        Type type;
+        uint32_t slot;
+        RHIBuffer* buffer = nullptr;
+        RHIImageView* image = nullptr;
+	};
+
     struct UserUploadValueMeta
     {
         std::string name{};
@@ -102,6 +124,10 @@ namespace Hazel
                                     uint64_t version,
                                     uint64_t frameInFlightIndex);
 
+		void SetUploadAssetForFrame(const std::string& name,
+                                    const UserUploadAssetBuffer& asset,
+                                    uint64_t frameInFlightIndex);
+
         void BuildSignature(const RHIShaderReflection& reflection);
         std::vector<GPUAssetHandle> BuildResources();
         std::vector<GPUAssetHandle> BuildResourcesForFrame(uint32_t frameInFlightIndex);
@@ -131,7 +157,8 @@ namespace Hazel
         std::vector<RHIBuffer*> m_MaterialBuffers;
         RHIBuffer* m_UserUploadValueBuffer = nullptr;
         uint32_t m_UserUploadValueBufferSize = 0;
-        std::unordered_map<std::string, UserUploadValueMeta> m_UserUploadValueBufferMemberMap;
+        std::vector<std::unordered_map<std::string, UserUploadValueMeta>> m_UserUploadValueBufferMemberMap;
+        std::vector<std::unordered_map<std::string, UserUploadAssetMeta>> m_UserUploadAssetBufferMap;
         RHIResourceLayout* m_UserUploadResourceLayout = nullptr;
         std::vector<RHIResourceGroup*> m_UserUploadResourceGroup;
 
@@ -174,7 +201,7 @@ namespace Hazel
         void SetViewProjectionMatrix(const glm::mat4& view, const glm::mat4& projection);
 
         void BindPerViewResources(RHICommandBuffer* cmd, UUID shader, UUID shaderVersion);
-        void UpdateUserUploadValuesForShader(UUID shader, uint64_t sourceVersion);
+        void UpdateUserUploadDataForShader(UUID shader, uint64_t sourceVersion);
 
         // bindless
         uint32_t RegisterTexture(GPUAssetHandle textureResult);
@@ -209,6 +236,9 @@ namespace Hazel
             auto& buffer = m_UserUploadValueBuffers[name];
             buffer.SetValue(value);
         }
+
+		void SetBuffer(std::string name, const GPUAssetHandle* handle);
+        void SetImage(std::string name, const GPUAssetHandle* handle);
 
         // per-shader resources
         void CreateOrUpdatePerShaderResources();
@@ -268,5 +298,6 @@ namespace Hazel
         std::vector<PendingResourceOperation> m_PendingResourceOperations;
 
         std::unordered_map<std::string, UserUploadValueBuffer> m_UserUploadValueBuffers;
+		std::unordered_map<std::string, UserUploadAssetBuffer> m_UserUploadAssetBuffers;
     };
 } // namespace Hazel

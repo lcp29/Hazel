@@ -194,35 +194,31 @@ namespace Hazel
         m_Device = deviceResult.value;
         if (!m_Device || deviceResult.result != vk::Result::eSuccess) { return; }
 
-        for (const auto queueType : requestedQueues)
+        for (auto queueFamily : uniqueQueueFamilies)
         {
-            const auto queueFamilyIndex = queueFamilyIndices[GetQueueSlot(queueType)];
-            if (!queueFamilyIndex.has_value()) { continue; }
+            static const auto queueTypes = {
+                RHIQueueType::Graphics, RHIQueueType::Compute, RHIQueueType::Transfer, RHIQueueType::Present};
 
-            std::unique_ptr<RHIQueue> queue(new RHIQueue(
-                this, queueType, queueFamilyIndex.value(), m_Device.getQueue(queueFamilyIndex.value(), 0), 0));
+            RHIQueueTypes queueType;
+            for (auto type : queueTypes)
+            {
+                if (queueFamilyIndices[GetQueueSlot(type)] == queueFamily) { queueType = queueType | type; }
+            }
+
+            std::unique_ptr<RHIQueue> queue(
+                new RHIQueue(this, queueType, queueFamily, m_Device.getQueue(queueFamily, 0), 0));
             if (!queue || !queue->IsValid()) { continue; }
 
-            auto* queuePtr = m_Queues.Register(std::move(queue));
-            m_QueueLookup[GetQueueSlot(queueType)] = queuePtr;
+			auto* queuePtr = m_Queues.Register(std::move(queue));
 
-            switch (queueType)
-            {
-                case RHIQueueType::Graphics:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Graphics;
-                    break;
-                case RHIQueueType::Compute:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Compute;
-                    break;
-                case RHIQueueType::Transfer:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Transfer;
-                    break;
-                case RHIQueueType::Present:
-                    m_Capabilities.queueTypes = m_Capabilities.queueTypes | RHIQueueTypeFlagBits::Present;
-                    break;
-                default:
-                    break;
-            }
+            for (auto type : queueTypes)
+			{
+				if (queueType & type)
+				{
+					m_Capabilities.queueTypes = m_Capabilities.queueTypes | type;
+                    m_QueueLookup[GetQueueSlot(type)] = queuePtr;
+				}
+			}
         }
 
         m_Allocator = std::make_unique<VulkanMemoryAllocator>(m_Instance, m_PhysicalDevice, m_Device, m_Capabilities);

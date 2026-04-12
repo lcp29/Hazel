@@ -6,11 +6,14 @@
 
 BeginPerMaterialProperties()
     MaterialTextureSampler(color)
+    MaterialSampler(outerTexSamp)
 EndPerMaterialProperties()
 
 BeginUserValues()
     UserValue(float, lightStrength)
 EndUserValues()
+
+layout (set = 1, binding = 1) uniform texture2D testImage;
 
 #ifdef VERTEX_SHADER
 
@@ -46,11 +49,12 @@ void main()
     vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
     float ndotl = max(dot(normalize(v_Normal), lightDir), 0.0);
     float irradiance = ndotl * GetUserValue(lightStrength);
-    vec4 color = texture(GetMaterialTextureSampler(color), v_TexCoord);
+    // vec4 color = texture(GetMaterialTextureSampler(color), v_TexCoord);
+    vec4 color = texture(sampler2D(testImage, GetMaterialSampler(outerTexSamp)), v_TexCoord);
     float ambient = 0.1;
 
     vec3 lighting = vec3(ambient + irradiance) * color.rgb;
-    outColor = vec4(albedo, 1.0);
+    outColor = color;//vec4(albedo, 1.0);
 }
 
 #endif

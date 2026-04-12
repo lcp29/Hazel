@@ -27,6 +27,8 @@ namespace Hazel
         m_ShouldRebuild.resize(maxFramesInFlight, false);
         m_MaterialIsDirty.resize(maxFramesInFlight);
         m_UserUploadResourceGroup.resize(maxFramesInFlight, nullptr);
+        m_UserUploadAssetBufferMap.resize(maxFramesInFlight);
+        m_UserUploadValueBufferMemberMap.resize(maxFramesInFlight);
         BuildSignature(reflection);
 
         for (const auto& group : reflection.resourceGroups)
@@ -40,12 +42,15 @@ namespace Hazel
                     m_UserUploadValueBufferSize = (slot.buffer.size + 255) / 256 * 256;
                     for (const auto& member : slot.buffer.members)
                     {
-                        m_UserUploadValueBufferMemberMap[member.name] = UserUploadValueMeta{
-                            .name = member.name,
-                            .version = 0,
-                            .offset = member.offset,
-                            .size = member.size,
-                        };
+                        for (int i = 0; i < maxFramesInFlight; ++i)
+                        {
+                            m_UserUploadValueBufferMemberMap[i][member.name] = UserUploadValueMeta{
+                                .name = member.name,
+                                .version = 0,
+                                .offset = member.offset,
+                                .size = member.size,
+                            };
+                        }
                     }
                     RHIBufferDesc bufferDesc{};
                     bufferDesc.size = m_UserUploadValueBufferSize * maxFramesInFlight;
@@ -57,6 +62,18 @@ namespace Hazel
 
                     m_UserUploadValueBuffer = m_Renderer->GetDevice()->CreateBuffer(bufferDesc);
                     if (m_UserUploadValueBuffer) { std::memset(m_UserUploadValueBuffer->Map(), 0, bufferDesc.size); }
+                    continue;
+                }
+
+                for (int i = 0; i < maxFramesInFlight; ++i)
+                {
+                    auto& assetMeta = m_UserUploadAssetBufferMap[i][slot.variableName];
+                    assetMeta.name = slot.variableName;
+                    assetMeta.slot = slot.slot;
+                    assetMeta.type =
+                        slot.type == RHIResourceBindingType::SampledImage   ? UserUploadAssetMeta::Type::SampledImage
+                        : slot.type == RHIResourceBindingType::StorageImage ? UserUploadAssetMeta::Type::StorageImage
+                                                                            : UserUploadAssetMeta::Type::Buffer;
                 }
             }
             break;
@@ -159,9 +176,12 @@ namespace Hazel
     void ShaderMaterialSlot::SetUploadValueForFrame(
         const std::string& name, const void* value, uint32_t valueSize, uint64_t version, uint64_t frameInFlightIndex)
     {
-        if (!m_UserUploadValueBufferMemberMap.contains(name) || !m_UserUploadValueBuffer) { return; }
+        if (!m_UserUploadValueBufferMemberMap[frameInFlightIndex].contains(name) || !m_UserUploadValueBuffer)
+        {
+            return;
+        }
 
-        auto& memberInfo = m_UserUploadValueBufferMemberMap[name];
+        auto& memberInfo = m_UserUploadValueBufferMemberMap[frameInFlightIndex][name];
         if (memberInfo.version >= version) { return; }
 
         std::memcpy(static_cast<uint8_t*>(m_UserUploadValueBuffer->Map())
@@ -169,6 +189,41 @@ namespace Hazel
                     value,
                     std::min(memberInfo.size, valueSize));
         memberInfo.version = version;
+    }
+
+    void ShaderMaterialSlot::SetUploadAssetForFrame(const std::string& name,
+                                                    const UserUploadAssetBuffer& asset,
+                                                    uint64_t frameInFlightIndex)
+    {
+        if (!m_UserUploadAssetBufferMap[frameInFlightIndex].contains(name)) { return; }
+        auto& slot = m_UserUploadAssetBufferMap[frameInFlightIndex][name];
+        switch (slot.type)
+        {
+            case UserUploadAssetMeta::Type::Buffer:
+                if (asset.buffer && slot.buffer != asset.buffer)
+                {
+                    slot.buffer = asset.buffer;
+                    m_UserUploadResourceGroup[frameInFlightIndex]->WriteBuffer(
+                        slot.slot, asset.buffer, 0, asset.buffer->GetDesc().size);
+                }
+                break;
+            case UserUploadAssetMeta::Type::SampledImage:
+                if (asset.image && slot.image != asset.image)
+                {
+                    slot.image = asset.image;
+                    m_UserUploadResourceGroup[frameInFlightIndex]->WriteImageView(
+                        slot.slot, asset.image, RHIImageResourceState::ShaderRead);
+                }
+                break;
+            case UserUploadAssetMeta::Type::StorageImage:
+                if (asset.image && slot.image != asset.image)
+                {
+                    slot.image = asset.image;
+                    m_UserUploadResourceGroup[frameInFlightIndex]->WriteImageView(
+                        slot.slot, asset.image, RHIImageResourceState::ShaderWrite);
+                }
+                break;
+        }
     }
 
     const RHIShaderReflection& ShaderMaterialSlot::GetShaderReflection() const { return m_Reflection; }
@@ -624,15 +679,50 @@ namespace Hazel
         combinedLock.unlock();
     }
 
+    void ResourceBindingRegistry::SetBuffer(std::string name, const GPUAssetHandle* handle)
+    {
+        if (!handle || !handle->asset || handle->asset->GetType() != AssetType::RenderBuffer) { return; }
+        auto* asset = static_cast<GPURenderBufferAsset*>(handle->asset);
+        auto& buffer = m_UserUploadAssetBuffers[name];
+        buffer.name = name;
+        buffer.buffer = asset->GetBuffer();
+    }
+
+    void ResourceBindingRegistry::SetImage(std::string name, const GPUAssetHandle* handle)
+    {
+        if (!handle || !handle->asset) { return; }
+        RHIImageView* imageView = nullptr;
+        switch (handle->asset->GetType())
+        {
+            case AssetType::Texture:
+                {
+                    auto* asset = static_cast<GPUTextureAsset*>(handle->asset);
+                    imageView = asset->GetDefaultImageView();
+                    break;
+                }
+            case AssetType::RenderTexture:
+                {
+                    auto* asset = static_cast<GPURenderTextureAsset*>(handle->asset);
+                    imageView = asset->GetDefaultImageView();
+                    break;
+                }
+            default:
+                return;
+        }
+        auto& buffer = m_UserUploadAssetBuffers[name];
+        buffer.name = name;
+        buffer.image = imageView;
+    }
+
     void ResourceBindingRegistry::CreateOrUpdatePerShaderResources()
     {
-        for (const auto& [key, slot] : m_ShaderMaterials)
+        for (const auto& slot : m_ShaderMaterials | std::views::values)
         {
             slot->BuildResources();
         }
     }
 
-    void ResourceBindingRegistry::UpdateUserUploadValuesForShader(UUID shader, uint64_t sourceVersion)
+    void ResourceBindingRegistry::UpdateUserUploadDataForShader(UUID shader, uint64_t sourceVersion)
     {
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
         if (it == m_ShaderMaterials.end()) { return; }
@@ -642,6 +732,10 @@ namespace Hazel
         for (const auto& [name, value] : m_UserUploadValueBuffers)
         {
             slot->SetUploadValueForFrame(name, value.data, value.size, value.version, currentFrame);
+        }
+        for (const auto& [name, asset] : m_UserUploadAssetBuffers)
+        {
+            slot->SetUploadAssetForFrame(name, asset, currentFrame);
         }
     }
 

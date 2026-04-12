@@ -16,7 +16,7 @@ namespace Hazel
     RHI_VK_CLASS_IMPL(RHIQueue)
     {
       public:
-        RHIQueueType GetType() const { return m_Type; }
+        RHIQueueTypes GetType() const { return m_Type; }
 
         vk::Queue GetHandle() const { return m_Queue; }
 
@@ -29,6 +29,7 @@ namespace Hazel
         RHISyncPoint Submit(const RHIQueueSubmitDesc& desc);
         RHISyncPoint SignalOnBinarySemaphore(vk::Semaphore semaphore);
         bool WaitSyncPointsAndSignalBinary(const std::vector<RHISyncPoint>& waitSyncPoints, vk::Semaphore semaphore);
+        std::unique_lock<std::mutex> AcquireQueueSubmitLock() { return std::unique_lock(m_QueueSubmitMutex); }
 
         bool IsValid() const { return m_IsValid; }
 
@@ -38,12 +39,12 @@ namespace Hazel
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
 
         RHIQueueImpl(
-            RHIDevice * device, RHIQueueType type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex = 0);
+            RHIDevice * device, RHIQueueTypes type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex = 0);
         void ReleaseFromOwner();
 
         vk::Semaphore GetSignalSemaphore() const { return m_SignalSemaphore; }
 
-        RHIQueueType m_Type;
+        RHIQueueTypes m_Type;
         bool m_IsValid = false;
         vk::Semaphore m_SignalSemaphore = VK_NULL_HANDLE;
         uint32_t m_FamilyIndex;

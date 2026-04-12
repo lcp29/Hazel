@@ -477,6 +477,10 @@ namespace Hazel
 
         RHIRect2D viewportArea = {{0, 0}, {m_ViewportWidth, m_ViewportHeight}};
 
+        auto testImage = ResolveGPUAsset(10859876451405640399ull, AssetType::Texture);
+
+        GetResourceBindingRegistry()->SetImage("testImage", &testImage);
+
         RunGraphicsPass(cmd,
                         &m_Cameras[0],
                         {colorAttachmentDesc},
@@ -717,8 +721,7 @@ namespace Hazel
             }
             auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
 
-            GetResourceBindingRegistry()->UpdateUserUploadValuesForShader(shader->GetUUID(),
-                                                                          shader->GetSourceVersion());
+            GetResourceBindingRegistry()->UpdateUserUploadDataForShader(shader->GetUUID(), shader->GetSourceVersion());
 
             if (firstBind)
             {
@@ -882,7 +885,7 @@ namespace Hazel
 
         cmd->BindGraphicsPipeline(pipeline->GetPipeline());
 
-        GetResourceBindingRegistry()->UpdateUserUploadValuesForShader(shader->GetUUID(), shader->GetSourceVersion());
+        GetResourceBindingRegistry()->UpdateUserUploadDataForShader(shader->GetUUID(), shader->GetSourceVersion());
         GetResourceBindingRegistry()->BindPerViewResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
         GetResourceBindingRegistry()->BindUserUploadResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
         GetResourceBindingRegistry()->BindMaterialPropertyResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
