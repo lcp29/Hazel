@@ -72,7 +72,9 @@ namespace Hazel
         void OnDuplicateEntity();
 
         // UI Panels
-        void UIToolbar();
+        void UIDrawMenuBar();
+        void UIDrawToolbar();
+        void UIDrawViewportAndGizmos();
 
         // editor textures
         RHISampler* m_UISampler = nullptr;

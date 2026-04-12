@@ -1,6 +1,5 @@
 #include "EditorLayer.h"
 
-#include "../../Hazel/vendor/yaml-cpp/src/tag.h"
 #include "Hazel/Math/Math.h"
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/RHI/RHI.h"
@@ -9,10 +8,11 @@
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "Hazel/Utils/PlatformUtils.h"
 
-#include <ImGuizmo.h>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <ImGuizmo.h>
+#include <yaml-cpp/yaml.h>
 
 namespace Hazel
 {
@@ -563,6 +563,51 @@ namespace Hazel
 
         style.WindowMinSize.x = minWinSizeX;
 
+        UIDrawMenuBar();
+
+        m_SceneHierarchyPanel.OnImGuiRender();
+        if (m_ContentBrowserPanel) { m_ContentBrowserPanel->OnImGuiRender(); }
+        if (m_SceneHierarchyPanel.GetSelectionVersion() != m_LastSceneHierarchySelectionVersion)
+        {
+            m_LastSceneHierarchySelectionVersion = m_SceneHierarchyPanel.GetSelectionVersion();
+            m_PropertyPanel.SetSelectedEntity(m_SceneHierarchyPanel.GetSelectedEntity());
+        }
+        if (m_ContentBrowserPanel
+            && m_ContentBrowserPanel->GetSelectionVersion() != m_LastContentBrowserSelectionVersion)
+        {
+            m_LastContentBrowserSelectionVersion = m_ContentBrowserPanel->GetSelectionVersion();
+            m_PropertyPanel.SetSelectedMetaPath(m_ContentBrowserPanel->GetSelectedMetaPath());
+        }
+        m_PropertyPanel.OnImGuiRender();
+
+        ImGui::Begin("Stats");
+
+        // auto stats = Renderer2D::GetStats();
+        // ImGui::Text("Renderer2D Stats:");
+        // ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+        // ImGui::Text("Quads: %d", stats.QuadCount);
+        // ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+        // ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+        //
+        // ImGui::End();
+        //
+        // ImGui::Begin("Settings");
+        // ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
+        //
+        // ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
+        //
+        //
+        ImGui::End();
+
+        UIDrawViewportAndGizmos();
+
+        UIDrawToolbar();
+
+        ImGui::End();
+    }
+
+	void EditorLayer::UIDrawMenuBar()
+    {
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("File"))
@@ -599,41 +644,97 @@ namespace Hazel
 
             ImGui::EndMenuBar();
         }
+    }
 
-        m_SceneHierarchyPanel.OnImGuiRender();
-        if (m_ContentBrowserPanel) { m_ContentBrowserPanel->OnImGuiRender(); }
-        if (m_SceneHierarchyPanel.GetSelectionVersion() != m_LastSceneHierarchySelectionVersion)
+    void EditorLayer::UIDrawToolbar()
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        auto& colors = ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+        ImGui::Begin("##toolbar",
+                     nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        bool toolbarEnabled = static_cast<bool>(m_ActiveScene);
+
+        auto tintColor = ImVec4(1, 1, 1, 1);
+        if (!toolbarEnabled) tintColor.w = 0.5f;
+
+        float size = ImGui::GetWindowHeight() - 4.0f;
+        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+
+        bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
+        bool hasPauseButton = m_SceneState != SceneState::Edit;
+
+        if (hasPlayButton)
         {
-            m_LastSceneHierarchySelectionVersion = m_SceneHierarchyPanel.GetSelectionVersion();
-            m_PropertyPanel.SetSelectedEntity(m_SceneHierarchyPanel.GetSelectedEntity());
+            void* icon = m_SceneState == SceneState::Edit ? m_IconPlay.ImGuiTexture : m_IconStop.ImGuiTexture;
+            if (ImGui::ImageButton("PlayButton",
+                                   icon,
+                                   ImVec2(size, size),
+                                   ImVec2(0, 0),
+                                   ImVec2(1, 1),
+                                   ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                   tintColor)
+                && toolbarEnabled)
+            {
+                if (m_SceneState == SceneState::Edit)
+                    OnScenePlay();
+                else if (m_SceneState == SceneState::Play)
+                    OnSceneStop();
+            }
         }
-        if (m_ContentBrowserPanel
-            && m_ContentBrowserPanel->GetSelectionVersion() != m_LastContentBrowserSelectionVersion)
+
+        if (hasPauseButton)
         {
-            m_LastContentBrowserSelectionVersion = m_ContentBrowserPanel->GetSelectionVersion();
-            m_PropertyPanel.SetSelectedMetaPath(m_ContentBrowserPanel->GetSelectedMetaPath());
+            bool isPaused = m_ActiveScene->IsPaused();
+            ImGui::SameLine();
+            {
+                if (ImGui::ImageButton("PauseButton",
+                                       m_IconPause.ImGuiTexture,
+                                       ImVec2(size, size),
+                                       ImVec2(0, 0),
+                                       ImVec2(1, 1),
+                                       ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                       tintColor)
+                    && toolbarEnabled)
+                {
+                    m_ActiveScene->SetPaused(!isPaused);
+                }
+            }
+
+            // Step button
+            if (isPaused)
+            {
+                ImGui::SameLine();
+                {
+                    if (ImGui::ImageButton("StepButton",
+                                           m_IconStep.ImGuiTexture,
+                                           ImVec2(size, size),
+                                           ImVec2(0, 0),
+                                           ImVec2(1, 1),
+                                           ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                                           tintColor)
+                        && toolbarEnabled)
+                    {
+                        m_ActiveScene->Step();
+                    }
+                }
+            }
         }
-        m_PropertyPanel.OnImGuiRender();
-
-        ImGui::Begin("Stats");
-
-        // auto stats = Renderer2D::GetStats();
-        // ImGui::Text("Renderer2D Stats:");
-        // ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-        // ImGui::Text("Quads: %d", stats.QuadCount);
-        // ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-        // ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-        //
-        // ImGui::End();
-        //
-        // ImGui::Begin("Settings");
-        // ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
-        //
-        // ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
-        //
-        //
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
         ImGui::End();
+    }
 
+    void EditorLayer::UIDrawViewportAndGizmos()
+    {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport");
         auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -748,97 +849,6 @@ namespace Hazel
 
         ImGui::End();
         ImGui::PopStyleVar();
-
-        UIToolbar();
-
-        ImGui::End();
-    }
-
-    void EditorLayer::UIToolbar()
-    {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        auto& colors = ImGui::GetStyle().Colors;
-        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
-
-        ImGui::Begin("##toolbar",
-                     nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-        bool toolbarEnabled = static_cast<bool>(m_ActiveScene);
-
-        auto tintColor = ImVec4(1, 1, 1, 1);
-        if (!toolbarEnabled) tintColor.w = 0.5f;
-
-        float size = ImGui::GetWindowHeight() - 4.0f;
-        ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-
-        bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
-        bool hasPauseButton = m_SceneState != SceneState::Edit;
-
-        if (hasPlayButton)
-        {
-            void* icon = m_SceneState == SceneState::Edit ? m_IconPlay.ImGuiTexture : m_IconStop.ImGuiTexture;
-            if (ImGui::ImageButton("PlayButton",
-                                   icon,
-                                   ImVec2(size, size),
-                                   ImVec2(0, 0),
-                                   ImVec2(1, 1),
-                                   ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                                   tintColor)
-                && toolbarEnabled)
-            {
-                if (m_SceneState == SceneState::Edit)
-                    OnScenePlay();
-                else if (m_SceneState == SceneState::Play)
-                    OnSceneStop();
-            }
-        }
-
-        if (hasPauseButton)
-        {
-            bool isPaused = m_ActiveScene->IsPaused();
-            ImGui::SameLine();
-            {
-                if (ImGui::ImageButton("PauseButton",
-                                       m_IconPause.ImGuiTexture,
-                                       ImVec2(size, size),
-                                       ImVec2(0, 0),
-                                       ImVec2(1, 1),
-                                       ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                                       tintColor)
-                    && toolbarEnabled)
-                {
-                    m_ActiveScene->SetPaused(!isPaused);
-                }
-            }
-
-            // Step button
-            if (isPaused)
-            {
-                ImGui::SameLine();
-                {
-                    if (ImGui::ImageButton("StepButton",
-                                           m_IconStep.ImGuiTexture,
-                                           ImVec2(size, size),
-                                           ImVec2(0, 0),
-                                           ImVec2(1, 1),
-                                           ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                                           tintColor)
-                        && toolbarEnabled)
-                    {
-                        m_ActiveScene->Step();
-                    }
-                }
-            }
-        }
-        ImGui::PopStyleVar(2);
-        ImGui::PopStyleColor(3);
-        ImGui::End();
     }
 
     void EditorLayer::OnEvent(Event& e)

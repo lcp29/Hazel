@@ -21,7 +21,7 @@ namespace Hazel::PropertyPanelHelpers
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
 
         float lineHeight = GImGui->Font->LegacySize + GImGui->Style.FramePadding.y * 2.0f;
-        ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+        ImVec2 buttonSize = {lineHeight + 3.0f, std::max(lineHeight, ImGui::GetFrameHeight())};
 
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
