@@ -10,29 +10,17 @@
 #include <cstdint>
 
 #if defined(HZ_DEBUG)
-#define HZ_RHI_DEBUG_FAIL_IF(condition)                                                                            \
-    if (condition)                                                                                                 \
-    {                                                                                                              \
-        return false;                                                                                              \
-    }
+#define HZ_RHI_DEBUG_FAIL_IF(condition)                                                                                \
+    if (condition) { return false; }
 
-#define HZ_RHI_DEBUG_RETURN_NULL_IF(condition)                                                                     \
-    if (condition)                                                                                                 \
-    {                                                                                                              \
-        return nullptr;                                                                                            \
-    }
+#define HZ_RHI_DEBUG_RETURN_NULL_IF(condition)                                                                         \
+    if (condition) { return nullptr; }
 
-#define HZ_RHI_DEBUG_RETURN_IF(condition)                                                                          \
-    if (condition)                                                                                                 \
-    {                                                                                                              \
-        return;                                                                                                    \
-    }
+#define HZ_RHI_DEBUG_RETURN_IF(condition)                                                                              \
+    if (condition) { return; }
 
-#define HZ_RHI_DEBUG_RETURN_VALUE_IF(condition, value)                                                             \
-    if (condition)                                                                                                 \
-    {                                                                                                              \
-        return value;                                                                                              \
-    }
+#define HZ_RHI_DEBUG_RETURN_VALUE_IF(condition, value)                                                                 \
+    if (condition) { return value; }
 #else
 #define HZ_RHI_DEBUG_FAIL_IF(condition)
 #define HZ_RHI_DEBUG_RETURN_NULL_IF(condition)
@@ -57,10 +45,8 @@ namespace Hazel
         Error = 1 << 3
     };
 
-    template <>
-    struct InRHIFlagScope<DebugMessageSeverityFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<DebugMessageSeverityFlagBits> : std::true_type
+    {};
 
     using DebugMessageSeverity = Flags<DebugMessageSeverityFlagBits>;
 
@@ -71,10 +57,8 @@ namespace Hazel
         Validation = 1 << 2
     };
 
-    template <>
-    struct InRHIFlagScope<DebugMessageTypeFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<DebugMessageTypeFlagBits> : std::true_type
+    {};
 
     using DebugMessageType = Flags<DebugMessageTypeFlagBits>;
 

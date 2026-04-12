@@ -32,17 +32,11 @@ namespace Hazel
         std::string ReadTextFile(const std::filesystem::path& path)
         {
             std::ifstream input(path, std::ios::in | std::ios::binary);
-            if (!input)
-            {
-                return {};
-            }
+            if (!input) { return {}; }
 
             input.seekg(0, std::ios::end);
             const auto size = input.tellg();
-            if (size <= 0)
-            {
-                return {};
-            }
+            if (size <= 0) { return {}; }
 
             std::string contents(size, '\0');
             input.seekg(0, std::ios::beg);
@@ -52,7 +46,7 @@ namespace Hazel
 
         class GLSLFileIncluder : public shaderc::CompileOptions::IncluderInterface
         {
-        public:
+          public:
             shaderc_include_result* GetInclude(const char* requested_source,
                                                shaderc_include_type type,
                                                const char* requesting_source,
@@ -61,14 +55,8 @@ namespace Hazel
                 std::filesystem::path requestingPath(requesting_source);
                 std::filesystem::path requestedPath(requested_source);
                 std::filesystem::path filePath;
-                if (requestedPath.is_absolute())
-                {
-                    filePath = requestedPath;
-                }
-                else
-                {
-                    filePath = requestingPath.parent_path() / requestedPath;
-                }
+                if (requestedPath.is_absolute()) { filePath = requestedPath; }
+                else { filePath = requestingPath.parent_path() / requestedPath; }
                 auto requestedFileContent = ReadTextFile(filePath);
 
                 auto* result = new shaderc_include_result;
@@ -89,7 +77,7 @@ namespace Hazel
                 delete data;
             }
         };
-    }
+    } // namespace
 
     std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc& desc)
     {
@@ -97,26 +85,20 @@ namespace Hazel
         {
             case RHIBackend::Auto:
             case RHIBackend::Vulkan:
-            {
-                auto instance = std::make_unique<RHIInstance>(desc);
-                return instance->IsValid() ? std::make_optional(std::move(instance)) : std::nullopt;
-            }
+                {
+                    auto instance = std::make_unique<RHIInstance>(desc);
+                    return instance->IsValid() ? std::make_optional(std::move(instance)) : std::nullopt;
+                }
         }
         return std::nullopt;
     }
 
     RHIShader* CreateShaderFromGLSLFile(RHIDevice* device, const RHIShaderFileDesc& desc)
     {
-        if (desc.path.empty())
-        {
-            return nullptr;
-        }
+        if (desc.path.empty()) { return nullptr; }
 
         const auto source = ReadTextFile(desc.path);
-        if (source.empty())
-        {
-            return nullptr;
-        }
+        if (source.empty()) { return nullptr; }
 
         shaderc::Compiler compiler;
         shaderc::CompileOptions options;
@@ -131,15 +113,8 @@ namespace Hazel
         }
 
         auto result = compiler.CompileGlslToSpv(
-            source,
-            ToShadercShaderKind(desc.stage),
-            desc.path.string().c_str(),
-            desc.entryPoint.c_str(),
-            options);
-        if (result.GetCompilationStatus() != shaderc_compilation_status_success)
-        {
-            return nullptr;
-        }
+            source, ToShadercShaderKind(desc.stage), desc.path.string().c_str(), desc.entryPoint.c_str(), options);
+        if (result.GetCompilationStatus() != shaderc_compilation_status_success) { return nullptr; }
 
         RHIShaderDesc shaderDesc;
         shaderDesc.stage = desc.stage;

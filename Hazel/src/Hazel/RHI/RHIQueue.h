@@ -29,10 +29,8 @@ namespace Hazel
 
     using RHIQueueType = RHIQueueTypeFlagBits;
 
-    template <>
-    struct InRHIFlagScope<RHIQueueTypeFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIQueueTypeFlagBits> : std::true_type
+    {};
 
     using RHIQueueTypes = Flags<RHIQueueTypeFlagBits>;
 } // namespace Hazel

@@ -5,15 +5,14 @@
 #include "MaterialAsset.h"
 
 #include "AssetManager.h"
-#include "ShaderAsset.h"
 #include "Hazel/Renderer/Renderer.h"
+#include "ShaderAsset.h"
 
 namespace Hazel
 {
     namespace
     {
-        const std::unordered_map<MaterialAssetPropertyType, std::string> s_MaterialAssetPropertyTypeToStringMap =
-        {
+        const std::unordered_map<MaterialAssetPropertyType, std::string> s_MaterialAssetPropertyTypeToStringMap = {
             {MaterialAssetPropertyType::Int, "Int"},
             {MaterialAssetPropertyType::UInt, "UInt"},
             {MaterialAssetPropertyType::Float, "Float"},
@@ -24,8 +23,7 @@ namespace Hazel
             {MaterialAssetPropertyType::Mat4, "Mat4"},
             {MaterialAssetPropertyType::Sampler, "Sampler"},
             {MaterialAssetPropertyType::Texture, "Texture"},
-            {MaterialAssetPropertyType::SamplerWithTexture, "Combined"}
-        };
+            {MaterialAssetPropertyType::SamplerWithTexture, "Combined"}};
 
         std::string MaterialAssetPropertyTypeToString(MaterialAssetPropertyType type)
         {
@@ -36,10 +34,7 @@ namespace Hazel
         {
             for (const auto& [type, name] : s_MaterialAssetPropertyTypeToStringMap)
             {
-                if (name == str)
-                {
-                    return type;
-                }
+                if (name == str) { return type; }
             }
             return MaterialAssetPropertyType::Int;
         }
@@ -61,38 +56,28 @@ namespace Hazel
         MaterialPipelineState DeserializePipelineState(const YAML::Node& node)
         {
             MaterialPipelineState state{};
-            if (!node)
-            {
-                return state;
-            }
+            if (!node) { return state; }
 
-            state.polygonMode = node["PolygonMode"]
-                                    ? static_cast<RHIPolygonMode>(node["PolygonMode"].as<uint32_t>())
-                                    : state.polygonMode;
-            state.cullMode = node["CullMode"]
-                                 ? static_cast<RHICullMode>(node["CullMode"].as<uint32_t>())
-                                 : state.cullMode;
-            state.depthClampEnable = node["DepthClampEnable"]
-                                         ? node["DepthClampEnable"].as<bool>()
-                                         : state.depthClampEnable;
-            state.depthBiasEnable = node["DepthBiasEnable"]
-                                        ? node["DepthBiasEnable"].as<bool>()
-                                        : state.depthBiasEnable;
-            state.depthTestEnable = node["DepthTestEnable"]
-                                        ? node["DepthTestEnable"].as<bool>()
-                                        : state.depthTestEnable;
-            state.depthWriteEnable = node["DepthWriteEnable"]
-                                         ? node["DepthWriteEnable"].as<bool>()
-                                         : state.depthWriteEnable;
+            state.polygonMode = node["PolygonMode"] ? static_cast<RHIPolygonMode>(node["PolygonMode"].as<uint32_t>())
+                                                    : state.polygonMode;
+            state.cullMode =
+                node["CullMode"] ? static_cast<RHICullMode>(node["CullMode"].as<uint32_t>()) : state.cullMode;
+            state.depthClampEnable =
+                node["DepthClampEnable"] ? node["DepthClampEnable"].as<bool>() : state.depthClampEnable;
+            state.depthBiasEnable =
+                node["DepthBiasEnable"] ? node["DepthBiasEnable"].as<bool>() : state.depthBiasEnable;
+            state.depthTestEnable =
+                node["DepthTestEnable"] ? node["DepthTestEnable"].as<bool>() : state.depthTestEnable;
+            state.depthWriteEnable =
+                node["DepthWriteEnable"] ? node["DepthWriteEnable"].as<bool>() : state.depthWriteEnable;
             state.depthCompareOp = node["DepthCompareOp"]
                                        ? static_cast<RHICompareOp>(node["DepthCompareOp"].as<uint32_t>())
                                        : state.depthCompareOp;
-            state.stencilTestEnable = node["StencilTestEnable"]
-                                          ? node["StencilTestEnable"].as<bool>()
-                                          : state.stencilTestEnable;
+            state.stencilTestEnable =
+                node["StencilTestEnable"] ? node["StencilTestEnable"].as<bool>() : state.stencilTestEnable;
             return state;
         }
-    }
+    } // namespace
 
     YAML::Node MaterialAssetMeta::Serialize() const
     {
@@ -194,16 +179,10 @@ namespace Hazel
         for (auto& set : reflection.resourceGroups)
         {
             // only reflect material property
-            if (set.set != 2)
-            {
-                continue;
-            }
+            if (set.set != 2) { continue; }
             for (auto& slot : set.slots)
             {
-                if (slot.slot != 0)
-                {
-                    continue;
-                }
+                if (slot.slot != 0) { continue; }
 
                 for (auto& member : slot.buffer.members)
                 {
@@ -243,61 +222,52 @@ namespace Hazel
                                     prop.type = MaterialAssetPropertyType::UInt;
                                     break;
                                 case RHIShaderValueBaseType::Float:
-                                {
-                                    if (member.columns == 1)
                                     {
-                                        switch (member.rows)
+                                        if (member.columns == 1)
                                         {
-                                            case 1:
-                                                prop.type = MaterialAssetPropertyType::Float;
-                                                break;
-                                            case 2:
-                                                prop.type = MaterialAssetPropertyType::Vec2;
-                                                break;
-                                            case 3:
-                                                prop.type = MaterialAssetPropertyType::Vec3;
-                                                break;
-                                            case 4:
-                                                prop.type = MaterialAssetPropertyType::Vec4;
-                                                break;
-                                            default:
-                                                break;
+                                            switch (member.rows)
+                                            {
+                                                case 1:
+                                                    prop.type = MaterialAssetPropertyType::Float;
+                                                    break;
+                                                case 2:
+                                                    prop.type = MaterialAssetPropertyType::Vec2;
+                                                    break;
+                                                case 3:
+                                                    prop.type = MaterialAssetPropertyType::Vec3;
+                                                    break;
+                                                case 4:
+                                                    prop.type = MaterialAssetPropertyType::Vec4;
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            switch (member.columns)
+                                            {
+                                                case 3:
+                                                    prop.type = MaterialAssetPropertyType::Mat3;
+                                                    break;
+                                                case 4:
+                                                    prop.type = MaterialAssetPropertyType::Mat4;
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
                                         }
                                     }
-                                    else
-                                    {
-                                        switch (member.columns)
-                                        {
-                                            case 3:
-                                                prop.type = MaterialAssetPropertyType::Mat3;
-                                                break;
-                                            case 4:
-                                                prop.type = MaterialAssetPropertyType::Mat4;
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                    }
-                                }
                                 default:
                                     break;
                             }
                         }
 
-                        if (isSampler)
-                        {
-                            prop.type = MaterialAssetPropertyType::Sampler;
-                        }
+                        if (isSampler) { prop.type = MaterialAssetPropertyType::Sampler; }
 
-                        if (isTexture)
-                        {
-                            prop.type = MaterialAssetPropertyType::Texture;
-                        }
+                        if (isTexture) { prop.type = MaterialAssetPropertyType::Texture; }
 
-                        if (isCombined)
-                        {
-                            prop.type = MaterialAssetPropertyType::SamplerWithTexture;
-                        }
+                        if (isCombined) { prop.type = MaterialAssetPropertyType::SamplerWithTexture; }
 
                         AddProperty(prop);
                     }
@@ -306,4 +276,4 @@ namespace Hazel
         }
         VersionUp();
     }
-} // Hazel
+} // namespace Hazel

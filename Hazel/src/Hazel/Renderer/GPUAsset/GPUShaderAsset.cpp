@@ -15,25 +15,18 @@ namespace Hazel
                                    RHIShader* fragmentShader,
                                    RHIShaderReflection reflection,
                                    uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::Shader, renderer, sourceVersion, lastReferencedFrame),
-          m_IsValid(true),
-          m_VertexShader(vertexShader),
-          m_FragmentShader(fragmentShader),
-          m_Reflection(reflection)
-    {
-    }
+        : GPUAsset(uuid, AssetType::Shader, renderer, sourceVersion, lastReferencedFrame)
+        , m_IsValid(true)
+        , m_VertexShader(vertexShader)
+        , m_FragmentShader(fragmentShader)
+        , m_Reflection(reflection)
+    {}
 
-    GPUShaderAsset::~GPUShaderAsset()
-    {
-        GPUShaderAsset::ReleaseImmediate();
-    }
+    GPUShaderAsset::~GPUShaderAsset() { GPUShaderAsset::ReleaseImmediate(); }
 
     void GPUShaderAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Renderer->UnregisterShader(GetUUID(), GetSourceVersion());
 
@@ -47,10 +40,7 @@ namespace Hazel
 
     void GPUShaderAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Renderer->UnregisterShader(GetUUID(), GetSourceVersion());
 

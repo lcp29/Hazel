@@ -31,8 +31,7 @@ namespace Hazel
                 {"RGBA16SFloat", RHIFormat::RGBA16SFloat},
                 {"D32SFloat", RHIFormat::D32SFloat},
                 {"D32SFloatS8Uint", RHIFormat::D32SFloatS8Uint},
-                {"S8Uint", RHIFormat::S8Uint}
-            };
+                {"S8Uint", RHIFormat::S8Uint}};
             return s_FormatMap;
         }
 
@@ -44,8 +43,7 @@ namespace Hazel
                 {"Sampled", RHIImageUsageFlagBits::Sampled},
                 {"Storage", RHIImageUsageFlagBits::Storage},
                 {"ColorAttachment", RHIImageUsageFlagBits::ColorAttachment},
-                {"DepthStencilAttachment", RHIImageUsageFlagBits::DepthStencilAttachment}
-            };
+                {"DepthStencilAttachment", RHIImageUsageFlagBits::DepthStencilAttachment}};
             return s_UsageMap;
         }
 
@@ -53,10 +51,7 @@ namespace Hazel
         {
             for (const auto& [name, mappedFormat] : GetFormatMap())
             {
-                if (mappedFormat == format)
-                {
-                    return name;
-                }
+                if (mappedFormat == format) { return name; }
             }
 
             return "Undefined";
@@ -64,16 +59,10 @@ namespace Hazel
 
         RHIFormat TryParseFormat(const YAML::Node& node)
         {
-            if (!node || !node.IsScalar())
-            {
-                return RHIFormat::BGRA8UNorm;
-            }
+            if (!node || !node.IsScalar()) { return RHIFormat::BGRA8UNorm; }
 
             const auto it = GetFormatMap().find(node.as<std::string>());
-            if (it == GetFormatMap().end())
-            {
-                return RHIFormat::BGRA8UNorm;
-            }
+            if (it == GetFormatMap().end()) { return RHIFormat::BGRA8UNorm; }
 
             RHIFormat format = it->second;
             return format;
@@ -84,34 +73,22 @@ namespace Hazel
             YAML::Node node(YAML::NodeType::Sequence);
             for (const auto& [name, flag] : GetImageUsageMap())
             {
-                if (usages & flag)
-                {
-                    node.push_back(name);
-                }
+                if (usages & flag) { node.push_back(name); }
             }
             return node;
         }
 
         RHIImageUsages DeserializeUsages(const YAML::Node& node)
         {
-            if (!node || !node.IsSequence())
-            {
-                return {};
-            }
+            if (!node || !node.IsSequence()) { return {}; }
 
             RHIImageUsages usages = {};
             for (const auto& usageNode : node)
             {
-                if (!usageNode.IsScalar())
-                {
-                    continue;
-                }
+                if (!usageNode.IsScalar()) { continue; }
 
                 const auto it = GetImageUsageMap().find(usageNode.as<std::string>());
-                if (it == GetImageUsageMap().end())
-                {
-                    continue;
-                }
+                if (it == GetImageUsageMap().end()) { continue; }
 
                 usages |= it->second;
             }
@@ -155,9 +132,8 @@ namespace Hazel
             meta.m_Desc.height = descNode["Height"] ? descNode["Height"].as<uint32_t>() : 256;
             meta.m_Desc.depth = descNode["Depth"] ? descNode["Depth"].as<uint32_t>() : 1;
             meta.m_Desc.arrayLayers = descNode["ArrayLayers"] ? descNode["ArrayLayers"].as<uint32_t>() : 1;
-            meta.m_Desc.viewType = descNode["ViewType"]
-                                       ? static_cast<RHIImageViewType>(descNode["ViewType"].as<int>())
-                                       : Image2D;
+            meta.m_Desc.viewType =
+                descNode["ViewType"] ? static_cast<RHIImageViewType>(descNode["ViewType"].as<int>()) : Image2D;
             meta.m_Desc.useMipmap = descNode["UseMipmap"] ? descNode["UseMipmap"].as<bool>() : false;
             meta.m_Desc.perFrame = descNode["PerFrame"] ? descNode["PerFrame"].as<bool>() : true;
             meta.m_Desc.format = descNode["Format"] ? TryParseFormat(descNode["Format"]) : RHIFormat::BGRA8UNorm;

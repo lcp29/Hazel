@@ -108,7 +108,6 @@ namespace Hazel
         }
     }
 
-
     void GeometryDataRegistry::CreateNewPageBuffer()
     {
         RHIBufferDesc pageBufferDesc{};
@@ -124,4 +123,4 @@ namespace Hazel
         m_PageBufferMutexes.push_back(std::make_unique<std::mutex>());
         m_PageBufferFreeRanges.push_back({{0, kMaxPageCountPerBuffer}});
     }
-} // Hazel
+} // namespace Hazel

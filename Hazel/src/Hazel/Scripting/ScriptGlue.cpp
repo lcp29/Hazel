@@ -3,9 +3,9 @@
 #include "Hazel/Core/Input.h"
 #include "Hazel/Core/KeyCodes.h"
 #include "Hazel/Core/UUID.h"
+#include "Hazel/Scene/Components.h"
 #include "Hazel/Scene/Entity.h"
 #include "Hazel/Scene/Scene.h"
-#include "Hazel/Scene/Components.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "hzpch.h"
 #include "mono/metadata/object.h"
@@ -46,10 +46,7 @@ namespace Hazel
         return glm::dot(*parameter, *parameter);
     }
 
-    static MonoObject* GetScriptInstance(UUID entityID)
-    {
-        return ScriptEngine::GetManagedInstance(entityID);
-    }
+    static MonoObject* GetScriptInstance(UUID entityID) { return ScriptEngine::GetManagedInstance(entityID); }
 
     static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
     {
@@ -72,8 +69,7 @@ namespace Hazel
         Entity entity = scene->FindEntityByName(nameCStr);
         mono_free(nameCStr);
 
-        if (!entity)
-            return 0;
+        if (!entity) return 0;
 
         return entity.GetUUID();
     }
@@ -98,13 +94,9 @@ namespace Hazel
         entity.GetComponent<TransformComponent>().translation = *translation;
     }
 
-    static bool Input_IsKeyDown(KeyCode keycode)
-    {
-        return Input::IsKeyPressed(keycode);
-    }
+    static bool Input_IsKeyDown(KeyCode keycode) { return Input::IsKeyPressed(keycode); }
 
-    template <typename... Component>
-    static void RegisterComponent()
+    template <typename... Component> static void RegisterComponent()
     {
         (
             []() {
@@ -125,8 +117,7 @@ namespace Hazel
             ...);
     }
 
-    template <typename... Component>
-    static void RegisterComponent(ComponentGroup<Component...>)
+    template <typename... Component> static void RegisterComponent(ComponentGroup<Component...>)
     {
         RegisterComponent<Component...>();
     }

@@ -9,17 +9,11 @@ namespace Hazel
         return CreateScope<GraphicsContext>(appName, window);
     }
 
-    GraphicsContext::~GraphicsContext()
-    {
-        ReleaseDefaultCommandBuffers();
-    }
+    GraphicsContext::~GraphicsContext() { ReleaseDefaultCommandBuffers(); }
 
     void GraphicsContext::Init(Window* window)
     {
-        if (m_Initialized)
-        {
-            return;
-        }
+        if (m_Initialized) { return; }
 
         // create Vulkan instance
         RHIInstanceDesc instanceDesc;
@@ -48,10 +42,7 @@ namespace Hazel
 #if defined(RHI_USE_VULKAN)
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
-            m_Instance->GetHandle(),
-            static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
-            nullptr,
-            &surface);
+            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
         RHISurfaceDesc surfaceDesc{surface};
 #endif
 
@@ -109,10 +100,7 @@ namespace Hazel
 
     void GraphicsContext::ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer)
     {
-        if (!commandBuffer)
-        {
-            return;
-        }
+        if (!commandBuffer) { return; }
 
         std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
         for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
@@ -130,21 +118,15 @@ namespace Hazel
         std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
         for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
         {
-            if (pooledCommandBuffer.commandBuffer)
-            {
-                pooledCommandBuffer.commandBuffer->ReleaseImmediate();
-            }
-            if (pooledCommandBuffer.pool)
-            {
-                pooledCommandBuffer.pool->ReleaseImmediate();
-            }
+            if (pooledCommandBuffer.commandBuffer) { pooledCommandBuffer.commandBuffer->ReleaseImmediate(); }
+            if (pooledCommandBuffer.pool) { pooledCommandBuffer.pool->ReleaseImmediate(); }
         }
         m_DefaultCommandBuffers.clear();
     }
 
     GraphicsContext::GraphicsContext(const std::string& appName, Window* window)
         : m_AppName(appName)
-          , m_Window(window)
+        , m_Window(window)
     {
         Init(window);
     }

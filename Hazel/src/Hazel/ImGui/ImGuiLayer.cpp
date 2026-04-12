@@ -5,15 +5,15 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#if defined(RHI_USE_VULKAN)
+#ifdef RHI_USE_VULKAN
 #include "Hazel/RHI/RHI.h"
 
 #include <imgui_impl_vulkan.h>
 #endif
 
 #include "Hazel/Core/Application.h"
-#include "ImGuizmo.h"
 #include "Hazel/Utils/PlatformUtils.h"
+#include "ImGuizmo.h"
 
 #include <GLFW/glfw3.h>
 #include <backends/imgui_impl_glfw.h>
@@ -22,9 +22,8 @@ namespace Hazel
 {
     ImGuiLayer::ImGuiLayer(Renderer* renderer)
         : Layer("ImGuiLayer")
-          , m_Renderer(renderer)
-    {
-    }
+        , m_Renderer(renderer)
+    {}
 
     void ImGuiLayer::OnAttach()
     {
@@ -76,7 +75,7 @@ namespace Hazel
 
         m_ResourceHeap = device->CreateResourceHeap(heapDesc, true);
 
-#if defined(RHI_USE_VULKAN)
+#ifdef RHI_USE_VULKAN
         ImGui_ImplGlfw_InitForVulkan(window, true);
 
         ImGui_ImplVulkan_InitInfo initInfo{};
@@ -98,11 +97,9 @@ namespace Hazel
                                                                   | RHIImageUsageFlagBits::TransferDestination);
         initInfo.PipelineInfoMain.SwapChainImageUsage = static_cast<VkImageUsageFlags>(imageUsage);
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {
-            VkPipelineRenderingCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}
-        };
+            VkPipelineRenderingCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}};
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        auto swapchainColorFormat =
-            static_cast<VkFormat>(VulkanConvertFormat(m_Renderer->GetSwapchain()->GetFormat()));
+        auto swapchainColorFormat = static_cast<VkFormat>(VulkanConvertFormat(m_Renderer->GetSwapchain()->GetFormat()));
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapchainColorFormat;
 
         ImGui_ImplVulkan_Init(&initInfo);
@@ -194,11 +191,8 @@ namespace Hazel
 
     void* ImGuiLayer::AddTexture(RHISampler* sampler, RHIImageView* imageView, RHIImageResourceState imageState)
     {
-        if (!sampler || !imageView)
-        {
-            return nullptr;
-        }
-#if defined(RHI_USE_VULKAN)
+        if (!sampler || !imageView) { return nullptr; }
+#ifdef RHI_USE_VULKAN
         return ImGui_ImplVulkan_AddTexture(sampler->GetHandle(),
                                            imageView->GetHandle(),
                                            static_cast<VkImageLayout>(VulkanConvertImageResourceState(imageState)));
@@ -209,17 +203,11 @@ namespace Hazel
 
     void ImGuiLayer::RemoveTexture(void* textureID)
     {
-#if defined(RHI_USE_VULKAN)
-        if (textureID)
-        {
-            ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(textureID));
-        }
+#ifdef RHI_USE_VULKAN
+        if (textureID) { ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(textureID)); }
 #endif
         // other not supported
     }
 
-    uint32_t ImGuiLayer::GetActiveWidgetID() const
-    {
-        return GImGui->ActiveId;
-    }
+    uint32_t ImGuiLayer::GetActiveWidgetID() const { return GImGui->ActiveId; }
 } // namespace Hazel

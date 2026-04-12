@@ -30,7 +30,7 @@ namespace Hazel
         auto* vertexShader = desc.vertexShader;
         auto* fragmentShader = desc.fragmentShader;
         HZ_RHI_DEBUG_RETURN_IF(!vertexShader || !fragmentShader || !vertexShader->IsValid()
-            || !fragmentShader->IsValid());
+                               || !fragmentShader->IsValid());
 
         auto* resourceSignature = desc.resourceSignature;
         HZ_RHI_DEBUG_RETURN_IF(!resourceSignature || !resourceSignature->IsValid());
@@ -50,9 +50,7 @@ namespace Hazel
         for (const auto& binding : desc.vertexBindings)
         {
             vertexBindings.emplace_back(
-                binding.binding,
-                binding.stride,
-                VulkanConvertVertexInputRate(binding.inputRate));
+                binding.binding, binding.stride, VulkanConvertVertexInputRate(binding.inputRate));
         }
 
         std::vector<vk::VertexInputAttributeDescription> vertexAttributes;
@@ -60,10 +58,7 @@ namespace Hazel
         for (const auto& attribute : desc.vertexAttributes)
         {
             vertexAttributes.emplace_back(
-                attribute.location,
-                attribute.binding,
-                VulkanConvertFormat(attribute.format),
-                attribute.offset);
+                attribute.location, attribute.binding, VulkanConvertFormat(attribute.format), attribute.offset);
         }
 
         vk::PipelineVertexInputStateCreateInfo vertexInputState;
@@ -98,16 +93,10 @@ namespace Hazel
         depthStencilState.stencilTestEnable = desc.stencilTestEnable;
 
         std::vector<RHIColorBlendAttachmentDesc> defaultBlendAttachments;
-        if (desc.colorBlendAttachments.empty())
-        {
-            defaultBlendAttachments.resize(desc.colorAttachmentFormats.size());
-        }
+        if (desc.colorBlendAttachments.empty()) { defaultBlendAttachments.resize(desc.colorAttachmentFormats.size()); }
         const auto& blendAttachmentsSource =
             desc.colorBlendAttachments.empty() ? defaultBlendAttachments : desc.colorBlendAttachments;
-        if (blendAttachmentsSource.size() != desc.colorAttachmentFormats.size())
-        {
-            return;
-        }
+        if (blendAttachmentsSource.size() != desc.colorAttachmentFormats.size()) { return; }
 
         std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments;
         colorBlendAttachments.reserve(blendAttachmentsSource.size());
@@ -186,48 +175,30 @@ namespace Hazel
         createInfo.layout = m_ResourceSignature->GetPipelineLayout();
 
         auto pipelineResult = m_Device.createGraphicsPipeline(VK_NULL_HANDLE, createInfo);
-        if (pipelineResult.result != vk::Result::eSuccess || !pipelineResult.value)
-        {
-            return;
-        }
+        if (pipelineResult.result != vk::Result::eSuccess || !pipelineResult.value) { return; }
 
         m_Pipeline = pipelineResult.value;
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ~RHIGraphicsPipelineImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ~RHIGraphicsPipelineImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterGraphicsPipeline(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterGraphicsPipeline(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterGraphicsPipeline(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterGraphicsPipeline(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ReleaseWithoutUnregister)()
@@ -238,16 +209,10 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion([device, pipeline]() {
-                if (device && pipeline)
-                {
-                    device.destroyPipeline(pipeline);
-                }
+                if (device && pipeline) { device.destroyPipeline(pipeline); }
             });
         }
-        else if (device && pipeline)
-        {
-            device.destroyPipeline(pipeline);
-        }
+        else if (device && pipeline) { device.destroyPipeline(pipeline); }
 
         m_Pipeline = VK_NULL_HANDLE;
         m_ResourceSignature = nullptr;
@@ -259,10 +224,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIGraphicsPipeline, ReleaseImmediateWithoutUnregister)()
     {
-        if (m_Device && m_Pipeline)
-        {
-            m_Device.destroyPipeline(m_Pipeline);
-        }
+        if (m_Device && m_Pipeline) { m_Device.destroyPipeline(m_Pipeline); }
 
         m_Pipeline = VK_NULL_HANDLE;
         m_ResourceSignature = nullptr;

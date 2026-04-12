@@ -6,7 +6,7 @@ namespace Hazel
 {
     class FileDialogs
     {
-    public:
+      public:
         // These return empty strings if cancelled
         static std::string OpenFile(const char* filter);
         static std::string SaveFile(const char* filter);
@@ -14,13 +14,13 @@ namespace Hazel
 
     class Time
     {
-    public:
+      public:
         static float GetTime();
     };
 
     class SystemSettings
     {
-    public:
+      public:
         static float GetSystemDPIScale();
     };
 } // namespace Hazel

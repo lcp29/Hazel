@@ -22,8 +22,7 @@ namespace Hazel
         s_Instance = this;
 
         // Set working directory here
-        if (!m_Specification.WorkingDirectory.empty())
-            std::filesystem::current_path(m_Specification.WorkingDirectory);
+        if (!m_Specification.WorkingDirectory.empty()) std::filesystem::current_path(m_Specification.WorkingDirectory);
 
         m_Window = Window::Create(WindowProps(m_Specification.Name, DefaultWindowWidth, DefaultWindowHeight));
         m_Window->SetEventCallback(HZ_BIND_EVENT_FN(Application::OnEvent));
@@ -69,10 +68,7 @@ namespace Hazel
         layer->OnAttach();
     }
 
-    void Application::Close()
-    {
-        m_Running = false;
-    }
+    void Application::Close() { m_Running = false; }
 
     void Application::SubmitToMainThread(const std::function<void()>& function)
     {
@@ -91,8 +87,7 @@ namespace Hazel
 
         for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
         {
-            if (e.Handled)
-                break;
+            if (e.Handled) break;
             (*it)->OnEvent(e);
         }
     }

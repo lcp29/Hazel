@@ -36,37 +36,22 @@ namespace Hazel
         static MeshAssetMeta Deserialize(const YAML::Node& node);
         static MeshAssetMeta CreateDefault();
 
-        UUID GetUUID() const
-        {
-            return m_UUID;
-        }
+        UUID GetUUID() const { return m_UUID; }
 
-        uint64_t GetVersion() const
-        {
-            return m_Version;
-        }
+        uint64_t GetVersion() const { return m_Version; }
 
-        void VersionUp()
-        {
-            m_Version++;
-        }
+        void VersionUp() { m_Version++; }
 
-        bool GenerateMeshlets() const
-        {
-            return m_GenerateMeshlets;
-        }
+        bool GenerateMeshlets() const { return m_GenerateMeshlets; }
 
         void SetGenerateMeshlets(bool generateMeshlets)
         {
-            if (m_GenerateMeshlets == generateMeshlets)
-            {
-                return;
-            }
+            if (m_GenerateMeshlets == generateMeshlets) { return; }
             m_GenerateMeshlets = generateMeshlets;
             VersionUp();
         }
 
-    private:
+      private:
         UUID m_UUID = 0;
         bool m_GenerateMeshlets = false;
         uint64_t m_Version = 0;
@@ -85,48 +70,29 @@ namespace Hazel
 
     class MeshAsset : public Asset
     {
-    public:
+      public:
         MeshAsset() = delete;
 
-        MeshAsset(AssetRegistryTerm* registryTerm,
-                  const MeshAssetMeta& meta,
-                  MeshAssetData data)
-            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(data))
-        {
-        }
+        MeshAsset(AssetRegistryTerm* registryTerm, const MeshAssetMeta& meta, MeshAssetData data)
+            : Asset(registryTerm)
+            , m_Meta(meta)
+            , m_Data(std::move(data))
+        {}
 
-        uint64_t GetVersion() const final
-        {
-            return m_Meta.GetVersion();
-        }
+        uint64_t GetVersion() const final { return m_Meta.GetVersion(); }
 
-        void VersionUp() final
-        {
-            m_Meta.VersionUp();
-        }
+        void VersionUp() final { m_Meta.VersionUp(); }
 
-        const MeshAssetMeta& GetMeta() const
-        {
-            return m_Meta;
-        }
+        const MeshAssetMeta& GetMeta() const { return m_Meta; }
 
-        MeshAssetMeta& GetMeta()
-        {
-            return m_Meta;
-        }
+        MeshAssetMeta& GetMeta() { return m_Meta; }
 
-        const MeshAssetData& GetData() const
-        {
-            return m_Data;
-        }
+        const MeshAssetData& GetData() const { return m_Data; }
 
-        MeshAssetData& GetData()
-        {
-            return m_Data;
-        }
+        MeshAssetData& GetData() { return m_Data; }
 
-    private:
+      private:
         MeshAssetMeta m_Meta{};
         MeshAssetData m_Data{};
     };
-} // Hazel
+} // namespace Hazel

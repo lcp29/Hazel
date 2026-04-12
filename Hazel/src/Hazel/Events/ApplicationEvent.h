@@ -6,22 +6,15 @@ namespace Hazel
 {
     class WindowResizeEvent : public Event
     {
-    public:
+      public:
         WindowResizeEvent(unsigned int width, unsigned int height)
             : m_Width(width)
-              , m_Height(height)
-        {
-        }
+            , m_Height(height)
+        {}
 
-        unsigned int GetWidth() const
-        {
-            return m_Width;
-        }
+        unsigned int GetWidth() const { return m_Width; }
 
-        unsigned int GetHeight() const
-        {
-            return m_Height;
-        }
+        unsigned int GetHeight() const { return m_Height; }
 
         std::string ToString() const override
         {
@@ -33,13 +26,13 @@ namespace Hazel
         EVENT_CLASS_TYPE(WindowResize)
         EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-    private:
+      private:
         unsigned int m_Width, m_Height;
     };
 
     class WindowCloseEvent : public Event
     {
-    public:
+      public:
         WindowCloseEvent() = default;
 
         EVENT_CLASS_TYPE(WindowClose)
@@ -48,7 +41,7 @@ namespace Hazel
 
     class AppTickEvent : public Event
     {
-    public:
+      public:
         AppTickEvent() = default;
 
         EVENT_CLASS_TYPE(AppTick)
@@ -57,7 +50,7 @@ namespace Hazel
 
     class AppUpdateEvent : public Event
     {
-    public:
+      public:
         AppUpdateEvent() = default;
 
         EVENT_CLASS_TYPE(AppUpdate)
@@ -66,7 +59,7 @@ namespace Hazel
 
     class AppRenderEvent : public Event
     {
-    public:
+      public:
         AppRenderEvent() = default;
 
         EVENT_CLASS_TYPE(AppRender)

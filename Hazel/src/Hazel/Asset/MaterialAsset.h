@@ -64,14 +64,10 @@ namespace Hazel
 
         bool operator==(const MaterialPipelineState& other) const
         {
-            return polygonMode == other.polygonMode &&
-                   cullMode == other.cullMode &&
-                   depthClampEnable == other.depthClampEnable &&
-                   depthBiasEnable == other.depthBiasEnable &&
-                   depthTestEnable == other.depthTestEnable &&
-                   depthWriteEnable == other.depthWriteEnable &&
-                   depthCompareOp == other.depthCompareOp &&
-                   stencilTestEnable == other.stencilTestEnable;
+            return polygonMode == other.polygonMode && cullMode == other.cullMode
+                   && depthClampEnable == other.depthClampEnable && depthBiasEnable == other.depthBiasEnable
+                   && depthTestEnable == other.depthTestEnable && depthWriteEnable == other.depthWriteEnable
+                   && depthCompareOp == other.depthCompareOp && stencilTestEnable == other.stencilTestEnable;
         };
     };
 
@@ -81,70 +77,40 @@ namespace Hazel
         static MaterialAssetMeta Deserialize(const YAML::Node& node);
         static MaterialAssetMeta CreateDefault();
 
-        UUID GetUUID() const
-        {
-            return m_UUID;
-        }
+        UUID GetUUID() const { return m_UUID; }
 
-        uint64_t GetVersion() const
-        {
-            return m_Version;
-        }
+        uint64_t GetVersion() const { return m_Version; }
 
-        void VersionUp()
-        {
-            m_Version++;
-        }
+        void VersionUp() { m_Version++; }
 
-        UUID GetShader() const
-        {
-            return m_Shader;
-        }
+        UUID GetShader() const { return m_Shader; }
 
         void SetShader(UUID shader)
         {
-            if (m_Shader == shader)
-            {
-                return;
-            }
+            if (m_Shader == shader) { return; }
             m_Shader = shader;
             VersionUp();
         }
 
-        const std::vector<MaterialAssetProperty>& GetProperties() const
-        {
-            return m_Properties;
-        }
+        const std::vector<MaterialAssetProperty>& GetProperties() const { return m_Properties; }
 
-        const MaterialPipelineState& GetPipelineState() const
-        {
-            return m_PipelineState;
-        }
+        const MaterialPipelineState& GetPipelineState() const { return m_PipelineState; }
 
         void SetPipelineState(MaterialPipelineState pipelineState)
         {
-            if (m_PipelineState == pipelineState)
-            {
-                return;
-            }
+            if (m_PipelineState == pipelineState) { return; }
             m_PipelineState = std::move(pipelineState);
             VersionUp();
         }
 
         void ClearProperties()
         {
-            if (m_Properties.empty())
-            {
-                return;
-            }
+            if (m_Properties.empty()) { return; }
             m_Properties.clear();
             VersionUp();
         }
 
-        void ReserveProperties(size_t count)
-        {
-            m_Properties.reserve(count);
-        }
+        void ReserveProperties(size_t count) { m_Properties.reserve(count); }
 
         void AddProperty(const MaterialAssetProperty& property)
         {
@@ -154,17 +120,15 @@ namespace Hazel
 
         void SetProperties(std::vector<MaterialAssetProperty> properties)
         {
-            if (m_Properties.size() == properties.size() &&
-                std::equal(m_Properties.begin(),
-                           m_Properties.end(),
-                           properties.begin(),
-                           [](const MaterialAssetProperty& lhs, const MaterialAssetProperty& rhs) {
-                               return lhs.name == rhs.name &&
-                                      lhs.type == rhs.type &&
-                                      std::memcmp(lhs.data, rhs.data, sizeof(lhs.data)) == 0 &&
-                                      lhs.sampler == rhs.sampler &&
-                                      lhs.texture == rhs.texture;
-                           }))
+            if (m_Properties.size() == properties.size()
+                && std::equal(m_Properties.begin(),
+                              m_Properties.end(),
+                              properties.begin(),
+                              [](const MaterialAssetProperty& lhs, const MaterialAssetProperty& rhs) {
+                                  return lhs.name == rhs.name && lhs.type == rhs.type
+                                         && std::memcmp(lhs.data, rhs.data, sizeof(lhs.data)) == 0
+                                         && lhs.sampler == rhs.sampler && lhs.texture == rhs.texture;
+                              }))
             {
                 return;
             }
@@ -174,16 +138,10 @@ namespace Hazel
 
         void SetPropertyData(size_t index, const void* data, size_t size)
         {
-            if (index >= m_Properties.size())
-            {
-                return;
-            }
+            if (index >= m_Properties.size()) { return; }
 
             const auto copySize = std::min(size, sizeof(m_Properties[index].data));
-            if (std::memcmp(m_Properties[index].data, data, copySize) == 0)
-            {
-                return;
-            }
+            if (std::memcmp(m_Properties[index].data, data, copySize) == 0) { return; }
 
             std::memcpy(m_Properties[index].data, data, copySize);
             if (copySize < sizeof(m_Properties[index].data))
@@ -195,27 +153,21 @@ namespace Hazel
 
         void SetPropertySampler(size_t index, UUID sampler)
         {
-            if (index >= m_Properties.size() || m_Properties[index].sampler == sampler)
-            {
-                return;
-            }
+            if (index >= m_Properties.size() || m_Properties[index].sampler == sampler) { return; }
             m_Properties[index].sampler = sampler;
             VersionUp();
         }
 
         void SetPropertyTexture(size_t index, UUID texture)
         {
-            if (index >= m_Properties.size() || m_Properties[index].texture == texture)
-            {
-                return;
-            }
+            if (index >= m_Properties.size() || m_Properties[index].texture == texture) { return; }
             m_Properties[index].texture = texture;
             VersionUp();
         }
 
         void RefreshShader(AssetManager* assetManager);
 
-    private:
+      private:
         UUID m_UUID = 0;
         UUID m_Shader = UUID(-1);
         MaterialPipelineState m_PipelineState{};
@@ -225,46 +177,27 @@ namespace Hazel
 
     class MaterialAsset : public Asset
     {
-    public:
+      public:
         MaterialAsset() = delete;
 
-        MaterialAsset(AssetRegistryTerm* registryTerm,
-                      const MaterialAssetMeta& meta)
-            : Asset(registryTerm), m_Meta(meta)
-        {
-        }
+        MaterialAsset(AssetRegistryTerm* registryTerm, const MaterialAssetMeta& meta)
+            : Asset(registryTerm)
+            , m_Meta(meta)
+        {}
 
-        uint64_t GetVersion() const final
-        {
-            return m_Meta.GetVersion();
-        }
+        uint64_t GetVersion() const final { return m_Meta.GetVersion(); }
 
-        void VersionUp() final
-        {
-            m_Meta.VersionUp();
-        }
+        void VersionUp() final { m_Meta.VersionUp(); }
 
-        const MaterialAssetMeta& GetMeta() const
-        {
-            return m_Meta;
-        }
+        const MaterialAssetMeta& GetMeta() const { return m_Meta; }
 
-        MaterialAssetMeta& GetMeta()
-        {
-            return m_Meta;
-        }
+        MaterialAssetMeta& GetMeta() { return m_Meta; }
 
-        UUID GetShader() const
-        {
-            return m_Meta.GetShader();
-        }
+        UUID GetShader() const { return m_Meta.GetShader(); }
 
-        MaterialPipelineState GetPipelineState() const
-        {
-            return m_Meta.GetPipelineState();
-        }
+        MaterialPipelineState GetPipelineState() const { return m_Meta.GetPipelineState(); }
 
-    private:
+      private:
         MaterialAssetMeta m_Meta{};
     };
-} // Hazel
+} // namespace Hazel

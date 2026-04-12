@@ -87,10 +87,8 @@ namespace Hazel
         A = 1 << 3
     };
 
-    template <>
-    struct InRHIFlagScope<RHIColorComponentFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIColorComponentFlagBits> : std::true_type
+    {};
 
     using RHIColorComponentFlags = Flags<RHIColorComponentFlagBits>;
 
@@ -112,10 +110,8 @@ namespace Hazel
         Bottom = 1 << 13
     };
 
-    template <>
-    struct InRHIFlagScope<RHIPipelineStageFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIPipelineStageFlagBits> : std::true_type
+    {};
 
     using RHIPipelineStages = Flags<RHIPipelineStageFlagBits>;
 
@@ -145,10 +141,8 @@ namespace Hazel
         ShaderStorageWrite = 1 << 20
     };
 
-    template <>
-    struct InRHIFlagScope<RHIPipelineAccessFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIPipelineAccessFlagBits> : std::true_type
+    {};
 
     using RHIPipelineAccessFlags = Flags<RHIPipelineAccessFlagBits>;
 

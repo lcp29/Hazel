@@ -1,13 +1,13 @@
+#include "EditorLayer.h"
+
 #include <Hazel.h>
 #include <Hazel/Core/EntryPoint.h>
-
-#include "EditorLayer.h"
 
 namespace Hazel
 {
     class Hazelnut : public Application
     {
-    public:
+      public:
         Hazelnut(const ApplicationSpecification& spec)
             : Application(spec)
         {
@@ -23,4 +23,4 @@ namespace Hazel
 
         return new Hazelnut(spec);
     }
-}
+} // namespace Hazel

@@ -20,10 +20,7 @@ namespace Hazel
         m_Desc = desc;
         m_IsDetached = isDetached;
 
-        if (!m_DeviceOwner || !m_BufferOwner || desc.format == RHIFormat::Undefined)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_BufferOwner || desc.format == RHIFormat::Undefined) { return; }
 
         HZ_RHI_DEBUG_RETURN_IF(!m_BufferOwner->IsValid());
 
@@ -50,39 +47,24 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIBufferView, ~RHIBufferViewImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIBufferView, ~RHIBufferViewImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHIBufferView, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* bufferOwner = m_BufferOwner;
         ReleaseWithoutUnregister();
-        if (bufferOwner && !m_IsDetached)
-        {
-            bufferOwner->UnregisterView(this);
-        }
+        if (bufferOwner && !m_IsDetached) { bufferOwner->UnregisterView(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIBufferView, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* bufferOwner = m_BufferOwner;
         ReleaseImmediateWithoutUnregister();
-        if (bufferOwner && !m_IsDetached)
-        {
-            bufferOwner->UnregisterView(this);
-        }
+        if (bufferOwner && !m_IsDetached) { bufferOwner->UnregisterView(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIBufferView, ReleaseWithoutUnregister)()
@@ -103,10 +85,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIBufferView, ReleaseImmediateWithoutUnregister)()
     {
-        if (m_DeviceOwner)
-        {
-            m_DeviceOwner->GetHandle().destroyBufferView(m_BufferView);
-        }
+        if (m_DeviceOwner) { m_DeviceOwner->GetHandle().destroyBufferView(m_BufferView); }
 
         m_DeviceOwner = nullptr;
         m_BufferOwner = nullptr;

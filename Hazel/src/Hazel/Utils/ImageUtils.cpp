@@ -19,14 +19,10 @@ namespace Hazel
         return mipLevels;
     }
 
-
     void ImageUtilGenerateMipmap(RHICommandBuffer* commandBuffer, RHIImage* image)
     {
         const RHIImageDesc& imageDesc = image->GetDesc();
-        if (imageDesc.mipLevels <= 1)
-        {
-            return;
-        }
+        if (imageDesc.mipLevels <= 1) { return; }
 
         const RHIImageResourceState originalState = image->GetCurrentState();
 
@@ -36,11 +32,10 @@ namespace Hazel
         destinationRange.baseArrayLayer = 0;
         destinationRange.layerCount = 1;
         destinationRange.planes = RHIImagePlaneFlagBits::Color;
-        image->Transition(
-            commandBuffer,
-            RHIImageResourceState::Undefined,
-            RHIImageResourceState::TransferDestination,
-            destinationRange);
+        image->Transition(commandBuffer,
+                          RHIImageResourceState::Undefined,
+                          RHIImageResourceState::TransferDestination,
+                          destinationRange);
 
         RHIImageSubresourceRange sourceRange{};
         sourceRange.baseMipLevel = 0;
@@ -59,12 +54,11 @@ namespace Hazel
 
             RHIImageBlitDesc blitDesc{};
             blitDesc.filter = RHIBlitFilter::Linear;
-            blitDesc.regions.push_back({{mipLevel - 1, 0, 1, RHIImagePlaneFlagBits::Color},
-                                        {{0, 0, 0},
-                                         {static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1}},
-                                        {mipLevel, 0, 1, RHIImagePlaneFlagBits::Color},
-                                        {{0, 0, 0},
-                                         {static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1}}});
+            blitDesc.regions.push_back(
+                {{mipLevel - 1, 0, 1, RHIImagePlaneFlagBits::Color},
+                 {{0, 0, 0}, {static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1}},
+                 {mipLevel, 0, 1, RHIImagePlaneFlagBits::Color},
+                 {{0, 0, 0}, {static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1}}});
 
             commandBuffer->BlitImage(image,
                                      RHIImageResourceState::TransferSource,

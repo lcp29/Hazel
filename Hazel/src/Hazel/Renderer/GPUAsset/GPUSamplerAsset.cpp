@@ -8,17 +8,11 @@
 
 namespace Hazel
 {
-    GPUSamplerAsset::~GPUSamplerAsset()
-    {
-        GPUSamplerAsset::ReleaseImmediate();
-    }
+    GPUSamplerAsset::~GPUSamplerAsset() { GPUSamplerAsset::ReleaseImmediate(); }
 
     void GPUSamplerAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Sampler->Release();
         m_Sampler = nullptr;
@@ -28,10 +22,7 @@ namespace Hazel
 
     void GPUSamplerAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Sampler->ReleaseImmediate();
         m_Sampler = nullptr;

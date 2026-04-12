@@ -46,10 +46,8 @@ namespace Hazel
         IndirectBuffer = 1 << 9
     };
 
-    template <>
-    struct InRHIFlagScope<RHIBufferUsageFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIBufferUsageFlagBits> : std::true_type
+    {};
 
     using RHIBufferUsages = Flags<RHIBufferUsageFlagBits>;
 

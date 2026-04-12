@@ -11,24 +11,17 @@
 
 namespace Hazel
 {
-    RHI_VK_FUNC_IMPL(RHIResourceHeap, RHIResourceHeapImpl)(RHIDevice* deviceOwner,
-                                                           vk::Device device,
-                                                           const RHIResourceHeapDesc& desc)
+    RHI_VK_FUNC_IMPL(RHIResourceHeap,
+                     RHIResourceHeapImpl)(RHIDevice* deviceOwner, vk::Device device, const RHIResourceHeapDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_Device || desc.maxGroups == 0)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_Device || desc.maxGroups == 0) { return; }
 
         std::vector<vk::DescriptorPoolSize> poolSizes;
-        if (desc.samplerCount > 0)
-        {
-            poolSizes.emplace_back(vk::DescriptorType::eSampler, desc.samplerCount);
-        }
+        if (desc.samplerCount > 0) { poolSizes.emplace_back(vk::DescriptorType::eSampler, desc.samplerCount); }
         if (desc.samplerWithImageCount > 0)
         {
             poolSizes.emplace_back(vk::DescriptorType::eCombinedImageSampler, desc.samplerWithImageCount);
@@ -58,10 +51,7 @@ namespace Hazel
             poolSizes.emplace_back(vk::DescriptorType::eStorageTexelBuffer, desc.storageTexelBufferCount);
         }
 
-        if (poolSizes.empty())
-        {
-            return;
-        }
+        if (poolSizes.empty()) { return; }
 
         vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
         descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
@@ -79,20 +69,14 @@ namespace Hazel
         m_IsValid = static_cast<bool>(m_DescriptorPool);
     }
 
-    RHI_VK_FUNC_IMPL(RHIResourceHeap, ~RHIResourceHeapImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIResourceHeap, ~RHIResourceHeapImpl)() { Release(); }
 
     RHIResourceGroup* RHI_VK_FUNC_IMPL(RHIResourceHeap, CreateGroup)(RHIResourceLayout* layout, bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !layout || !layout->IsValid());
 
         std::unique_ptr<RHIResourceGroup> group(new RHIResourceGroup(this, m_Device, layout));
-        if (!group || !group->IsValid())
-        {
-            return nullptr;
-        }
+        if (!group || !group->IsValid()) { return nullptr; }
 
         group->m_IsDetached = isDetached;
         auto* groupPtr = group.get();
@@ -105,42 +89,27 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterResourceHeap(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterResourceHeap(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterResourceHeap(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterResourceHeap(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, ReleaseWithoutUnregister)()
     {
         for (const auto& group : m_Groups)
         {
-            if (group)
-            {
-                group->ReleaseWithoutUnregister();
-            }
+            if (group) { group->ReleaseWithoutUnregister(); }
         }
         m_Groups.Clear();
 
@@ -175,20 +144,14 @@ namespace Hazel
     {
         for (const auto& group : m_Groups)
         {
-            if (group)
-            {
-                group->ReleaseImmediateWithoutUnregister();
-            }
+            if (group) { group->ReleaseImmediateWithoutUnregister(); }
         }
         m_Groups.Clear();
 
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         DeletionQueue::Execute(std::move(pendingOperations));
 
-        if (m_Device && m_DescriptorPool)
-        {
-            m_Device.destroyDescriptorPool(m_DescriptorPool);
-        }
+        if (m_Device && m_DescriptorPool) { m_Device.destroyDescriptorPool(m_DescriptorPool); }
 
         m_DescriptorPool = VK_NULL_HANDLE;
         m_IsValid = false;
@@ -202,8 +165,5 @@ namespace Hazel
         m_Groups.Register(std::move(group));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup* group)
-    {
-        m_Groups.Unregister(group);
-    }
+    void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup* group) { m_Groups.Unregister(group); }
 } // namespace Hazel

@@ -33,7 +33,7 @@ namespace Hazel
 
     class Application
     {
-    public:
+      public:
         Application(const ApplicationSpecification& specification);
         virtual ~Application();
 
@@ -42,41 +42,23 @@ namespace Hazel
         void PushLayer(Layer* layer);
         void PushOverlay(Layer* layer);
 
-        Window& GetWindow()
-        {
-            return *m_Window;
-        }
+        Window& GetWindow() { return *m_Window; }
 
-        GraphicsContext* GetGraphicsContext() const
-        {
-            return m_GraphicsContext.get();
-        }
+        GraphicsContext* GetGraphicsContext() const { return m_GraphicsContext.get(); }
 
-        Renderer* GetRenderer() const
-        {
-            return m_Renderer.get();
-        }
+        Renderer* GetRenderer() const { return m_Renderer.get(); }
 
-        ImGuiLayer* GetImGuiLayer()
-        {
-            return m_ImGuiLayer;
-        }
+        ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
         void Close();
 
-        static Application& Get()
-        {
-            return *s_Instance;
-        }
+        static Application& Get() { return *s_Instance; }
 
-        const ApplicationSpecification& GetSpecification() const
-        {
-            return m_Specification;
-        }
+        const ApplicationSpecification& GetSpecification() const { return m_Specification; }
 
         void SubmitToMainThread(const std::function<void()>& function);
 
-    protected:
+      protected:
         void Run();
         bool OnWindowClose(WindowCloseEvent& e);
         bool OnWindowResize(WindowResizeEvent& e);

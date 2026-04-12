@@ -17,4 +17,4 @@ namespace Hazel
 
     std::pair<glm::vec3, float> ComputeRitterBoundingSphere(const std::vector<Vertex>& vertices);
     bool ImportMeshAssetData(const std::filesystem::path& filePath, bool generateMeshlets, MeshAssetData& outData);
-}
+} // namespace Hazel

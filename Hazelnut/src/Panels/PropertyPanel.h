@@ -10,14 +10,14 @@ namespace Hazel
 {
     class PropertyPanel
     {
-    public:
+      public:
         void SetContext(const Ref<Scene>& scene);
         void SetSelectedEntity(Entity entity);
         void SetSelectedMetaPath(const std::filesystem::path& metaPath);
 
         void OnImGuiRender();
 
-    private:
+      private:
         enum class SelectionType
         {
             None,
@@ -25,8 +25,7 @@ namespace Hazel
             Meta
         };
 
-        template <typename T>
-        void DisplayAddComponentEntry(const std::string& entryName);
+        template <typename T> void DisplayAddComponentEntry(const std::string& entryName);
 
         void DrawEntityProperties(Entity entity);
         void DrawAssetProperties();
@@ -36,4 +35,4 @@ namespace Hazel
         std::filesystem::path m_SelectedMetaPath;
         SelectionType m_SelectionType = SelectionType::None;
     };
-}
+} // namespace Hazel

@@ -5,12 +5,12 @@
 #include "VulkanImage.h"
 
 #include "../RHIImage.h"
+#include "Hazel/Core/Log.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
 #include "VulkanMemoryAllocator.h"
-#include "Hazel/Core/Log.h"
 
 #include <stb_image.h>
 #include <utility>
@@ -145,18 +145,14 @@ namespace Hazel
         }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHIImage, RHIImageImpl)(RHIDevice* deviceOwner,
-                                             VulkanMemoryAllocator* allocator,
-                                             const RHIImageDesc& desc)
+    RHI_VK_FUNC_IMPL(RHIImage,
+                     RHIImageImpl)(RHIDevice* deviceOwner, VulkanMemoryAllocator* allocator, const RHIImageDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_AllocatorOwner = allocator;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_AllocatorOwner || desc.format == RHIFormat::Undefined)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_AllocatorOwner || desc.format == RHIFormat::Undefined) { return; }
 
         vk::ImageCreateInfo imageCreateInfo;
         imageCreateInfo.imageType = desc.depth > 1 ? vk::ImageType::e3D : vk::ImageType::e2D;
@@ -196,10 +192,8 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIImage, RHIImageImpl)(RHIDevice* deviceOwner,
-                                             const RHIImageDesc& desc,
-                                             vk::Image image,
-                                             bool isDetached)
+    RHI_VK_FUNC_IMPL(RHIImage,
+                     RHIImageImpl)(RHIDevice* deviceOwner, const RHIImageDesc& desc, vk::Image image, bool isDetached)
     {
         m_DeviceOwner = deviceOwner;
         m_Desc = desc;
@@ -208,25 +202,19 @@ namespace Hazel
         m_IsSwapchainImage = true;
         m_IsDetached = isDetached;
 
-        if (!m_DeviceOwner || !m_Image || desc.format == RHIFormat::Undefined)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_Image || desc.format == RHIFormat::Undefined) { return; }
 
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIImage, ~RHIImageImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIImage, ~RHIImageImpl)() { Release(); }
 
-    RHIImage*RHI_VK_FUNC_IMPL(RHIImage, Factory)::CreateFromRawData(RHIDevice* device,
-                                                                    RHICommandBuffer* cmd,
-                                                                    const RHIImageDesc& desc,
-                                                                    const void* data,
-                                                                    size_t dataSize,
-                                                                    bool detached)
+    RHIImage* RHI_VK_FUNC_IMPL(RHIImage, Factory)::CreateFromRawData(RHIDevice* device,
+                                                                     RHICommandBuffer* cmd,
+                                                                     const RHIImageDesc& desc,
+                                                                     const void* data,
+                                                                     size_t dataSize,
+                                                                     bool detached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !cmd || !cmd->IsValid() || !data || dataSize == 0);
         const uint32_t bytesPerPixel = GetBytesPerPixel(desc.format);
@@ -240,10 +228,7 @@ namespace Hazel
         imageDesc.usages = imageDesc.usages | RHIImageUsageFlagBits::TransferDestination;
 
         auto* targetImage = device->CreateImage(imageDesc, detached);
-        if (!targetImage || !targetImage->IsValid())
-        {
-            return nullptr;
-        }
+        if (!targetImage || !targetImage->IsValid()) { return nullptr; }
 
         RHIBufferDesc stagingBufferDesc{};
         stagingBufferDesc.size = dataSize;
@@ -254,10 +239,7 @@ namespace Hazel
         auto* stagingBuffer = device->CreateBuffer(stagingBufferDesc, true);
         if (!stagingBuffer || !stagingBuffer->IsValid())
         {
-            if (stagingBuffer)
-            {
-                stagingBuffer->ReleaseImmediate();
-            }
+            if (stagingBuffer) { stagingBuffer->ReleaseImmediate(); }
             targetImage->ReleaseImmediate();
             return nullptr;
         }
@@ -307,13 +289,13 @@ namespace Hazel
         return targetImage;
     }
 
-    RHIImage*RHI_VK_FUNC_IMPL(RHIImage, Factory)::CreateFromFile(RHIDevice* device,
-                                                                 RHICommandBuffer* cmd,
-                                                                 const std::filesystem::path& path,
-                                                                 bool isSRGB,
-                                                                 bool useMipmap,
-                                                                 RHIImageUsages usages,
-                                                                 bool detached)
+    RHIImage* RHI_VK_FUNC_IMPL(RHIImage, Factory)::CreateFromFile(RHIDevice* device,
+                                                                  RHICommandBuffer* cmd,
+                                                                  const std::filesystem::path& path,
+                                                                  bool isSRGB,
+                                                                  bool useMipmap,
+                                                                  RHIImageUsages usages,
+                                                                  bool detached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !cmd || !cmd->IsValid());
 
@@ -336,10 +318,7 @@ namespace Hazel
             float* pixels = stbi_loadf(filePath.c_str(), &width, &height, &channels, STBI_rgb);
             if (!pixels || width <= 0 || height <= 0)
             {
-                if (pixels)
-                {
-                    stbi_image_free(pixels);
-                }
+                if (pixels) { stbi_image_free(pixels); }
 
                 HZ_CORE_ERROR("Failed to load HDR image '{}'", filePath);
                 return nullptr;
@@ -362,10 +341,7 @@ namespace Hazel
         stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, 4);
         if (!pixels || width <= 0 || height <= 0)
         {
-            if (pixels)
-            {
-                stbi_image_free(pixels);
-            }
+            if (pixels) { stbi_image_free(pixels); }
 
             HZ_CORE_ERROR("Failed to load image '{}'", filePath);
             return nullptr;
@@ -392,42 +368,27 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIImage, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterImage(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterImage(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterImage(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterImage(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, ReleaseWithoutUnregister)()
     {
         for (const auto& view : m_Views)
         {
-            if (view)
-            {
-                view->ReleaseWithoutUnregister();
-            }
+            if (view) { view->ReleaseWithoutUnregister(); }
         }
         m_Views.Clear();
 
@@ -443,10 +404,7 @@ namespace Hazel
                     VulkanMemoryAllocator::DestroyImage(allocator, image, allocation);
                 });
             }
-            else
-            {
-                VulkanMemoryAllocator::DestroyImage(allocator, image, allocation);
-            }
+            else { VulkanMemoryAllocator::DestroyImage(allocator, image, allocation); }
         }
 
         m_Image = VK_NULL_HANDLE;
@@ -462,10 +420,7 @@ namespace Hazel
     {
         for (const auto& view : m_Views)
         {
-            if (view)
-            {
-                view->ReleaseImmediateWithoutUnregister();
-            }
+            if (view) { view->ReleaseImmediateWithoutUnregister(); }
         }
         m_Views.Clear();
 
@@ -486,8 +441,7 @@ namespace Hazel
         m_IsDetached = false;
     }
 
-    RHIImageView*RHI_VK_FUNC_IMPL(RHIImage, CreateView)(const RHIImageViewDesc& desc,
-                                                        bool isDetached)
+    RHIImageView* RHI_VK_FUNC_IMPL(RHIImage, CreateView)(const RHIImageViewDesc& desc, bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !m_DeviceOwner);
 
@@ -496,8 +450,7 @@ namespace Hazel
 
     bool RHI_VK_FUNC_IMPL(RHIImage, Transition)(RHICommandBuffer* commandBuffer,
                                                 RHIImageResourceState oldState,
-                                                RHIImageResourceState newState
-    )
+                                                RHIImageResourceState newState)
     {
         RHIImageSubresourceRange fullRange;
         fullRange.levelCount = m_Desc.mipLevels;
@@ -536,8 +489,5 @@ namespace Hazel
         m_Views.Register(std::move(view));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIImage, UnregisterView)(RHIImageView* view)
-    {
-        m_Views.Unregister(view);
-    }
+    void RHI_VK_FUNC_IMPL(RHIImage, UnregisterView)(RHIImageView* view) { m_Views.Unregister(view); }
 } // namespace Hazel

@@ -15,20 +15,14 @@ namespace Hazel
 {
     class Log
     {
-    public:
+      public:
         static void Init();
 
-        static Ref<spdlog::logger>& GetCoreLogger()
-        {
-            return s_CoreLogger;
-        }
+        static Ref<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
 
-        static Ref<spdlog::logger>& GetClientLogger()
-        {
-            return s_ClientLogger;
-        }
+        static Ref<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
 
-    private:
+      private:
         static Ref<spdlog::logger> s_CoreLogger;
         static Ref<spdlog::logger> s_ClientLogger;
     };
@@ -46,8 +40,7 @@ OStream& operator<<(OStream& os, const glm::mat<C, R, T, Q>& matrix)
     return os << glm::to_string(matrix);
 }
 
-template <typename OStream, typename T, glm::qualifier Q>
-OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion)
+template <typename OStream, typename T, glm::qualifier Q> OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion)
 {
     return os << glm::to_string(quaternion);
 }

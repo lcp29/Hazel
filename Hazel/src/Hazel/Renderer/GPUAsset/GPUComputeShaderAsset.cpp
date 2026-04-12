@@ -6,17 +6,11 @@
 
 namespace Hazel
 {
-    GPUComputeShaderAsset::~GPUComputeShaderAsset()
-    {
-        GPUComputeShaderAsset::ReleaseImmediate();
-    }
+    GPUComputeShaderAsset::~GPUComputeShaderAsset() { GPUComputeShaderAsset::ReleaseImmediate(); }
 
     void GPUComputeShaderAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         if (m_CachedPipeline)
         {
@@ -44,10 +38,7 @@ namespace Hazel
 
     void GPUComputeShaderAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         if (m_CachedPipeline)
         {

@@ -36,10 +36,8 @@ namespace Hazel
         Stencil = 1 << 2
     };
 
-    template <>
-    struct InRHIFlagScope<RHIImagePlaneFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIImagePlaneFlagBits> : std::true_type
+    {};
 
     using RHIImagePlanes = Flags<RHIImagePlaneFlagBits>;
 
@@ -53,10 +51,8 @@ namespace Hazel
         DepthStencilAttachment = 1 << 5
     };
 
-    template <>
-    struct InRHIFlagScope<RHIImageUsageFlagBits> : std::true_type
-    {
-    };
+    template <> struct InRHIFlagScope<RHIImageUsageFlagBits> : std::true_type
+    {};
 
     using RHIImageUsages = Flags<RHIImageUsageFlagBits>;
 

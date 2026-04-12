@@ -19,31 +19,19 @@ namespace Hazel
 {
     class GraphicsContext
     {
-    public:
+      public:
         GraphicsContext(const std::string& appName, Window* window);
         ~GraphicsContext();
 
         void Init(Window* window);
 
-        RHIInstance* GetInstance() const
-        {
-            return m_Instance.get();
-        }
+        RHIInstance* GetInstance() const { return m_Instance.get(); }
 
-        RHIAdapter GetAdapter() const
-        {
-            return m_Adapter;
-        }
+        RHIAdapter GetAdapter() const { return m_Adapter; }
 
-        RHIDevice* GetDevice() const
-        {
-            return m_Device;
-        }
+        RHIDevice* GetDevice() const { return m_Device; }
 
-        RHISurface* GetSurface() const
-        {
-            return m_Surface;
-        }
+        RHISurface* GetSurface() const { return m_Surface; }
 
         static Scope<GraphicsContext> Create(std::string appName, Window* window);
 
@@ -51,7 +39,7 @@ namespace Hazel
         void ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer);
         void ReleaseDefaultCommandBuffers();
 
-    private:
+      private:
         struct PooledCommandBuffer
         {
             RHICommandPool* pool = nullptr;

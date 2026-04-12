@@ -3,6 +3,7 @@
 //
 
 #include "Hazel/Scene/Entity.h"
+
 #include "Hazel/Scene/Components.h"
 
 namespace Hazel
@@ -12,10 +13,7 @@ namespace Hazel
         HZ_CORE_ASSERT(child->m_Scene == m_Scene, "Child entity must belong to the same scene!");
         auto& childRelationship = GetComponent<EntityRelationshipComponent>();
         childRelationship.childCount++;
-        if (childRelationship.firstChild == entt::null)
-        {
-            childRelationship.firstChild = child->m_EntityHandle;
-        }
+        if (childRelationship.firstChild == entt::null) { childRelationship.firstChild = child->m_EntityHandle; }
         else
         {
             auto sibling = Entity{childRelationship.firstChild, m_Scene};
@@ -33,8 +31,7 @@ namespace Hazel
     {
         HZ_CORE_ASSERT(child->m_Scene == m_Scene, "Child entity must belong to the same scene!");
         auto& childRelationship = GetComponent<EntityRelationshipComponent>();
-        if (childRelationship.childCount == 0)
-            return;
+        if (childRelationship.childCount == 0) return;
         childRelationship.childCount--;
         if (childRelationship.firstChild == child->m_EntityHandle)
         {
@@ -80,40 +77,22 @@ namespace Hazel
         }
     }
 
-    Entity::operator bool() const
-    {
-        return m_EntityHandle != entt::null;
-    }
+    Entity::operator bool() const { return m_EntityHandle != entt::null; }
 
-    Entity::operator entt::entity() const
-    {
-        return m_EntityHandle;
-    }
+    Entity::operator entt::entity() const { return m_EntityHandle; }
 
-    Entity::operator uint32_t() const
-    {
-        return static_cast<uint32_t>(m_EntityHandle);
-    }
+    Entity::operator uint32_t() const { return static_cast<uint32_t>(m_EntityHandle); }
 
-    UUID Entity::GetUUID()
-    {
-        return GetComponent<IDComponent>().ID;
-    }
+    UUID Entity::GetUUID() { return GetComponent<IDComponent>().ID; }
 
-    const std::string& Entity::GetName()
-    {
-        return GetComponent<TagComponent>().tag;
-    }
+    const std::string& Entity::GetName() { return GetComponent<TagComponent>().tag; }
 
     bool Entity::operator==(const Entity& other) const
     {
         return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene;
     }
 
-    bool Entity::operator!=(const Entity& other) const
-    {
-        return !(*this == other);
-    }
+    bool Entity::operator!=(const Entity& other) const { return !(*this == other); }
 
     YAML::Node Entity::Serialize()
     {
@@ -122,18 +101,12 @@ namespace Hazel
         node["Tag"] = GetComponent<TagComponent>().Serialize();
         node["Transform"] = GetComponent<TransformComponent>().Serialize();
         node["Relationship"] = GetComponent<EntityRelationshipComponent>().Serialize(m_Scene->m_Registry);
-        if (HasComponent<CameraComponent>())
-        {
-            node["Camera"] = GetComponent<CameraComponent>().Serialize();
-        }
+        if (HasComponent<CameraComponent>()) { node["Camera"] = GetComponent<CameraComponent>().Serialize(); }
         if (HasComponent<MeshRendererComponent>())
         {
             node["MeshRenderer"] = GetComponent<MeshRendererComponent>().Serialize();
         }
-        if (HasComponent<ScriptComponent>())
-        {
-            node["Script"] = GetComponent<ScriptComponent>().Serialize(*this);
-        }
+        if (HasComponent<ScriptComponent>()) { node["Script"] = GetComponent<ScriptComponent>().Serialize(*this); }
         return node;
     }
 
@@ -206,10 +179,7 @@ namespace Hazel
 
     void Entity::SetMesh(UUID mesh)
     {
-        if (!HasComponent<MeshRendererComponent>())
-        {
-            return;
-        }
+        if (!HasComponent<MeshRendererComponent>()) { return; }
         auto& component = GetComponent<MeshRendererComponent>();
         component.meshUUID = mesh;
 
@@ -223,10 +193,7 @@ namespace Hazel
 
     void Entity::SetMaterial(UUID material)
     {
-        if (!HasComponent<MeshRendererComponent>())
-        {
-            return;
-        }
+        if (!HasComponent<MeshRendererComponent>()) { return; }
         auto& component = GetComponent<MeshRendererComponent>();
         component.materialUUID = material;
 
@@ -237,10 +204,7 @@ namespace Hazel
         m_Scene->AddToRenderSceneUpdatePayload(payload);
     }
 
-    glm::mat4 Entity::GetGlobalTransform() const
-    {
-        return m_Scene->GetWorldTransform(m_EntityHandle);
-    }
+    glm::mat4 Entity::GetGlobalTransform() const { return m_Scene->GetWorldTransform(m_EntityHandle); }
 
     void Entity::AddMeshRendererPayload(const MeshRendererComponent& component)
     {

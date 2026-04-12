@@ -4,8 +4,8 @@
 
 #pragma once
 #include "Hazel/Asset/MaterialAsset.h"
-#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 #include "Hazel/Core/UUID.h"
+#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 #include "Hazel/Renderer/Renderer.h"
 
 #include <string>
@@ -21,7 +21,7 @@ namespace Hazel
 
     class CachedMaterial : public GPUAsset
     {
-    public:
+      public:
         CachedMaterial() = delete;
 
         CachedMaterial(const UUID uuid,
@@ -33,54 +33,40 @@ namespace Hazel
                        const MaterialPipelineState& pipelineState,
                        const std::unordered_map<std::string, MaterialAssetProperty>& properties,
                        uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Material, renderer, sourceVersion, lastReferencedFrame),
-              m_IsValid(true),
-              m_MaterialID(materialID),
-              m_Shader(shader),
-              m_ShaderSourceVersion(shaderSourceVersion),
-              m_PipelineState(pipelineState),
-              m_Properties(properties)
-        {
-        }
+            : GPUAsset(uuid, AssetType::Material, renderer, sourceVersion, lastReferencedFrame)
+            , m_IsValid(true)
+            , m_MaterialID(materialID)
+            , m_Shader(shader)
+            , m_ShaderSourceVersion(shaderSourceVersion)
+            , m_PipelineState(pipelineState)
+            , m_Properties(properties)
+        {}
 
         ~CachedMaterial() override;
 
-        uint32_t GetMaterialID() const
-        {
-            return m_MaterialID;
-        }
+        uint32_t GetMaterialID() const { return m_MaterialID; }
 
-        const std::unordered_map<std::string, MaterialAssetProperty>& GetProperties() const
-        {
-            return m_Properties;
-        }
+        const std::unordered_map<std::string, MaterialAssetProperty>& GetProperties() const { return m_Properties; }
 
-        const MaterialPipelineState& GetPipelineState() const
-        {
-            return m_PipelineState;
-        }
+        const MaterialPipelineState& GetPipelineState() const { return m_PipelineState; }
 
-        UUID GetShader() const
-        {
-            return m_Shader;
-        }
+        UUID GetShader() const { return m_Shader; }
 
-        uint64_t GetShaderSourceVersion() const
-        {
-            return m_ShaderSourceVersion;
-        }
+        uint64_t GetShaderSourceVersion() const { return m_ShaderSourceVersion; }
 
         uint64_t GetPipelineKey(const std::vector<RHIFormat>& colorAttachmentFormats,
                                 const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                 RHIFormat depthStencilFormat = RHIFormat::Undefined) const;
 
         bool IsDirty() const { return m_IsDirty; }
+
         void SetDirty(bool dirty) { m_IsDirty = dirty; }
 
         void Release() override;
-        void ReleaseImmediate() override;;
+        void ReleaseImmediate() override;
+        ;
 
-    private:
+      private:
         bool m_IsValid = false;
         bool m_IsDirty = true;
         uint32_t m_MaterialID = 0;
@@ -89,4 +75,4 @@ namespace Hazel
         MaterialPipelineState m_PipelineState{};
         std::unordered_map<std::string, MaterialAssetProperty> m_Properties;
     };
-} // Hazel
+} // namespace Hazel

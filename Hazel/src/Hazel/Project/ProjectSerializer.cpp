@@ -10,8 +10,7 @@ namespace Hazel
 {
     ProjectSerializer::ProjectSerializer(Ref<Project> project)
         : m_Project(project)
-    {
-    }
+    {}
 
     bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
     {
@@ -51,8 +50,7 @@ namespace Hazel
         }
 
         YAML::Node projectNode = data["Project"];
-        if (!projectNode)
-            return false;
+        if (!projectNode) return false;
 
         config.Name = projectNode["Name"] ? projectNode["Name"].as<std::string>() : "Untitled";
         config.StartScene = projectNode["StartScene"] ? projectNode["StartScene"].as<std::string>() : "";

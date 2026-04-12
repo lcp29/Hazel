@@ -16,9 +16,9 @@
 namespace Hazel
 {
     AssetManager::AssetManager(Project* project, Renderer* renderer)
-        : m_Project(project), m_Renderer(renderer)
-    {
-    }
+        : m_Project(project)
+        , m_Renderer(renderer)
+    {}
 
     void AssetManager::WriteAllMetaFiles() const
     {
@@ -37,8 +37,7 @@ namespace Hazel
                                     asset->GetFilePath().string() + ".meta");
                     break;
                 case AssetType::Sampler:
-                    WriteMetaToFile(static_cast<SamplerAsset*>(asset.get())->GetMeta(),
-                                    asset->GetFilePath().string());
+                    WriteMetaToFile(static_cast<SamplerAsset*>(asset.get())->GetMeta(), asset->GetFilePath().string());
                     break;
                 case AssetType::RenderTexture:
                     WriteMetaToFile(static_cast<RenderTextureAsset*>(asset.get())->GetMeta(),
@@ -53,8 +52,7 @@ namespace Hazel
                                     asset->GetFilePath().string() + ".meta");
                     break;
                 case AssetType::Material:
-                    WriteMetaToFile(static_cast<MaterialAsset*>(asset.get())->GetMeta(),
-                                    asset->GetFilePath().string());
+                    WriteMetaToFile(static_cast<MaterialAsset*>(asset.get())->GetMeta(), asset->GetFilePath().string());
                     break;
                 default:
                     break;
@@ -74,10 +72,7 @@ namespace Hazel
 
                 auto assetType = InferAssetTypeFromPath(assetPath);
 
-                if (assetType == AssetType::Unknown)
-                {
-                    continue;
-                }
+                if (assetType == AssetType::Unknown) { continue; }
 
                 auto metaPath = GetMetaPathFromAssetPath(assetPath);
 
@@ -119,68 +114,68 @@ namespace Hazel
                 switch (assetType)
                 {
                     case AssetType::Texture:
-                    {
-                        TextureAssetMeta meta = TextureAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            TextureAssetMeta meta = TextureAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::Shader:
-                    {
-                        ShaderAssetMeta meta = ShaderAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            ShaderAssetMeta meta = ShaderAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::Sampler:
-                    {
-                        SamplerAssetMeta meta = SamplerAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            SamplerAssetMeta meta = SamplerAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::RenderTexture:
-                    {
-                        RenderTextureAssetMeta meta = RenderTextureAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            RenderTextureAssetMeta meta = RenderTextureAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::ComputeShader:
-                    {
-                        ComputeShaderAssetMeta meta = ComputeShaderAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            ComputeShaderAssetMeta meta = ComputeShaderAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::Mesh:
-                    {
-                        MeshAssetMeta meta = MeshAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            MeshAssetMeta meta = MeshAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     case AssetType::Material:
-                    {
-                        MaterialAssetMeta meta = MaterialAssetMeta::CreateDefault();
-                        WriteMetaToFile(meta, metaPath);
-                        registryTerm->uuid = meta.GetUUID();
-                        std::unique_lock registryLock(m_AssetRegistryMutex);
-                        m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
-                        break;
-                    }
+                        {
+                            MaterialAssetMeta meta = MaterialAssetMeta::CreateDefault();
+                            WriteMetaToFile(meta, metaPath);
+                            registryTerm->uuid = meta.GetUUID();
+                            std::unique_lock registryLock(m_AssetRegistryMutex);
+                            m_AssetRegistry.emplace(meta.GetUUID(), std::move(registryTerm));
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -191,10 +186,7 @@ namespace Hazel
     AssetType AssetManager::GetAssetType(UUID uuid) const
     {
         std::unique_lock registryLock(m_AssetRegistryMutex);
-        if (!m_AssetRegistry.contains(uuid))
-        {
-            return AssetType::Unknown;
-        }
+        if (!m_AssetRegistry.contains(uuid)) { return AssetType::Unknown; }
 
         return m_AssetRegistry.at(uuid)->type;
     }
@@ -208,10 +200,7 @@ namespace Hazel
     std::filesystem::path AssetManager::GetAssetPath(UUID uuid) const
     {
         std::unique_lock registryLock(m_AssetRegistryMutex);
-        if (!m_AssetRegistry.contains(uuid))
-        {
-            return {};
-        }
+        if (!m_AssetRegistry.contains(uuid)) { return {}; }
 
         return m_AssetRegistry.at(uuid)->filePath;
     }
@@ -223,16 +212,12 @@ namespace Hazel
         std::unique_lock registryLock(m_AssetRegistryMutex);
         for (const auto& registryTerm : m_AssetRegistry | std::views::values)
         {
-            if (registryTerm->type == type)
-            {
-                assets.push_back(registryTerm.get());
-            }
+            if (registryTerm->type == type) { assets.push_back(registryTerm.get()); }
         }
 
-        std::ranges::sort(assets,
-                          [](const AssetRegistryTerm* lhs, const AssetRegistryTerm* rhs) {
-                              return lhs->filePath.filename().string() < rhs->filePath.filename().string();
-                          });
+        std::ranges::sort(assets, [](const AssetRegistryTerm* lhs, const AssetRegistryTerm* rhs) {
+            return lhs->filePath.filename().string() < rhs->filePath.filename().string();
+        });
         return assets;
     }
 
@@ -266,19 +251,13 @@ namespace Hazel
     {
         {
             std::unique_lock assetLock(m_AssetMutex);
-            if (m_Assets.contains(uuid))
-            {
-                return m_Assets[uuid].get();
-            }
+            if (m_Assets.contains(uuid)) { return m_Assets[uuid].get(); }
         }
 
         AssetRegistryTerm* registry = nullptr;
         {
             std::unique_lock registryLock(m_AssetRegistryMutex);
-            if (!m_AssetRegistry.contains(uuid))
-            {
-                return nullptr;
-            }
+            if (!m_AssetRegistry.contains(uuid)) { return nullptr; }
 
             registry = m_AssetRegistry.at(uuid).get();
         }
@@ -286,33 +265,22 @@ namespace Hazel
         {
             std::unique_lock registryStateLock(registry->mutex);
             auto state = registry->state;
-            if (state == AssetState::Failed)
-            {
-                return nullptr;
-            }
+            if (state == AssetState::Failed) { return nullptr; }
 
             if (state == AssetState::Loaded)
             {
                 registryStateLock.unlock();
                 std::unique_lock assetLock(m_AssetMutex);
-                if (m_Assets.contains(uuid))
-                {
-                    return m_Assets[uuid].get();
-                }
+                if (m_Assets.contains(uuid)) { return m_Assets[uuid].get(); }
                 return nullptr;
             }
 
-            if (state == AssetState::Loading)
-            {
-                return nullptr;
-            }
+            if (state == AssetState::Loading) { return nullptr; }
 
             registry->state = AssetState::Loading;
         }
 
-        std::thread([this, uuid, registry] {
-            LoadAssetFromRegistry(uuid, registry);
-        }).detach();
+        std::thread([this, uuid, registry] { LoadAssetFromRegistry(uuid, registry); }).detach();
         return nullptr;
     }
 
@@ -320,19 +288,13 @@ namespace Hazel
     {
         {
             std::unique_lock assetLock(m_AssetMutex);
-            if (m_Assets.contains(uuid))
-            {
-                return m_Assets[uuid].get();
-            }
+            if (m_Assets.contains(uuid)) { return m_Assets[uuid].get(); }
         }
 
         AssetRegistryTerm* registry = nullptr;
         {
             std::unique_lock registryLock(m_AssetRegistryMutex);
-            if (!m_AssetRegistry.contains(uuid))
-            {
-                return nullptr;
-            }
+            if (!m_AssetRegistry.contains(uuid)) { return nullptr; }
 
             registry = m_AssetRegistry.at(uuid).get();
         }
@@ -341,35 +303,24 @@ namespace Hazel
         {
             std::unique_lock registryStateLock(registry->mutex);
             auto state = registry->state;
-            if (state == AssetState::Failed)
-            {
-                return nullptr;
-            }
+            if (state == AssetState::Failed) { return nullptr; }
 
             if (state == AssetState::Loaded)
             {
                 registryStateLock.unlock();
                 std::unique_lock assetLock(m_AssetMutex);
-                if (m_Assets.contains(uuid))
-                {
-                    return m_Assets[uuid].get();
-                }
+                if (m_Assets.contains(uuid)) { return m_Assets[uuid].get(); }
                 return nullptr;
             }
 
             if (state == AssetState::Loading)
             {
                 registry->loadingCondition.wait(registryStateLock,
-                                                [registry] {
-                                                    return registry->state != AssetState::Loading;
-                                                });
+                                                [registry] { return registry->state != AssetState::Loading; });
                 continue;
             }
 
-            if (state != AssetState::Unloaded)
-            {
-                continue;
-            }
+            if (state != AssetState::Unloaded) { continue; }
 
             registry->state = AssetState::Loading;
             registryStateLock.unlock();

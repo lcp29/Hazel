@@ -3,6 +3,7 @@
 //
 
 #include "Components.h"
+
 #include "Hazel/Scene/Entity.h"
 
 namespace Hazel
@@ -23,8 +24,7 @@ namespace Hazel
             auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
             for (const auto& [name, field] : fields)
             {
-                if (!fields.contains(name))
-                    continue;
+                if (!fields.contains(name)) continue;
 
                 YAML::Node fieldNode;
                 fieldNode["Name"] = name;
@@ -92,8 +92,7 @@ namespace Hazel
 
                     ScriptFieldInstance& fieldInstance = entityFields[name];
 
-                    if (!fields.contains(name))
-                        continue;
+                    if (!fields.contains(name)) continue;
 
                     fieldInstance.Field = fields.at(name);
 

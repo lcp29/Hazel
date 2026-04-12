@@ -15,40 +15,28 @@ namespace Hazel
 
     RHI_VK_CLASS_IMPL(RHIImageView)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
 
-        const RHIImageViewDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIImageViewDesc& GetDesc() const { return m_Desc; }
 
-        RHIFormat GetFormat() const
-        {
-            return m_Desc.format;
-        }
+        RHIFormat GetFormat() const { return m_Desc.format; }
 
         ~RHIImageViewImpl();
 
-        vk::ImageView GetHandle() const
-        {
-            return m_ImageView;
-        }
+        vk::ImageView GetHandle() const { return m_ImageView; }
 
         RHIImageViewImpl() = default;
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIImageImpl<RHIBackend::Vulkan>;
         friend class RHISwapchainImpl<RHIBackend::Vulkan>;
 
-        RHIImageViewImpl(RHIDevice* device, RHIImage* image, const RHIImageViewDesc& desc, bool isDetached);
+        RHIImageViewImpl(RHIDevice * device, RHIImage * image, const RHIImageViewDesc& desc, bool isDetached);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

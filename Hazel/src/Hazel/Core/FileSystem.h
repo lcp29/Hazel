@@ -6,7 +6,7 @@ namespace Hazel
 {
     class FileSystem
     {
-    public:
+      public:
         // TODO: move to FileSystem class
         static Buffer ReadFileBinary(const std::filesystem::path& filepath);
     };

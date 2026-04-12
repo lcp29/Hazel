@@ -19,7 +19,7 @@ namespace Hazel
 
     class AssetImporter
     {
-    public:
+      public:
         static std::unique_ptr<ComputeShaderAsset> ImportComputeShader(AssetRegistryTerm* registryTerm);
         static std::unique_ptr<MeshAsset> ImportMesh(AssetRegistryTerm* registryTerm);
         static std::unique_ptr<MaterialAsset> ImportMaterial(AssetManager* assetManager,
@@ -29,4 +29,4 @@ namespace Hazel
         static std::unique_ptr<TextureAsset> ImportTexture(AssetRegistryTerm* registryTerm);
         static std::unique_ptr<SamplerAsset> ImportSampler(AssetRegistryTerm* registryTerm);
     };
-} // Hazel
+} // namespace Hazel

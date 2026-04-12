@@ -23,10 +23,7 @@ namespace Hazel
 
             for (const auto& binding : layout->GetDesc().bindings)
             {
-                if (binding.updateAfterBind)
-                {
-                    usage.updateAfterBind = true;
-                }
+                if (binding.updateAfterBind) { usage.updateAfterBind = true; }
 
                 switch (binding.type)
                 {
@@ -64,24 +61,22 @@ namespace Hazel
 
         bool CanAllocate(const ResourceHeapAllocator::HeapRecord& heapRecord, const RHIResourceHeapDesc& usage)
         {
-            return heapRecord.usedGroupCount + usage.maxGroups + 1 <= heapRecord.capacity.maxGroups &&
-                   heapRecord.used.samplerCount + usage.samplerCount + 1 <= heapRecord.capacity.samplerCount &&
-                   heapRecord.used.samplerWithImageCount + usage.samplerWithImageCount + 1 <= heapRecord.capacity.
-                   samplerWithImageCount &&
-                   heapRecord.used.sampledImageCount + usage.sampledImageCount + 1 <= heapRecord.capacity.
-                   sampledImageCount
-                   &&
-                   heapRecord.used.storageImageCount + usage.storageImageCount + 1 <= heapRecord.capacity.
-                   storageImageCount
-                   &&
-                   heapRecord.used.uniformBufferCount + usage.uniformBufferCount + 1 <= heapRecord.capacity.
-                   uniformBufferCount &&
-                   heapRecord.used.storageBufferCount + usage.storageBufferCount + 1 <= heapRecord.capacity.
-                   storageBufferCount &&
-                   heapRecord.used.uniformTexelBufferCount + usage.uniformTexelBufferCount + 1 <= heapRecord.capacity.
-                   uniformTexelBufferCount &&
-                   heapRecord.used.storageTexelBufferCount + usage.storageTexelBufferCount + 1 <= heapRecord.capacity.
-                   storageTexelBufferCount;
+            return heapRecord.usedGroupCount + usage.maxGroups + 1 <= heapRecord.capacity.maxGroups
+                   && heapRecord.used.samplerCount + usage.samplerCount + 1 <= heapRecord.capacity.samplerCount
+                   && heapRecord.used.samplerWithImageCount + usage.samplerWithImageCount + 1
+                          <= heapRecord.capacity.samplerWithImageCount
+                   && heapRecord.used.sampledImageCount + usage.sampledImageCount + 1
+                          <= heapRecord.capacity.sampledImageCount
+                   && heapRecord.used.storageImageCount + usage.storageImageCount + 1
+                          <= heapRecord.capacity.storageImageCount
+                   && heapRecord.used.uniformBufferCount + usage.uniformBufferCount + 1
+                          <= heapRecord.capacity.uniformBufferCount
+                   && heapRecord.used.storageBufferCount + usage.storageBufferCount + 1
+                          <= heapRecord.capacity.storageBufferCount
+                   && heapRecord.used.uniformTexelBufferCount + usage.uniformTexelBufferCount + 1
+                          <= heapRecord.capacity.uniformTexelBufferCount
+                   && heapRecord.used.storageTexelBufferCount + usage.storageTexelBufferCount + 1
+                          <= heapRecord.capacity.storageTexelBufferCount;
         }
 
         void AddUsage(RHIResourceHeapDesc& target, const RHIResourceHeapDesc& usage)
@@ -133,14 +128,11 @@ namespace Hazel
     } // namespace
 
     ResourceHeapAllocator::ResourceHeapAllocator(Renderer* renderer)
-        : m_Renderer(renderer), m_IsValid(true)
-    {
-    }
+        : m_Renderer(renderer)
+        , m_IsValid(true)
+    {}
 
-    ResourceHeapAllocator::~ResourceHeapAllocator()
-    {
-        Release();
-    }
+    ResourceHeapAllocator::~ResourceHeapAllocator() { Release(); }
 
     RHIResourceGroup* ResourceHeapAllocator::AllocateGroup(RHIResourceLayout* layout, RHIResourceHeap** outHeap)
     {
@@ -153,14 +145,8 @@ namespace Hazel
 
         for (auto& heapRecord : heaps)
         {
-            if (!heapRecord.isValid)
-            {
-                continue;
-            }
-            if (!CanAllocate(heapRecord, usage))
-            {
-                continue;
-            }
+            if (!heapRecord.isValid) { continue; }
+            if (!CanAllocate(heapRecord, usage)) { continue; }
 
             auto* group = heapRecord.heap->CreateGroup(layout);
             if (group)
@@ -175,10 +161,7 @@ namespace Hazel
                 groupRecord.isValid = true;
                 groups.push_back(groupRecord);
             }
-            if (outHeap)
-            {
-                *outHeap = heapRecord.heap;
-            }
+            if (outHeap) { *outHeap = heapRecord.heap; }
             return group;
         }
 
@@ -190,10 +173,7 @@ namespace Hazel
         heapRecord.heap = heap;
         heapRecord.capacity = capacity;
         heapRecord.used = {};
-        if (group)
-        {
-            AddUsage(heapRecord.used, usage);
-        }
+        if (group) { AddUsage(heapRecord.used, usage); }
         heapRecord.usedGroupCount = group ? usage.maxGroups : 0;
         heapRecord.isValid = true;
         heaps.push_back(heapRecord);
@@ -208,10 +188,7 @@ namespace Hazel
             groups.push_back(groupRecord);
         }
 
-        if (outHeap)
-        {
-            *outHeap = heap;
-        }
+        if (outHeap) { *outHeap = heap; }
         return group;
     }
 
@@ -223,21 +200,16 @@ namespace Hazel
         auto& heaps = usage.updateAfterBind ? m_HeapsUpdateAfterBind : m_Heaps;
         auto& groups = usage.updateAfterBind ? m_GroupsUpdateAfterBind : m_Groups;
 
-        auto groupIt = std::ranges::find_if(groups,
-                                            [group](const GroupRecord& groupRecord) {
-                                                return groupRecord.isValid && groupRecord.group == group;
-                                            });
-        if (groupIt == groups.end())
-        {
-            return;
-        }
+        auto groupIt = std::ranges::find_if(groups, [group](const GroupRecord& groupRecord) {
+            return groupRecord.isValid && groupRecord.group == group;
+        });
+        if (groupIt == groups.end()) { return; }
 
         groupIt->group->ReleaseImmediate();
 
-        auto heapIt = std::ranges::find_if(heaps,
-                                           [groupIt](const HeapRecord& heapRecord) {
-                                               return heapRecord.isValid && heapRecord.heap == groupIt->heap;
-                                           });
+        auto heapIt = std::ranges::find_if(heaps, [groupIt](const HeapRecord& heapRecord) {
+            return heapRecord.isValid && heapRecord.heap == groupIt->heap;
+        });
         if (heapIt != heaps.end())
         {
             RemoveUsage(heapIt->used, groupIt->usage);
@@ -254,21 +226,12 @@ namespace Hazel
     {
         std::lock_guard lock(m_Mutex);
 
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (auto& heapRecord : m_Heaps)
         {
-            if (!heapRecord.isValid)
-            {
-                continue;
-            }
-            if (heapRecord.heap)
-            {
-                heapRecord.heap->Release();
-            }
+            if (!heapRecord.isValid) { continue; }
+            if (heapRecord.heap) { heapRecord.heap->Release(); }
             heapRecord.heap = nullptr;
             heapRecord.capacity = {};
             heapRecord.used = {};
@@ -278,14 +241,8 @@ namespace Hazel
 
         for (auto& heapRecord : m_HeapsUpdateAfterBind)
         {
-            if (!heapRecord.isValid)
-            {
-                continue;
-            }
-            if (heapRecord.heap)
-            {
-                heapRecord.heap->Release();
-            }
+            if (!heapRecord.isValid) { continue; }
+            if (heapRecord.heap) { heapRecord.heap->Release(); }
             heapRecord.heap = nullptr;
             heapRecord.capacity = {};
             heapRecord.used = {};

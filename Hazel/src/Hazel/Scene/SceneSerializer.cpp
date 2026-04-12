@@ -30,8 +30,7 @@ namespace Hazel
         for (auto& enttEntity : m_Scene->m_Registry.view<entt::entity>())
         {
             Entity entity = {enttEntity, m_Scene.get()};
-            if (!entity)
-                continue;
+            if (!entity) continue;
             entities.push_back(entity.Serialize());
         }
 
@@ -54,8 +53,7 @@ namespace Hazel
             return false;
         }
 
-        if (!data["Scene"])
-            return false;
+        if (!data["Scene"]) return false;
 
         auto sceneName = data["Scene"].as<std::string>();
         HZ_CORE_TRACE("Deserializing scene '{0}'", sceneName);

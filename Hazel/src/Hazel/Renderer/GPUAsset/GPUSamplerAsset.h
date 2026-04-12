@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/RHI/RHI.h"
+#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 
 namespace Hazel
 {
@@ -14,7 +14,7 @@ namespace Hazel
 
     class GPUSamplerAsset : public GPUAsset
     {
-    public:
+      public:
         GPUSamplerAsset() = delete;
 
         GPUSamplerAsset(UUID uuid,
@@ -23,32 +23,24 @@ namespace Hazel
                         const RHISamplerDesc& desc,
                         RHISampler* sampler,
                         uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Sampler, renderer, sourceVersion, lastReferencedFrame),
-              m_IsValid(true), m_Desc(desc), m_Sampler(sampler)
-        {
-        }
+            : GPUAsset(uuid, AssetType::Sampler, renderer, sourceVersion, lastReferencedFrame)
+            , m_IsValid(true)
+            , m_Desc(desc)
+            , m_Sampler(sampler)
+        {}
 
         ~GPUSamplerAsset() override;
 
         void Release() override;
         void ReleaseImmediate() override;
 
-        const RHISamplerDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHISamplerDesc& GetDesc() const { return m_Desc; }
 
-        RHISampler* GetHandle() const
-        {
-            return m_Sampler;
-        }
+        RHISampler* GetHandle() const { return m_Sampler; }
 
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+        bool IsValid() const { return m_IsValid; }
 
-    private:
+      private:
         bool m_IsValid = false;
         RHISamplerDesc m_Desc{};
         RHISampler* m_Sampler = nullptr;

@@ -4,9 +4,9 @@
 
 #include "AssetUtils.h"
 
-#include <yaml-cpp/yaml.h>
-#include <unordered_set>
 #include <fstream>
+#include <unordered_set>
+#include <yaml-cpp/yaml.h>
 
 namespace Hazel
 {
@@ -14,48 +14,27 @@ namespace Hazel
     {
         const auto extension = path.extension().string();
 
-        static const std::unordered_set<std::string> imageExtensions =
-            {".png", ".jpg", ".jpeg", ".bmp", ".tga", ".hdr"};
+        static const std::unordered_set<std::string> imageExtensions = {
+            ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".hdr"};
 
-        if (imageExtensions.contains(extension))
-        {
-            return AssetType::Texture;
-        }
+        if (imageExtensions.contains(extension)) { return AssetType::Texture; }
 
-        if (extension == ".comp")
-        {
-            return AssetType::ComputeShader;
-        }
+        if (extension == ".comp") { return AssetType::ComputeShader; }
 
-        if (extension == ".obj")
-        {
-            return AssetType::Mesh;
-        }
+        if (extension == ".obj") { return AssetType::Mesh; }
 
-        if (extension == ".shader")
-        {
-            return AssetType::Shader;
-        }
+        if (extension == ".shader") { return AssetType::Shader; }
 
         if (extension == ".meta")
         {
             const auto stemFilePath = path.stem();
             const auto stemExtension = stemFilePath.extension().string();
 
-            if (stemExtension == ".rt")
-            {
-                return AssetType::RenderTexture;
-            }
+            if (stemExtension == ".rt") { return AssetType::RenderTexture; }
 
-            if (stemExtension == ".sampler")
-            {
-                return AssetType::Sampler;
-            }
+            if (stemExtension == ".sampler") { return AssetType::Sampler; }
 
-            if (stemExtension == ".mat")
-            {
-                return AssetType::Material;
-            }
+            if (stemExtension == ".mat") { return AssetType::Material; }
         }
 
         return AssetType::Unknown;
@@ -63,10 +42,7 @@ namespace Hazel
 
     std::filesystem::path GetMetaPathFromAssetPath(const std::filesystem::path& assetPath)
     {
-        if (assetPath.extension() == ".meta")
-        {
-            return assetPath;
-        }
+        if (assetPath.extension() == ".meta") { return assetPath; }
         auto metaPath = assetPath;
         metaPath += ".meta";
         return metaPath;
@@ -74,17 +50,11 @@ namespace Hazel
 
     UUID GetUUIDFromMetaFile(const std::filesystem::path& metaPath)
     {
-        if (!(std::filesystem::is_regular_file(metaPath) && std::filesystem::exists(metaPath)))
-        {
-            return UUID(-1);
-        }
+        if (!(std::filesystem::is_regular_file(metaPath) && std::filesystem::exists(metaPath))) { return UUID(-1); }
 
         YAML::Node metaNode = YAML::LoadFile(metaPath.string());
-        if (!metaNode["UUID"])
-        {
-            return UUID(-1);
-        }
+        if (!metaNode["UUID"]) { return UUID(-1); }
 
         return UUID(metaNode["UUID"].as<uint64_t>());
     }
-}
+} // namespace Hazel

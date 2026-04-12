@@ -1,19 +1,20 @@
-#include "hzpch.h"
 #include "ContentBrowserPanel.h"
 
 #include "Hazel/Asset/AssetManager.h"
 #include "Hazel/Asset/AssetUtils.h"
 #include "Hazel/Core/Application.h"
 #include "Hazel/Project/Project.h"
+#include "hzpch.h"
 
-#include <imgui.h>
 #include <cstring>
 #include <fstream>
+#include <imgui.h>
 
 namespace Hazel
 {
     ContentBrowserPanel::ContentBrowserPanel(void* directoryIcon, void* fileIcon)
-        : m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
+        : m_BaseDirectory(Project::GetAssetDirectory())
+        , m_CurrentDirectory(m_BaseDirectory)
     {
         m_DirectoryIcon = directoryIcon;
         m_FileIcon = fileIcon;
@@ -40,18 +41,12 @@ namespace Hazel
             float h = ImGui::GetFrameHeight();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - 150 - 2 * h);
             ImGui::PushID("ContentIconSizeSlider");
-            if (ImGui::Button("-", ImVec2(h, h)))
-            {
-                thumbnailSize = std::max(16.0, thumbnailSize - 32.0);
-            }
+            if (ImGui::Button("-", ImVec2(h, h))) { thumbnailSize = std::max(16.0, thumbnailSize - 32.0); }
             ImGui::SameLine();
             ImGui::SetNextItemWidth(150);
             ImGui::SliderFloat("", &thumbnailSize, 16, 512, "");
             ImGui::SameLine();
-            if (ImGui::Button("+", ImVec2(h, h)))
-            {
-                thumbnailSize = std::min(512.0, thumbnailSize + 32.0);
-            }
+            if (ImGui::Button("+", ImVec2(h, h))) { thumbnailSize = std::min(512.0, thumbnailSize + 32.0); }
             ImGui::PopID();
             ImGui::PopStyleVar();
 
@@ -75,11 +70,7 @@ namespace Hazel
             void* icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
             ImVec4 buttonColor = path == m_SelectedPath ? ImVec4(0.2f, 0.35f, 0.6f, 0.35f) : ImVec4(0, 0, 0, 0);
             ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
-            ImGui::ImageButton("##btn",
-                               icon,
-                               ImVec2(thumbnailSize, thumbnailSize),
-                               ImVec2(0, 0),
-                               ImVec2(1, 1));
+            ImGui::ImageButton("##btn", icon, ImVec2(thumbnailSize, thumbnailSize), ImVec2(0, 0), ImVec2(1, 1));
 
             if (ImGui::BeginDragDropSource())
             {
@@ -97,8 +88,7 @@ namespace Hazel
             }
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                if (directoryEntry.is_directory())
-                    m_CurrentDirectory /= path.filename();
+                if (directoryEntry.is_directory()) m_CurrentDirectory /= path.filename();
             }
             ImGui::TextWrapped(filenameString.c_str());
 
@@ -113,22 +103,13 @@ namespace Hazel
         {
             if (ImGui::BeginMenu("Create"))
             {
-                if (ImGui::MenuItem("Material"))
-                {
-                    OpenCreateAssetPopup(AssetType::Material, "New Material");
-                }
+                if (ImGui::MenuItem("Material")) { OpenCreateAssetPopup(AssetType::Material, "New Material"); }
                 if (ImGui::MenuItem("Render Texture"))
                 {
                     OpenCreateAssetPopup(AssetType::RenderTexture, "New Render Texture");
                 }
-                if (ImGui::MenuItem("Sampler"))
-                {
-                    OpenCreateAssetPopup(AssetType::Sampler, "New Sampler");
-                }
-                if (ImGui::MenuItem("Shader"))
-                {
-                    OpenCreateAssetPopup(AssetType::Shader, "New Shader");
-                }
+                if (ImGui::MenuItem("Sampler")) { OpenCreateAssetPopup(AssetType::Sampler, "New Sampler"); }
+                if (ImGui::MenuItem("Shader")) { OpenCreateAssetPopup(AssetType::Shader, "New Shader"); }
                 if (ImGui::MenuItem("Compute Shader"))
                 {
                     OpenCreateAssetPopup(AssetType::ComputeShader, "New Compute Shader");
@@ -145,10 +126,7 @@ namespace Hazel
 
     std::filesystem::path ContentBrowserPanel::GetSelectedMetaPath() const
     {
-        if (m_SelectedPath.empty())
-        {
-            return {};
-        }
+        if (m_SelectedPath.empty()) { return {}; }
 
         return GetMetaPathFromAssetPath(m_SelectedPath);
     }
@@ -157,19 +135,13 @@ namespace Hazel
                                                              const std::string& extension) const
     {
         auto path = m_CurrentDirectory / (baseName + extension);
-        if (!std::filesystem::exists(path))
-        {
-            return path;
-        }
+        if (!std::filesystem::exists(path)) { return path; }
 
         int index = 1;
         while (true)
         {
             path = m_CurrentDirectory / (baseName + " " + std::to_string(index) + extension);
-            if (!std::filesystem::exists(path))
-            {
-                return path;
-            }
+            if (!std::filesystem::exists(path)) { return path; }
             index++;
         }
     }
@@ -222,10 +194,8 @@ namespace Hazel
 
             ImGui::Text("Type: %s", assetTypeName);
             ImGui::SetNextItemWidth(280.0f);
-            bool create = ImGui::InputText("Name",
-                                           m_CreateAssetNameBuffer,
-                                           sizeof(m_CreateAssetNameBuffer),
-                                           ImGuiInputTextFlags_EnterReturnsTrue);
+            bool create = ImGui::InputText(
+                "Name", m_CreateAssetNameBuffer, sizeof(m_CreateAssetNameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SetItemDefaultFocus();
 
             if (ImGui::Button("Create") || create)
@@ -294,8 +264,8 @@ namespace Hazel
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
-        auto assetRegistryTerm = std::make_unique<
-            AssetRegistryTerm>(meta.GetUUID(), AssetType::RenderTexture, metaPath);
+        auto assetRegistryTerm =
+            std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::RenderTexture, metaPath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
@@ -323,24 +293,24 @@ namespace Hazel
 
         std::ofstream sourceOutput(sourcePath);
         sourceOutput << "#version 450 core\n\n"
-            "#ifdef VERTEX_SHADER\n"
-            "layout(location = 0) out vec2 v_UV;\n"
-            "vec2 positions[3] = vec2[](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));\n"
-            "vec2 uvs[3] = vec2[](vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0));\n"
-            "void main()\n"
-            "{\n"
-            "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
-            "    v_UV = uvs[gl_VertexIndex];\n"
-            "}\n"
-            "#endif\n\n"
-            "#ifdef FRAGMENT_SHADER\n"
-            "layout(location = 0) in vec2 v_UV;\n"
-            "layout(location = 0) out vec4 o_Color;\n"
-            "void main()\n"
-            "{\n"
-            "    o_Color = vec4(v_UV, 0.0, 1.0);\n"
-            "}\n"
-            "#endif\n";
+                        "#ifdef VERTEX_SHADER\n"
+                        "layout(location = 0) out vec2 v_UV;\n"
+                        "vec2 positions[3] = vec2[](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));\n"
+                        "vec2 uvs[3] = vec2[](vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0));\n"
+                        "void main()\n"
+                        "{\n"
+                        "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\n"
+                        "    v_UV = uvs[gl_VertexIndex];\n"
+                        "}\n"
+                        "#endif\n\n"
+                        "#ifdef FRAGMENT_SHADER\n"
+                        "layout(location = 0) in vec2 v_UV;\n"
+                        "layout(location = 0) out vec4 o_Color;\n"
+                        "void main()\n"
+                        "{\n"
+                        "    o_Color = vec4(v_UV, 0.0, 1.0);\n"
+                        "}\n"
+                        "#endif\n";
         sourceOutput.close();
 
         auto meta = ShaderAssetMeta::CreateDefault();
@@ -362,21 +332,20 @@ namespace Hazel
 
         std::ofstream sourceOutput(sourcePath);
         sourceOutput << "#version 450 core\n\n"
-            "layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n\n"
-            "void main()\n"
-            "{\n"
-            "}\n";
+                        "layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n\n"
+                        "void main()\n"
+                        "{\n"
+                        "}\n";
 
         auto meta = ComputeShaderAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
-        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(),
-                                                                     AssetType::ComputeShader,
-                                                                     sourcePath);
+        auto assetRegistryTerm =
+            std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::ComputeShader, sourcePath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(sourcePath);
     }
-}
+} // namespace Hazel

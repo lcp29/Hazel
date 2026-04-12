@@ -4,7 +4,7 @@ namespace Hazel
 {
     class ScriptGlue
     {
-    public:
+      public:
         static void RegisterComponents();
         static void RegisterFunctions();
     };

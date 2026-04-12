@@ -17,10 +17,7 @@ namespace Hazel
         m_LayoutOwner = layoutOwner;
         m_Device = device;
 
-        if (!m_HeapOwner || !m_LayoutOwner || !m_Device)
-        {
-            return;
-        }
+        if (!m_HeapOwner || !m_LayoutOwner || !m_Device) { return; }
 
         const auto descriptorSetLayout = m_LayoutOwner->GetDescriptorSetLayout();
         vk::DescriptorSetAllocateInfo allocateInfo;
@@ -29,26 +26,16 @@ namespace Hazel
         allocateInfo.pSetLayouts = &descriptorSetLayout;
 
         const auto descriptorSets = m_Device.allocateDescriptorSets(allocateInfo);
-        if (descriptorSets.empty())
-        {
-            return;
-        }
+        if (descriptorSets.empty()) { return; }
 
         m_DescriptorSet = descriptorSets.front();
         m_IsValid = static_cast<bool>(m_DescriptorSet);
     }
 
-    RHI_VK_FUNC_IMPL(RHIResourceGroup, ~RHIResourceGroupImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIResourceGroup, ~RHIResourceGroupImpl)() { Release(); }
 
     bool RHI_VK_FUNC_IMPL(RHIResourceGroup, WriteBuffer)(
-        uint32_t slot,
-        RHIBuffer* buffer,
-        uint64_t offset,
-        uint64_t range,
-        uint32_t arrayElement)
+        uint32_t slot, RHIBuffer* buffer, uint64_t offset, uint64_t range, uint32_t arrayElement)
     {
         const auto* bindingDesc = FindBinding(slot);
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !buffer || !buffer->IsValid());
@@ -116,15 +103,12 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHIResourceGroup, WriteSamplerWithImage)(uint32_t slot,
-                                                                   RHISampler* sampler,
-                                                                   RHIImageView* imageView,
-                                                                   RHIImageResourceState state,
-                                                                   uint32_t arrayElement)
+    bool RHI_VK_FUNC_IMPL(RHIResourceGroup, WriteSamplerWithImage)(
+        uint32_t slot, RHISampler* sampler, RHIImageView* imageView, RHIImageResourceState state, uint32_t arrayElement)
     {
         const auto* bindingDesc = FindBinding(slot);
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !sampler || !imageView || !sampler->IsValid()
-            || !imageView->IsValid());
+                             || !imageView->IsValid());
 
         vk::DescriptorImageInfo imageInfo;
         imageInfo.sampler = sampler->GetHandle();
@@ -143,9 +127,8 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHIResourceGroup, WriteBufferView)(uint32_t slot,
-                                                             RHIBufferView* bufferView,
-                                                             uint32_t arrayElement)
+    bool RHI_VK_FUNC_IMPL(RHIResourceGroup,
+                          WriteBufferView)(uint32_t slot, RHIBufferView* bufferView, uint32_t arrayElement)
     {
         const auto* bindingDesc = FindBinding(slot);
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !bindingDesc || !bufferView || !bufferView->IsValid());
@@ -165,32 +148,20 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIResourceGroup, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* heapOwner = m_HeapOwner;
         ReleaseWithoutUnregister();
-        if (heapOwner && !m_IsDetached)
-        {
-            heapOwner->UnregisterGroup(this);
-        }
+        if (heapOwner && !m_IsDetached) { heapOwner->UnregisterGroup(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceGroup, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* heapOwner = m_HeapOwner;
         ReleaseImmediateWithoutUnregister();
-        if (heapOwner && !m_IsDetached)
-        {
-            heapOwner->UnregisterGroup(this);
-        }
+        if (heapOwner && !m_IsDetached) { heapOwner->UnregisterGroup(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceGroup, ReleaseWithoutUnregister)()
@@ -225,7 +196,7 @@ namespace Hazel
         if (m_Device && m_HeapOwner
             && m_HeapOwner
 
-            ->GetHandle()
+                   ->GetHandle()
             && m_DescriptorSet)
         {
             m_Device.freeDescriptorSets(m_HeapOwner->GetHandle(), m_DescriptorSet);
@@ -239,24 +210,15 @@ namespace Hazel
         m_IsDetached = false;
     }
 
-    RHIResourceLayout* RHI_VK_FUNC_IMPL(RHIResourceGroup, GetLayout)() const
-    {
-        return m_LayoutOwner;
-    }
+    RHIResourceLayout* RHI_VK_FUNC_IMPL(RHIResourceGroup, GetLayout)() const { return m_LayoutOwner; }
 
     const RHIResourceBindingSlotDesc* RHI_VK_FUNC_IMPL(RHIResourceGroup, FindBinding)(uint32_t slot) const
     {
-        if (!m_LayoutOwner)
-        {
-            return nullptr;
-        }
+        if (!m_LayoutOwner) { return nullptr; }
 
         for (const auto& bindingDesc : m_LayoutOwner->GetDesc().bindings)
         {
-            if (bindingDesc.slot == slot)
-            {
-                return &bindingDesc;
-            }
+            if (bindingDesc.slot == slot) { return &bindingDesc; }
         }
 
         return nullptr;

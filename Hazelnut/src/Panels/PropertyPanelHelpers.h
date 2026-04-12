@@ -5,16 +5,13 @@
 #include "Hazel/RHI/RHI.h"
 
 #include <glm/glm.hpp>
-
 #include <string>
 #include <vector>
 
 namespace Hazel::PropertyPanelHelpers
 {
-    void DrawVec3Control(const std::string& label,
-                         glm::vec3& values,
-                         float resetValue = 0.0f,
-                         float columnWidth = 100.0f);
+    void
+    DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f);
 
     const char* GetFormatName(RHIFormat format);
     bool DrawFormatCombo(const char* label, RHIFormat& format);
@@ -44,4 +41,4 @@ namespace Hazel::PropertyPanelHelpers
                                 const std::vector<AssetRegistryTerm*>& assets,
                                 UUID& value,
                                 bool allowNone = true);
-}
+} // namespace Hazel::PropertyPanelHelpers

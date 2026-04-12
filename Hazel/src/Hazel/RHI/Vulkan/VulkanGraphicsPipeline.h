@@ -15,42 +15,29 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIGraphicsPipeline)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
         ~RHIGraphicsPipelineImpl();
 
-        const RHIGraphicsPipelineDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIGraphicsPipelineDesc& GetDesc() const { return m_Desc; }
 
-        vk::Pipeline GetHandle() const
-        {
-            return m_Pipeline;
-        }
+        vk::Pipeline GetHandle() const { return m_Pipeline; }
 
         vk::PipelineLayout GetPipelineLayout() const
         {
             return m_ResourceSignature ? m_ResourceSignature->GetPipelineLayout() : VK_NULL_HANDLE;
         }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-    private
-    :
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHICommandBufferImpl<RHIBackend::Vulkan>;
 
-        RHIGraphicsPipelineImpl(RHIDevice* deviceOwner, vk::Device device, const RHIGraphicsPipelineDesc& desc);
+        RHIGraphicsPipelineImpl(RHIDevice * deviceOwner, vk::Device device, const RHIGraphicsPipelineDesc& desc);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

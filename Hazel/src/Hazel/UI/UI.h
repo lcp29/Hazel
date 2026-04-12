@@ -11,24 +11,21 @@ namespace Hazel::UI
         ScopedStyleColor(ImGuiCol idx, ImVec4 color, bool predicate = true)
             : m_Set(predicate)
         {
-            if (predicate)
-                ImGui::PushStyleColor(idx, color);
+            if (predicate) ImGui::PushStyleColor(idx, color);
         }
 
         ScopedStyleColor(ImGuiCol idx, ImU32 color, bool predicate = true)
             : m_Set(predicate)
         {
-            if (predicate)
-                ImGui::PushStyleColor(idx, color);
+            if (predicate) ImGui::PushStyleColor(idx, color);
         }
 
         ~ScopedStyleColor()
         {
-            if (m_Set)
-                ImGui::PopStyleColor();
+            if (m_Set) ImGui::PopStyleColor();
         }
 
-    private:
+      private:
         bool m_Set = false;
     };
 } // namespace Hazel::UI

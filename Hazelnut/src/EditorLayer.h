@@ -3,10 +3,10 @@
 #include "Hazel.h"
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
+#include "Hazel/Scene/ViewportCameraController.h"
+#include "Panels/ContentBrowserPanel.h"
 #include "Panels/PropertyPanel.h"
 #include "Panels/SceneHierarchyPanel.h"
-#include "Panels/ContentBrowserPanel.h"
-#include "Hazel/Scene/ViewportCameraController.h"
 
 namespace Hazel
 {
@@ -14,7 +14,7 @@ namespace Hazel
 
     class EditorLayer : public Layer
     {
-    public:
+      public:
         constexpr static auto GizmoTranslateSnapString = "editor.Gizmo.TranslateSnap";
         constexpr static auto GizmoRotateSnapDegreesString = "editor.Gizmo.RotateSnapDegrees";
         constexpr static float DefaultGizmoTranslateSnap = 0.5f;
@@ -39,7 +39,7 @@ namespace Hazel
         void OnImGuiRender() override;
         void OnEvent(Event& e) override;
 
-    private:
+      private:
         bool OnKeyPressed(KeyPressedEvent& e);
         bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
@@ -94,8 +94,8 @@ namespace Hazel
         std::mutex m_ObjectIDRenderMutex;
         std::vector<bool> m_ObjectIDNeedsPulling;
         std::vector<std::array<int32_t, 2>> m_ObjectIDPullPositions;
-        uint32_t m_ObjectIDPullingQueueFront;
-        uint32_t m_ObjectIDPullingQueueBack;
+        uint32_t m_ObjectIDPullingQueueFront = 0;
+        uint32_t m_ObjectIDPullingQueueBack = 0;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTexture = nullptr;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDDepthRenderTexture = nullptr;
         std::unique_ptr<GPUAssetHandle> m_ObjectIDRenderTextureBuffer = nullptr;
@@ -109,7 +109,8 @@ namespace Hazel
 
         enum class SceneState
         {
-            Edit = 0, Play = 1
+            Edit = 0,
+            Play = 1
         };
 
         SceneState m_SceneState = SceneState::Edit;
@@ -121,4 +122,4 @@ namespace Hazel
         uint64_t m_LastSceneHierarchySelectionVersion = 0;
         uint64_t m_LastContentBrowserSelectionVersion = 0;
     };
-}
+} // namespace Hazel

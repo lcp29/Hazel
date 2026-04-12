@@ -9,7 +9,7 @@ namespace Hazel
 {
     class Input
     {
-    public:
+      public:
         static bool IsKeyPressed(KeyCode key);
 
         static bool IsMouseButtonPressed(MouseCode button);

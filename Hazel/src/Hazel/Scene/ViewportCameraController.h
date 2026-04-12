@@ -3,16 +3,16 @@
 //
 
 #pragma once
-#include "Transform.h"
-#include "glm/vec2.hpp"
 #include "Hazel/Core/Timestep.h"
 #include "Hazel/Renderer/Camera.h"
+#include "Transform.h"
+#include "glm/vec2.hpp"
 
 namespace Hazel
 {
     class ViewportCameraController
     {
-    public:
+      public:
         constexpr static auto MoveSpeedString = "editor.ViewportCamera.MoveSpeed";
         constexpr static auto RotationSpeedString = "editor.ViewportCamera.RotationSpeed";
         constexpr static float DefaultMoveSpeed = 5.0f;
@@ -24,29 +24,18 @@ namespace Hazel
 
         void OnUpdate(Timestep ts);
         void StopControlling();
+
         bool IsControlling() const { return m_WasRightMousePressed; }
 
-        const Camera* GetCamera() const
-        {
-            return m_ViewportCamera;
-        }
+        const Camera* GetCamera() const { return m_ViewportCamera; }
 
-        void SetCamera(Camera* camera)
-        {
-            m_ViewportCamera = camera;
-        }
+        void SetCamera(Camera* camera) { m_ViewportCamera = camera; }
 
-        const Transform& GetCameraTransform() const
-        {
-            return m_Transform;
-        }
+        const Transform& GetCameraTransform() const { return m_Transform; }
 
-        void SetCameraTransform(const Transform& transform)
-        {
-            m_Transform = transform;
-        }
+        void SetCameraTransform(const Transform& transform) { m_Transform = transform; }
 
-    private:
+      private:
         Transform m_Transform{};
         Camera* m_ViewportCamera = nullptr;
         glm::vec2 m_LastMousePosition = {0.0f, 0.0f};

@@ -23,17 +23,11 @@ namespace Hazel
     {
         m_Registries.clear();
 
-        if (!node || !node.IsMap())
-        {
-            return;
-        }
+        if (!node || !node.IsMap()) { return; }
 
         for (const auto& entry : node)
         {
-            if (!entry.first.IsScalar() || !entry.second.IsScalar())
-            {
-                continue;
-            }
+            if (!entry.first.IsScalar() || !entry.second.IsScalar()) { continue; }
 
             m_Registries[entry.first.as<std::string>()] = entry.second.as<std::string>();
         }

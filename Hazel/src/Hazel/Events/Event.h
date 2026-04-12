@@ -43,28 +43,16 @@ namespace Hazel
     };
 
 #define EVENT_CLASS_TYPE(type)                                                                                         \
-    static EventType GetStaticType()                                                                                   \
-    {                                                                                                                  \
-        return EventType::type;                                                                                        \
-    }                                                                                                                  \
-    virtual EventType GetEventType() const override                                                                    \
-    {                                                                                                                  \
-        return GetStaticType();                                                                                        \
-    }                                                                                                                  \
-    virtual const char* GetName() const override                                                                       \
-    {                                                                                                                  \
-        return #type;                                                                                                  \
-    }
+    static EventType GetStaticType() { return EventType::type; }                                                       \
+    virtual EventType GetEventType() const override { return GetStaticType(); }                                        \
+    virtual const char* GetName() const override { return #type; }
 
 #define EVENT_CLASS_CATEGORY(category)                                                                                 \
-    virtual int GetCategoryFlags() const override                                                                      \
-    {                                                                                                                  \
-        return category;                                                                                               \
-    }
+    virtual int GetCategoryFlags() const override { return category; }
 
     class Event
     {
-    public:
+      public:
         virtual ~Event() = default;
 
         bool Handled = false;
@@ -73,28 +61,20 @@ namespace Hazel
         virtual const char* GetName() const = 0;
         virtual int GetCategoryFlags() const = 0;
 
-        virtual std::string ToString() const
-        {
-            return GetName();
-        }
+        virtual std::string ToString() const { return GetName(); }
 
-        bool IsInCategory(EventCategory category)
-        {
-            return GetCategoryFlags() & category;
-        }
+        bool IsInCategory(EventCategory category) { return GetCategoryFlags() & category; }
     };
 
     class EventDispatcher
     {
-    public:
+      public:
         EventDispatcher(Event& event)
             : m_Event(event)
-        {
-        }
+        {}
 
         // F will be deduced by the compiler
-        template <typename T, typename F>
-        bool Dispatch(const F& func)
+        template <typename T, typename F> bool Dispatch(const F& func)
         {
             if (m_Event.GetEventType() == T::GetStaticType())
             {
@@ -104,12 +84,9 @@ namespace Hazel
             return false;
         }
 
-    private:
+      private:
         Event& m_Event;
     };
 
-    inline std::ostream& operator<<(std::ostream& os, const Event& e)
-    {
-        return os << e.ToString();
-    }
+    inline std::ostream& operator<<(std::ostream& os, const Event& e) { return os << e.ToString(); }
 } // namespace Hazel

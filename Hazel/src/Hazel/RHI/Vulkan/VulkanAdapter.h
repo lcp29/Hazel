@@ -30,43 +30,25 @@ namespace Hazel
 
     RHI_VK_CLASS_IMPL(RHIAdapter)
     {
-    public:
+      public:
         bool CanCreateDevice(const RHIDeviceCapabilities& caps) const;
 
-        const RHIDeviceCapabilities& GetCapabilities() const
-        {
-            return m_Capabilities;
-        }
+        const RHIDeviceCapabilities& GetCapabilities() const { return m_Capabilities; }
 
-        const std::string& GetName() const
-        {
-            return m_Info.name;
-        }
+        const std::string& GetName() const { return m_Info.name; }
 
-        uint32_t GetDeviceId() const
-        {
-            return m_Info.deviceId;
-        }
+        uint32_t GetDeviceId() const { return m_Info.deviceId; }
 
-        uint32_t GetVendorId() const
-        {
-            return m_Info.vendorId;
-        }
+        uint32_t GetVendorId() const { return m_Info.vendorId; }
 
-        RHIAdapterType GetType() const
-        {
-            return m_Info.type;
-        }
+        RHIAdapterType GetType() const { return m_Info.type; }
 
         RHIAdapterImpl() = default;
         explicit RHIAdapterImpl(vk::PhysicalDevice adapter);
 
-        vk::PhysicalDevice GetHandle() const
-        {
-            return m_Adapter;
-        }
+        vk::PhysicalDevice GetHandle() const { return m_Adapter; }
 
-    private:
+      private:
         RHIAdapterInfo m_Info;
         RHIDeviceCapabilities m_Capabilities;
         vk::PhysicalDevice m_Adapter;

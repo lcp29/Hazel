@@ -39,15 +39,15 @@ namespace Hazel
         {
             return GlobalSettings.Get(Camera::DefaultOrthoFarString, Camera::DefaultOrthoFar);
         }
-    }
+    } // namespace
 
     Camera::Camera()
         : m_FovX(GetDefaultPerspectiveFovX())
-          , m_NearClip(GetDefaultPerspectiveNear())
-          , m_FarClip(GetDefaultPerspectiveFar())
-          , m_OrthoWidth(GetDefaultOrthoWidth())
-          , m_OrthoNearClip(GetDefaultOrthoNear())
-          , m_OrthoFarClip(GetDefaultOrthoFar())
+        , m_NearClip(GetDefaultPerspectiveNear())
+        , m_FarClip(GetDefaultPerspectiveFar())
+        , m_OrthoWidth(GetDefaultOrthoWidth())
+        , m_OrthoNearClip(GetDefaultOrthoNear())
+        , m_OrthoFarClip(GetDefaultOrthoFar())
     {
         UpdateMatrices();
     }

@@ -43,4 +43,4 @@ namespace Hazel
                                                 const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                                 RHIFormat depthStencilFormat,
                                                 Renderer* renderer);
-} // Hazel
+} // namespace Hazel

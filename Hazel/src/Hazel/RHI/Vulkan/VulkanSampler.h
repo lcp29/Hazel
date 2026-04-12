@@ -13,36 +13,24 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHISampler)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
         ~RHISamplerImpl();
 
-        const RHISamplerDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHISamplerDesc& GetDesc() const { return m_Desc; }
 
-        vk::Sampler GetHandle() const
-        {
-            return m_Sampler;
-        }
+        vk::Sampler GetHandle() const { return m_Sampler; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIResourceGroupImpl<RHIBackend::Vulkan>;
 
-        RHISamplerImpl(RHIDevice* deviceOwner, vk::Device device, const RHISamplerDesc& desc);
+        RHISamplerImpl(RHIDevice * deviceOwner, vk::Device device, const RHISamplerDesc& desc);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

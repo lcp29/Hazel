@@ -8,7 +8,6 @@
 #include "Hazel/Core/UUID.h"
 #include "Hazel/RHI/RHI.h"
 
-
 namespace Hazel
 {
     class Renderer;
@@ -24,7 +23,7 @@ namespace Hazel
 
     class GPUTextureAsset : public GPUAsset
     {
-    public:
+      public:
         GPUTextureAsset() = delete;
 
         GPUTextureAsset(const UUID uuid,
@@ -34,40 +33,27 @@ namespace Hazel
                         RHIImage* image,
                         RHIImageView* imageView,
                         uint64_t lastReferencedFrame = 0)
-            : GPUAsset(uuid, AssetType::Texture, renderer, sourceVersion, lastReferencedFrame),
-              m_IsValid(true),
-              m_Desc(desc),
-              m_Image(image),
-              m_DefaultImageView(imageView)
-        {
-        }
+            : GPUAsset(uuid, AssetType::Texture, renderer, sourceVersion, lastReferencedFrame)
+            , m_IsValid(true)
+            , m_Desc(desc)
+            , m_Image(image)
+            , m_DefaultImageView(imageView)
+        {}
 
         ~GPUTextureAsset() override;
 
         void Release() override;
         void ReleaseImmediate() override;
 
-        RHIImage* GetImage() const
-        {
-            return m_Image;
-        }
+        RHIImage* GetImage() const { return m_Image; }
 
-        RHIImageView* GetDefaultImageView() const
-        {
-            return m_DefaultImageView;
-        }
+        RHIImageView* GetDefaultImageView() const { return m_DefaultImageView; }
 
-        const TextureDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const TextureDesc& GetDesc() const { return m_Desc; }
 
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+        bool IsValid() const { return m_IsValid; }
 
-    private:
+      private:
         bool m_IsValid = false;
         TextureDesc m_Desc{};
         RHIImage* m_Image = nullptr;

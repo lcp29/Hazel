@@ -123,10 +123,7 @@ namespace Hazel
         vk::ColorComponentFlags result;
 
 #define X(rhi, vul)                                                                                                    \
-    if (flags & RHIColorComponentFlagBits::rhi)                                                                        \
-    {                                                                                                                  \
-        result |= vk::ColorComponentFlagBits::vul;                                                                     \
-    }
+    if (flags & RHIColorComponentFlagBits::rhi) { result |= vk::ColorComponentFlagBits::vul; }
 #include "TypeMappings/ColorComponentFlags.inl"
 
 #undef X
@@ -183,10 +180,7 @@ namespace Hazel
         for (auto* layout : desc.resourceLayouts)
         {
             auto* vkLayout = layout;
-            if (!vkLayout || !vkLayout->IsValid())
-            {
-                return false;
-            }
+            if (!vkLayout || !vkLayout->IsValid()) { return false; }
 
             descriptorSetLayouts.push_back(vkLayout->GetDescriptorSetLayout());
         }
@@ -202,10 +196,7 @@ namespace Hazel
                                                            && existingRange.offset == vkRange.offset
                                                            && existingRange.size == vkRange.size;
                                                 });
-            if (duplicate == pushConstantRanges.end())
-            {
-                pushConstantRanges.push_back(vkRange);
-            }
+            if (duplicate == pushConstantRanges.end()) { pushConstantRanges.push_back(vkRange); }
         }
 
         createInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());

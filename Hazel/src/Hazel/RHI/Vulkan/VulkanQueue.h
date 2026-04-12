@@ -15,58 +15,33 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIQueue)
     {
-    public:
-        RHIQueueType GetType() const
-        {
-            return m_Type;
-        }
+      public:
+        RHIQueueType GetType() const { return m_Type; }
 
-        vk::Queue GetHandle() const
-        {
-            return m_Queue;
-        }
+        vk::Queue GetHandle() const { return m_Queue; }
 
-        uint32_t GetFamilyIndex() const
-        {
-            return m_FamilyIndex;
-        }
+        uint32_t GetFamilyIndex() const { return m_FamilyIndex; }
 
-        uint32_t GetQueueIndex() const
-        {
-            return m_QueueIndex;
-        }
+        uint32_t GetQueueIndex() const { return m_QueueIndex; }
 
-        uint64_t GetCurrentTimelineValue() const
-        {
-            return m_TimelineValue;
-        }
+        uint64_t GetCurrentTimelineValue() const { return m_TimelineValue; }
 
         RHISyncPoint Submit(const RHIQueueSubmitDesc& desc);
         RHISyncPoint SignalOnBinarySemaphore(vk::Semaphore semaphore);
         bool WaitSyncPointsAndSignalBinary(const std::vector<RHISyncPoint>& waitSyncPoints, vk::Semaphore semaphore);
 
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+        bool IsValid() const { return m_IsValid; }
 
         ~RHIQueueImpl();
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
 
         RHIQueueImpl(
-            RHIDevice* device,
-            RHIQueueType type,
-            uint32_t familyIndex,
-            vk::Queue queue,
-            uint32_t queueIndex = 0);
+            RHIDevice * device, RHIQueueType type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex = 0);
         void ReleaseFromOwner();
 
-        vk::Semaphore GetSignalSemaphore() const
-        {
-            return m_SignalSemaphore;
-        }
+        vk::Semaphore GetSignalSemaphore() const { return m_SignalSemaphore; }
 
         RHIQueueType m_Type;
         bool m_IsValid = false;

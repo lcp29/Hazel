@@ -125,10 +125,7 @@ namespace Hazel
         m_CommandPool = commandPool;
         m_Desc = desc;
 
-        if (!m_CommandPoolOwner || !m_Device || !m_CommandPool)
-        {
-            return;
-        }
+        if (!m_CommandPoolOwner || !m_Device || !m_CommandPool) { return; }
 
         vk::CommandBufferAllocateInfo allocateInfo;
         allocateInfo.commandPool = m_CommandPool;
@@ -136,33 +133,21 @@ namespace Hazel
         allocateInfo.commandBufferCount = 1;
 
         const auto commandBuffers = m_Device.allocateCommandBuffers(allocateInfo);
-        if (commandBuffers.value.empty())
-        {
-            return;
-        }
+        if (commandBuffers.value.empty()) { return; }
 
         m_CommandBuffer = commandBuffers.value.front();
         m_IsValid = static_cast<bool>(m_CommandBuffer);
     }
 
-    RHI_VK_FUNC_IMPL(RHICommandBuffer, ~RHICommandBufferImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHICommandBuffer, ~RHICommandBufferImpl)() { Release(); }
 
     bool RHI_VK_FUNC_IMPL(RHICommandBuffer, Begin)(bool oneTimeSubmit)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || m_IsRecording);
 
         vk::CommandBufferBeginInfo beginInfo;
-        if (oneTimeSubmit)
-        {
-            beginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-        }
-        if (m_CommandBuffer.begin(beginInfo) != vk::Result::eSuccess)
-        {
-            return false;
-        }
+        if (oneTimeSubmit) { beginInfo.flags |= vk::CommandBufferUsageFlagBits::eOneTimeSubmit; }
+        if (m_CommandBuffer.begin(beginInfo) != vk::Result::eSuccess) { return false; }
 
         m_IsRendering = false;
         m_IsRecording = true;
@@ -173,10 +158,7 @@ namespace Hazel
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering);
 
-        if (m_CommandBuffer.end() != vk::Result::eSuccess)
-        {
-            return false;
-        }
+        if (m_CommandBuffer.end() != vk::Result::eSuccess) { return false; }
 
         m_IsRecording = false;
         return true;
@@ -186,18 +168,14 @@ namespace Hazel
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || m_IsRecording || m_IsRendering);
 
-        if (m_CommandBuffer.reset() != vk::Result::eSuccess)
-        {
-            return false;
-        }
+        if (m_CommandBuffer.reset() != vk::Result::eSuccess) { return false; }
 
         return true;
     }
 
     bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BeginRendering)(
 
-        const RHIRenderingInfo& info
-    )
+        const RHIRenderingInfo& info)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering);
 
@@ -255,14 +233,8 @@ namespace Hazel
         renderingInfo.viewMask = info.viewMask;
         renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
         renderingInfo.pColorAttachments = colorAttachments.data();
-        if (depthAttachment.has_value())
-        {
-            renderingInfo.pDepthAttachment = &depthAttachment.value();
-        }
-        if (stencilAttachment.has_value())
-        {
-            renderingInfo.pStencilAttachment = &stencilAttachment.value();
-        }
+        if (depthAttachment.has_value()) { renderingInfo.pDepthAttachment = &depthAttachment.value(); }
+        if (stencilAttachment.has_value()) { renderingInfo.pStencilAttachment = &stencilAttachment.value(); }
 
         m_CommandBuffer.beginRendering(renderingInfo);
         m_IsRendering = true;
@@ -296,9 +268,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindVertexBuffer)(uint32_t binding,
-                                                              RHIBuffer* buffer,
-                                                              uint64_t offset)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindVertexBuffer)(uint32_t binding, RHIBuffer* buffer, uint64_t offset)
     {
         auto* vkBuffer = buffer;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkBuffer || !vkBuffer->IsValid());
@@ -309,9 +279,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindIndexBuffer)(RHIBuffer* buffer,
-                                                             RHIIndexType indexType,
-                                                             uint64_t offset)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, BindIndexBuffer)(RHIBuffer* buffer, RHIIndexType indexType, uint64_t offset)
     {
         auto* vkBuffer = buffer;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkBuffer || !vkBuffer->IsValid());
@@ -339,31 +307,24 @@ namespace Hazel
         auto* vkSignature = signature;
         auto* vkGroup = resourceGroup;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid()
-            || !vkGroup->IsValid());
+                             || !vkGroup->IsValid());
 
         const vk::DescriptorSet descriptorSet = vkGroup->GetHandle();
 
         if (bufferOffsets)
         {
-            m_CommandBuffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics,
-                vkSignature->GetPipelineLayout(),
-                set,
-                1,
-                &descriptorSet,
-                bufferOffsets->size(),
-                bufferOffsets->data());
+            m_CommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                               vkSignature->GetPipelineLayout(),
+                                               set,
+                                               1,
+                                               &descriptorSet,
+                                               bufferOffsets->size(),
+                                               bufferOffsets->data());
         }
         else
         {
             m_CommandBuffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics,
-                vkSignature->GetPipelineLayout(),
-                set,
-                1,
-                &descriptorSet,
-                0,
-                nullptr);
+                vk::PipelineBindPoint::eGraphics, vkSignature->GetPipelineLayout(), set, 1, &descriptorSet, 0, nullptr);
         }
         return true;
     }
@@ -385,17 +346,11 @@ namespace Hazel
         auto* vkSignature = signature;
         auto* vkGroup = resourceGroup;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkGroup || !vkSignature->IsValid()
-            || !vkGroup->IsValid());
+                             || !vkGroup->IsValid());
 
         const vk::DescriptorSet descriptorSet = vkGroup->GetHandle();
         m_CommandBuffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eCompute,
-            vkSignature->GetPipelineLayout(),
-            set,
-            1,
-            &descriptorSet,
-            0,
-            nullptr);
+            vk::PipelineBindPoint::eCompute, vkSignature->GetPipelineLayout(), set, 1, &descriptorSet, 0, nullptr);
         return true;
     }
 
@@ -408,7 +363,7 @@ namespace Hazel
         auto* vkSrcImage = srcImage;
         auto* vkDstImage = dstImage;
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !vkSrcImage || !vkDstImage
-            || !vkSrcImage->IsValid() || !vkDstImage->IsValid());
+                             || !vkSrcImage->IsValid() || !vkDstImage->IsValid());
 
         std::vector<vk::ImageBlit> blitRegions;
         blitRegions.reserve(desc.regions.size());
@@ -454,7 +409,7 @@ namespace Hazel
                                                                RHIImageSubresourceLayers dstSubresource)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !srcBuffer || !dstImage || !srcBuffer->IsValid()
-            || !dstImage->IsValid());
+                             || !dstImage->IsValid());
         vk::BufferImageCopy2 info{};
         info.bufferOffset = bufferOffset;
         info.bufferRowLength = bufferMemoryExtent.width;
@@ -487,7 +442,7 @@ namespace Hazel
                                                                RHIImageSubresourceLayers srcSubresource)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcImage || !dstBuffer
-            || !srcImage->IsValid() || !dstBuffer->IsValid());
+                             || !srcImage->IsValid() || !dstBuffer->IsValid());
 
         vk::BufferImageCopy2 info{};
         info.bufferOffset = bufferOffset;
@@ -586,19 +541,15 @@ namespace Hazel
 
         const vk::ClearDepthStencilValue clearValue = VulkanConvertClearDepthStencilValue(value);
         m_CommandBuffer.clearDepthStencilImage(
-            image->GetHandle(),
-            VulkanConvertImageResourceState(state),
-            clearValue,
-            range);
+            image->GetHandle(), VulkanConvertImageResourceState(state), clearValue, range);
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, CopyBuffer)(RHIBuffer* srcBuffer,
-                                                        RHIBuffer* dstBuffer,
-                                                        const RHIBufferCopyDesc& desc)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer,
+                          CopyBuffer)(RHIBuffer* srcBuffer, RHIBuffer* dstBuffer, const RHIBufferCopyDesc& desc)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering || !srcBuffer || !dstBuffer
-            || !srcBuffer->IsValid() || !dstBuffer->IsValid());
+                             || !srcBuffer->IsValid() || !dstBuffer->IsValid());
 
         std::vector<vk::BufferCopy2> regions;
         regions.reserve(desc.regions.size());
@@ -632,11 +583,8 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndexed)(uint32_t indexCount,
-                                                         uint32_t instanceCount,
-                                                         uint32_t firstIndex,
-                                                         int32_t vertexOffset,
-                                                         uint32_t firstInstance)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndexed)(
+        uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !m_IsRendering);
 
@@ -644,10 +592,8 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndirect)(RHIBuffer* buffer,
-                                                          uint64_t offset,
-                                                          uint32_t drawCount,
-                                                          uint32_t stride)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer,
+                          DrawIndirect)(RHIBuffer* buffer, uint64_t offset, uint32_t drawCount, uint32_t stride)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !m_IsRendering || !buffer || !buffer->IsValid());
 
@@ -657,10 +603,8 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, DrawIndexedIndirect)(RHIBuffer* buffer,
-                                                                 uint64_t offset,
-                                                                 uint32_t drawCount,
-                                                                 uint32_t stride)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer,
+                          DrawIndexedIndirect)(RHIBuffer* buffer, uint64_t offset, uint32_t drawCount, uint32_t stride)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !m_IsRendering || !buffer || !buffer->IsValid());
 
@@ -670,9 +614,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, Dispatch)(uint32_t groupCountX,
-                                                      uint32_t groupCountY,
-                                                      uint32_t groupCountZ)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, Dispatch)(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || m_IsRendering);
 
@@ -688,12 +630,8 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetViewport)(float x,
-                                                         float y,
-                                                         float width,
-                                                         float height,
-                                                         float minDepth,
-                                                         float maxDepth)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer,
+                          SetViewport)(float x, float y, float width, float height, float minDepth, float maxDepth)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording);
 
@@ -702,10 +640,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetScissor)(int32_t x,
-                                                        int32_t y,
-                                                        uint32_t width,
-                                                        uint32_t height)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetScissor)(int32_t x, int32_t y, uint32_t width, uint32_t height)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording);
 
@@ -714,10 +649,7 @@ namespace Hazel
         return true;
     }
 
-    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetBlendConstants)(float red,
-                                                               float green,
-                                                               float blue,
-                                                               float alpha)
+    bool RHI_VK_FUNC_IMPL(RHICommandBuffer, SetBlendConstants)(float red, float green, float blue, float alpha)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording);
 
@@ -745,11 +677,7 @@ namespace Hazel
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !m_IsRecording || !vkSignature || !vkSignature->IsValid() || !data);
 
         m_CommandBuffer.pushConstants(
-            vkSignature->GetPipelineLayout(),
-            VulkanConvertShaderStages(stages),
-            offset,
-            size,
-            data);
+            vkSignature->GetPipelineLayout(), VulkanConvertShaderStages(stages), offset, size, data);
         return true;
     }
 
@@ -827,42 +755,27 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHICommandBuffer, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* commandPoolOwner = m_CommandPoolOwner;
         ReleaseWithoutUnregister();
 
-        if (commandPoolOwner && !m_IsDetached)
-        {
-            commandPoolOwner->UnregisterCommandBuffer(this);
-        }
+        if (commandPoolOwner && !m_IsDetached) { commandPoolOwner->UnregisterCommandBuffer(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandBuffer, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* commandPoolOwner = m_CommandPoolOwner;
         ReleaseImmediateWithoutUnregister();
 
-        if (commandPoolOwner && !m_IsDetached)
-        {
-            commandPoolOwner->UnregisterCommandBuffer(this);
-        }
+        if (commandPoolOwner && !m_IsDetached) { commandPoolOwner->UnregisterCommandBuffer(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandBuffer, ReleaseWithoutUnregister)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         const auto device = m_Device;
         const auto commandPool = m_CommandPool;
@@ -870,16 +783,10 @@ namespace Hazel
         if (m_CommandPoolOwner)
         {
             m_CommandPoolOwner->EnqueueDeletion([device, commandPool, commandBuffer]() {
-                if (device && commandPool && commandBuffer)
-                {
-                    device.freeCommandBuffers(commandPool, commandBuffer);
-                }
+                if (device && commandPool && commandBuffer) { device.freeCommandBuffers(commandPool, commandBuffer); }
             });
         }
-        else if (device && commandPool && commandBuffer)
-        {
-            device.freeCommandBuffers(commandPool, commandBuffer);
-        }
+        else if (device && commandPool && commandBuffer) { device.freeCommandBuffers(commandPool, commandBuffer); }
 
         m_CommandBuffer = VK_NULL_HANDLE;
         m_IsRecording = false;
@@ -893,10 +800,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHICommandBuffer, ReleaseImmediateWithoutUnregister)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         if (m_Device && m_CommandPool && m_CommandBuffer)
         {

@@ -6,13 +6,13 @@ namespace Hazel
 {
     class ProjectSerializer
     {
-    public:
+      public:
         ProjectSerializer(Ref<Project> project);
 
         bool Serialize(const std::filesystem::path& filepath);
         bool Deserialize(const std::filesystem::path& filepath);
 
-    private:
+      private:
         Ref<Project> m_Project;
     };
 } // namespace Hazel

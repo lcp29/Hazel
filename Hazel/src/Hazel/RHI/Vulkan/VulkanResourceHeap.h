@@ -13,47 +13,32 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIResourceHeap)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
-        RHIResourceGroup* CreateGroup(RHIResourceLayout* layout, bool isDetached = false);
+        RHIResourceGroup* CreateGroup(RHIResourceLayout * layout, bool isDetached = false);
         void Release();
         void ReleaseImmediate();
         ~RHIResourceHeapImpl();
 
-        const RHIResourceHeapDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIResourceHeapDesc& GetDesc() const { return m_Desc; }
 
-        vk::DescriptorPool GetHandle() const
-        {
-            return m_DescriptorPool;
-        }
+        vk::DescriptorPool GetHandle() const { return m_DescriptorPool; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-        void EnqueueDeletion(DeletionQueue::Operation operation)
-        {
-            m_DeletionQueue.Enqueue(std::move(operation));
-        }
+        void EnqueueDeletion(DeletionQueue::Operation operation) { m_DeletionQueue.Enqueue(std::move(operation)); }
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIResourceGroupImpl<RHIBackend::Vulkan>;
 
-        RHIResourceHeapImpl(RHIDevice* deviceOwner, vk::Device device, const RHIResourceHeapDesc& desc);
+        RHIResourceHeapImpl(RHIDevice * deviceOwner, vk::Device device, const RHIResourceHeapDesc& desc);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();
         void RegisterGroup(std::unique_ptr<RHIResourceGroup> group);
-        void UnregisterGroup(RHIResourceGroup* group);
+        void UnregisterGroup(RHIResourceGroup * group);
 
         bool m_IsValid = false;
         RHIResourceHeapDesc m_Desc;

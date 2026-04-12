@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/RHI/RHI.h"
+#include "Hazel/Renderer/GPUAsset/GPUAsset.h"
 
 #include <memory>
 #include <vector>
@@ -30,7 +30,7 @@ namespace Hazel
 
     class GPURenderTextureAsset : public GPUAsset
     {
-    public:
+      public:
         GPURenderTextureAsset() = delete;
 
         GPURenderTextureAsset(UUID uuid,
@@ -52,22 +52,13 @@ namespace Hazel
         const std::vector<RHIImage*>& GetAllImages() const;
         RHIImageView* GetDefaultImageView() const;
 
-        const std::vector<RHIImageView*>& GetAllDefaultImageViews() const
-        {
-            return m_ImageViews;
-        }
+        const std::vector<RHIImageView*>& GetAllDefaultImageViews() const { return m_ImageViews; }
 
-        const RenderTextureDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RenderTextureDesc& GetDesc() const { return m_Desc; }
 
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+        bool IsValid() const { return m_IsValid; }
 
-    private:
+      private:
         bool m_IsValid = false;
         bool m_PerFrame = true;
         uint32_t m_MaxFramesInFlight = 0;

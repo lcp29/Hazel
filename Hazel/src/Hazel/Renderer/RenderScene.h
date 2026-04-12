@@ -3,12 +3,12 @@
 //
 
 #pragma once
-#include "Hazel/RHI/RHI.h"
 #include "Hazel/Core/UUID.h"
+#include "Hazel/RHI/RHI.h"
 
+#include <glm/glm.hpp>
 #include <map>
 #include <unordered_set>
-#include <glm/glm.hpp>
 
 namespace Hazel
 {
@@ -65,7 +65,7 @@ namespace Hazel
 
     class RenderScene
     {
-    public:
+      public:
         RenderScene(Renderer* renderer);
         void Update(const std::vector<RenderSceneUpdatePayload>& payload);
         void Clear();
@@ -76,7 +76,7 @@ namespace Hazel
             return m_RenderObjectsSortedByShader;
         }
 
-    private:
+      private:
         Renderer* m_Renderer = nullptr;
 
         std::mutex m_RenderObjectsMutex;
@@ -86,4 +86,4 @@ namespace Hazel
         std::multimap<UUID, RenderObject*> m_RenderObjectsSortedByShader;
         std::unordered_set<RenderObject*> m_RenderObjectsUnsorted;
     };
-} // Hazel
+} // namespace Hazel

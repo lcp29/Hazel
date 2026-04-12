@@ -6,8 +6,8 @@
 
 #include "VulkanShader.h"
 
-#include "VulkanDevice.h"
 #include "Hazel/Renderer/ShaderCommon.h"
+#include "VulkanDevice.h"
 
 #include <algorithm>
 #include <spirv_cross/spirv_cross.hpp>
@@ -91,10 +91,7 @@ namespace Hazel
             {
                 typeName += "mat" + std::to_string(type.columns) + "x" + std::to_string(type.vecsize);
             }
-            else if (type.vecsize > 1)
-            {
-                typeName += "vec" + std::to_string(type.vecsize);
-            }
+            else if (type.vecsize > 1) { typeName += "vec" + std::to_string(type.vecsize); }
 
             if (!type.array.empty())
             {
@@ -109,10 +106,7 @@ namespace Hazel
 
         uint32_t GetArraySize(const spirv_cross::SPIRType& type)
         {
-            if (type.array.empty())
-            {
-                return 0;
-            }
+            if (type.array.empty()) { return 0; }
 
             uint32_t totalArraySize = 1;
             for (const auto extent : type.array)
@@ -129,15 +123,11 @@ namespace Hazel
         {
             if (type.image.dim == spv::DimBuffer)
             {
-                return storage
-                           ? RHIResourceBindingType::StorageTexelBuffer
-                           : RHIResourceBindingType::UniformTexelBuffer;
+                return storage ? RHIResourceBindingType::StorageTexelBuffer
+                               : RHIResourceBindingType::UniformTexelBuffer;
             }
 
-            if (type.basetype == spirv_cross::SPIRType::Sampler)
-            {
-                return RHIResourceBindingType::Sampler;
-            }
+            if (type.basetype == spirv_cross::SPIRType::Sampler) { return RHIResourceBindingType::Sampler; }
 
             if (type.basetype == spirv_cross::SPIRType::Image)
             {
@@ -161,10 +151,7 @@ namespace Hazel
         {
             for (auto& resourceGroup : reflection.resourceGroups)
             {
-                if (resourceGroup.set == set)
-                {
-                    return resourceGroup;
-                }
+                if (resourceGroup.set == set) { return resourceGroup; }
             }
 
             reflection.resourceGroups.push_back({set});
@@ -174,16 +161,12 @@ namespace Hazel
         void SortReflection(RHIShaderReflection& reflection)
         {
             std::ranges::sort(reflection.resourceGroups,
-                              [](const auto& lhs, const auto& rhs) {
-                                  return lhs.set < rhs.set;
-                              });
+                              [](const auto& lhs, const auto& rhs) { return lhs.set < rhs.set; });
 
             for (auto& resourceGroup : reflection.resourceGroups)
             {
                 std::ranges::sort(resourceGroup.slots,
-                                  [](const auto& lhs, const auto& rhs) {
-                                      return lhs.slot < rhs.slot;
-                                  });
+                                  [](const auto& lhs, const auto& rhs) { return lhs.slot < rhs.slot; });
             }
         }
 
@@ -203,15 +186,14 @@ namespace Hazel
             {
                 const auto& memberType = compiler.get_type(bufferType.member_types[memberIndex]);
 
-                if (reflectTheFirstStructArray && memberType.basetype == spirv_cross::SPIRType::Struct &&
-                    !memberType.array.empty())
+                if (reflectTheFirstStructArray && memberType.basetype == spirv_cross::SPIRType::Struct
+                    && !memberType.array.empty())
                 {
                     reflection.size = static_cast<uint32_t>(compiler.get_declared_struct_size(memberType));
                     reflection.members.clear();
                     reflection.members.reserve(memberType.member_types.size());
 
-                    for (uint32_t childIndex = 0;
-                         childIndex < static_cast<uint32_t>(memberType.member_types.size());
+                    for (uint32_t childIndex = 0; childIndex < static_cast<uint32_t>(memberType.member_types.size());
                          childIndex++)
                     {
                         const auto& childMemberType = compiler.get_type(memberType.member_types[childIndex]);
@@ -263,15 +245,9 @@ namespace Hazel
             bindingReflection.count = 1;
 
             const auto& resourceType = compiler.get_type(resource.type_id);
-            if (!resourceType.array.empty())
-            {
-                bindingReflection.count = GetArraySize(resourceType);
-            }
+            if (!resourceType.array.empty()) { bindingReflection.count = GetArraySize(resourceType); }
 
-            if (!resource.name.empty())
-            {
-                bindingReflection.variableName = resource.name;
-            }
+            if (!resource.name.empty()) { bindingReflection.variableName = resource.name; }
 
             if (reflectBuffer && (set != kMaterialResourceSet || binding != 0))
             {
@@ -286,28 +262,20 @@ namespace Hazel
         }
     } // namespace
 
-    RHI_VK_FUNC_IMPL(RHIShader, RHIShaderImpl)(RHIDevice* deviceOwner,
-                                               vk::Device device,
-                                               const RHIShaderDesc& desc)
+    RHI_VK_FUNC_IMPL(RHIShader, RHIShaderImpl)(RHIDevice* deviceOwner, vk::Device device, const RHIShaderDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_Device = device;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_Device || desc.binary.empty() || desc.entryPoint.empty())
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_Device || desc.binary.empty() || desc.entryPoint.empty()) { return; }
 
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.codeSize = desc.binary.size() * sizeof(uint32_t);
         createInfo.pCode = desc.binary.data();
 
         auto createResult = m_Device.createShaderModule(createInfo);
-        if (createResult.result != vk::Result::eSuccess || !createResult.value)
-        {
-            return;
-        }
+        if (createResult.result != vk::Result::eSuccess || !createResult.value) { return; }
 
         m_ShaderModule = createResult.value;
         if (!Reflect(m_Desc.binary, m_Reflection))
@@ -320,39 +288,24 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIShader, ~RHIShaderImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIShader, ~RHIShaderImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHIShader, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterShader(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterShader(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIShader, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterShader(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterShader(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIShader, ReleaseWithoutUnregister)()
@@ -363,16 +316,10 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion([device, shaderModule]() {
-                if (device && shaderModule)
-                {
-                    device.destroyShaderModule(shaderModule);
-                }
+                if (device && shaderModule) { device.destroyShaderModule(shaderModule); }
             });
         }
-        else if (device && shaderModule)
-        {
-            device.destroyShaderModule(shaderModule);
-        }
+        else if (device && shaderModule) { device.destroyShaderModule(shaderModule); }
 
         m_ShaderModule = VK_NULL_HANDLE;
         m_Device = VK_NULL_HANDLE;
@@ -384,10 +331,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIShader, ReleaseImmediateWithoutUnregister)()
     {
-        if (m_Device && m_ShaderModule)
-        {
-            m_Device.destroyShaderModule(m_ShaderModule);
-        }
+        if (m_Device && m_ShaderModule) { m_Device.destroyShaderModule(m_ShaderModule); }
 
         m_ShaderModule = VK_NULL_HANDLE;
         m_Device = VK_NULL_HANDLE;
@@ -422,33 +366,21 @@ namespace Hazel
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                outReflection,
-                compiler,
-                resource,
-                GetBindingType(compiler, resource, type, false),
-                false);
+                outReflection, compiler, resource, GetBindingType(compiler, resource, type, false), false);
         }
 
         for (const auto& resource : resources.separate_images)
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                outReflection,
-                compiler,
-                resource,
-                GetBindingType(compiler, resource, type, false),
-                false);
+                outReflection, compiler, resource, GetBindingType(compiler, resource, type, false), false);
         }
 
         for (const auto& resource : resources.storage_images)
         {
             const auto& type = compiler.get_type(resource.type_id);
             ReflectBoundResource(
-                outReflection,
-                compiler,
-                resource,
-                GetBindingType(compiler, resource, type, true),
-                false);
+                outReflection, compiler, resource, GetBindingType(compiler, resource, type, true), false);
         }
 
         for (const auto& resource : resources.push_constant_buffers)

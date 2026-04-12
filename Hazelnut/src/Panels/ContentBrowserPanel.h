@@ -10,15 +10,18 @@ namespace Hazel
 {
     class ContentBrowserPanel
     {
-    public:
+      public:
         ContentBrowserPanel(void* directoryIcon, void* fileIcon);
 
         void OnImGuiRender();
+
         const std::filesystem::path& GetSelectedPath() const { return m_SelectedPath; }
+
         std::filesystem::path GetSelectedMetaPath() const;
+
         uint64_t GetSelectionVersion() const { return m_SelectionVersion; }
 
-    private:
+      private:
         std::filesystem::path GetUniquePath(const std::string& baseName, const std::string& extension) const;
         void SelectPath(const std::filesystem::path& path);
         void OpenCreateAssetPopup(AssetType assetType, const char* defaultName);
@@ -40,4 +43,4 @@ namespace Hazel
         char m_CreateAssetNameBuffer[256] = {};
         bool m_OpenCreateAssetPopup = false;
     };
-}
+} // namespace Hazel

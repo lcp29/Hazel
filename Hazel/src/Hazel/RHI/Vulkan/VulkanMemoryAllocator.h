@@ -13,7 +13,7 @@ namespace Hazel
 {
     class VulkanMemoryAllocator
     {
-    public:
+      public:
         VulkanMemoryAllocator(vk::Instance instance,
                               vk::PhysicalDevice physicalDevice,
                               vk::Device device,
@@ -23,15 +23,9 @@ namespace Hazel
         VulkanMemoryAllocator(const VulkanMemoryAllocator&) = delete;
         VulkanMemoryAllocator& operator=(const VulkanMemoryAllocator&) = delete;
 
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+        bool IsValid() const { return m_IsValid; }
 
-        VmaAllocator GetHandle() const
-        {
-            return m_Allocator;
-        }
+        VmaAllocator GetHandle() const { return m_Allocator; }
 
         bool CreateImage(const VkImageCreateInfo& imageCreateInfo,
                          const VmaAllocationCreateInfo& allocationCreateInfo,
@@ -50,7 +44,7 @@ namespace Hazel
         VmaAllocator Detach();
         static void Destroy(VmaAllocator allocator);
 
-    private:
+      private:
         bool m_IsValid = false;
         VmaAllocator m_Allocator = VK_NULL_HANDLE;
     };

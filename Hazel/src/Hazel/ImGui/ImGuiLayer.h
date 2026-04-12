@@ -10,7 +10,7 @@ namespace Hazel
 {
     class ImGuiLayer : public Layer
     {
-    public:
+      public:
         ImGuiLayer(Renderer* renderer);
         ~ImGuiLayer() override = default;
 
@@ -21,10 +21,7 @@ namespace Hazel
         void Begin();
         void End(RHICommandBuffer* commandBuffer = nullptr);
 
-        void BlockEvents(bool block)
-        {
-            m_BlockEvents = block;
-        }
+        void BlockEvents(bool block) { m_BlockEvents = block; }
 
         void SetDarkThemeColors();
         void* AddTexture(RHISampler* sampler,
@@ -34,7 +31,7 @@ namespace Hazel
 
         uint32_t GetActiveWidgetID() const;
 
-    private:
+      private:
         bool m_BlockEvents = true;
         Renderer* m_Renderer = nullptr;
         RHIResourceHeap* m_ResourceHeap = nullptr;

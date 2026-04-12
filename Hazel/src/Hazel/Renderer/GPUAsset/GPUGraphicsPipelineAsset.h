@@ -14,7 +14,7 @@ namespace Hazel
 
     class GPUGraphicsPipelineAsset : public GPUAsset
     {
-    public:
+      public:
         GPUGraphicsPipelineAsset() = delete;
 
         GPUGraphicsPipelineAsset(const UUID& uuid,
@@ -23,35 +23,30 @@ namespace Hazel
                                  UUID shader,
                                  Renderer* renderer,
                                  uint64_t lastReferencedFrame)
-            : GPUAsset(uuid, assetType, renderer, 0, lastReferencedFrame),
-              m_Isvalid(true),
-              m_Shader(shader),
-              m_Pipeline(pipeline)
-        {
-        }
+            : GPUAsset(uuid, assetType, renderer, 0, lastReferencedFrame)
+            , m_Isvalid(true)
+            , m_Shader(shader)
+            , m_Pipeline(pipeline)
+        {}
 
         ~GPUGraphicsPipelineAsset() override;
 
         std::mutex& GetMutex() { return m_Mutex; }
+
         std::condition_variable& GetCondition() { return m_Condition; }
 
         bool IsLoading() const { return m_IsLoading; }
+
         RHIGraphicsPipeline* GetPipeline() const { return m_Pipeline; }
 
-        void SetPipeline(RHIGraphicsPipeline* pipeline)
-        {
-            m_Pipeline = pipeline;
-        }
+        void SetPipeline(RHIGraphicsPipeline* pipeline) { m_Pipeline = pipeline; }
 
-        void SetLoading(bool isLoading)
-        {
-            m_IsLoading = isLoading;
-        }
+        void SetLoading(bool isLoading) { m_IsLoading = isLoading; }
 
         void Release() override;
         void ReleaseImmediate() override;
 
-    private:
+      private:
         bool m_Isvalid = false;
         bool m_IsLoading = true;
         UUID m_Shader = UUID(-1);
@@ -59,4 +54,4 @@ namespace Hazel
         std::mutex m_Mutex;
         std::condition_variable m_Condition;
     };
-} // Hazel
+} // namespace Hazel

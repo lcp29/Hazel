@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Hazel/Core/Base.h"
-#include "Hazel/Scene/Scene.h"
 #include "Hazel/Scene/Entity.h"
+#include "Hazel/Scene/Scene.h"
 
 namespace Hazel
 {
     class SceneHierarchyPanel
     {
-    public:
+      public:
         SceneHierarchyPanel() = default;
         SceneHierarchyPanel(const Ref<Scene>& scene);
 
@@ -17,10 +17,12 @@ namespace Hazel
         void OnImGuiRender();
 
         Entity GetSelectedEntity() const { return m_SelectionContext; }
+
         void SetSelectedEntity(Entity entity);
+
         uint64_t GetSelectionVersion() const { return m_SelectionVersion; }
 
-    private:
+      private:
         void DrawEntityNode(Entity entity);
 
         Ref<Scene> m_Context;
@@ -28,4 +30,4 @@ namespace Hazel
         uint64_t m_SelectionVersion = 0;
         std::vector<Entity> m_EntityDeletionQueue;
     };
-}
+} // namespace Hazel

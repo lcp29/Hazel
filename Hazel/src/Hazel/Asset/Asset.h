@@ -47,9 +47,10 @@ namespace Hazel
         AssetRegistryTerm() = default;
 
         AssetRegistryTerm(UUID uuid, AssetType type, std::filesystem::path filePath)
-            : uuid(uuid), type(type), filePath(std::move(filePath))
-        {
-        }
+            : uuid(uuid)
+            , type(type)
+            , filePath(std::move(filePath))
+        {}
     };
 
     enum class GPUAssetLoadState
@@ -69,46 +70,33 @@ namespace Hazel
 
     class Asset
     {
-    public:
+      public:
         Asset() = delete;
 
         explicit Asset(AssetRegistryTerm* registryTerm)
             : m_RegistryTerm(registryTerm)
-        {
-        }
+        {}
 
         virtual ~Asset() = default;
 
-        UUID GetUUID() const
-        {
-            return m_RegistryTerm->uuid;
-        }
+        UUID GetUUID() const { return m_RegistryTerm->uuid; }
 
-        const std::filesystem::path& GetFilePath() const
-        {
-            return m_RegistryTerm->filePath;
-        }
+        const std::filesystem::path& GetFilePath() const { return m_RegistryTerm->filePath; }
 
         virtual uint64_t GetVersion() const = 0;
         virtual void VersionUp() = 0;
 
-        AssetType GetType() const
-        {
-            return m_RegistryTerm->type;
-        }
+        AssetType GetType() const { return m_RegistryTerm->type; }
 
-        GPUAssetState& GetGPUAssetState()
-        {
-            return m_GPUAssetState;
-        }
+        GPUAssetState& GetGPUAssetState() { return m_GPUAssetState; }
 
         std::filesystem::path GetAbsoluteFilePath() const
         {
             return std::filesystem::absolute(m_RegistryTerm->filePath);
         }
 
-    protected:
+      protected:
         AssetRegistryTerm* m_RegistryTerm = nullptr;
         GPUAssetState m_GPUAssetState{};
     };
-} // Hazel
+} // namespace Hazel

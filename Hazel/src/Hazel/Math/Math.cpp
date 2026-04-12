@@ -17,8 +17,7 @@ namespace Hazel::Math
         mat4 LocalMatrix(transform);
 
         // Normalize the matrix.
-        if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>()))
-            return false;
+        if (epsilonEqual(LocalMatrix[3][3], static_cast<float>(0), epsilon<T>())) return false;
 
         // First, isolate perspective.  This is the messiest.
         if (epsilonNotEqual(LocalMatrix[0][3], static_cast<T>(0), epsilon<T>())

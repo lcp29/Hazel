@@ -1,7 +1,6 @@
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
-
 #include "Hazel/Asset/TextureAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
+#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Utils/ImageUtils.h"
@@ -21,10 +20,7 @@ namespace Hazel
         textureDesc.useMipmap = meta.UseMipmap();
         textureDesc.format = textureData.format;
         textureDesc.usages = RHIImageUsageFlagBits::Sampled;
-        if (meta.AllowStorageLoad())
-        {
-            textureDesc.usages |= RHIImageUsageFlagBits::Storage;
-        }
+        if (meta.AllowStorageLoad()) { textureDesc.usages |= RHIImageUsageFlagBits::Storage; }
         if (textureDesc.useMipmap)
         {
             textureDesc.usages |= RHIImageUsageFlagBits::TransferSource | RHIImageUsageFlagBits::TransferDestination;
@@ -50,9 +46,8 @@ namespace Hazel
 
         image->Transition(cmd,
                           RHIImageResourceState::Undefined,
-                          textureDesc.useMipmap
-                              ? RHIImageResourceState::TransferDestination
-                              : RHIImageResourceState::ShaderRead);
+                          textureDesc.useMipmap ? RHIImageResourceState::TransferDestination
+                                                : RHIImageResourceState::ShaderRead);
 
         RHIBufferDesc stagingBufferDesc{};
         stagingBufferDesc.size = textureData.rawImageData.size();
@@ -76,14 +71,8 @@ namespace Hazel
                                {imageDesc.width, imageDesc.height, 1},
                                {0, 0, 1, RHIImagePlaneFlagBits::Color});
 
-        if (textureDesc.useMipmap)
-        {
-            ImageUtilGenerateMipmap(cmd, image);
-        }
-        else
-        {
-            image->Transition(cmd, RHIImageResourceState::TransferDestination, RHIImageResourceState::ShaderRead);
-        }
+        if (textureDesc.useMipmap) { ImageUtilGenerateMipmap(cmd, image); }
+        else { image->Transition(cmd, RHIImageResourceState::TransferDestination, RHIImageResourceState::ShaderRead); }
 
         cmd->End();
 

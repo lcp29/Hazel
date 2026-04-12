@@ -18,61 +18,38 @@ namespace Hazel
 
     RHI_VK_CLASS_IMPL(RHIImage)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
-        bool IsSwapchainImage() const
-        {
-            return m_IsSwapchainImage;
-        }
+        bool IsSwapchainImage() const { return m_IsSwapchainImage; }
 
         void Release();
         void ReleaseImmediate();
         RHIImageView* CreateView(const RHIImageViewDesc& desc, bool isDetached = false);
         bool Transition(
-            RHICommandBuffer* commandBuffer,
-            RHIImageResourceState oldState,
-            RHIImageResourceState newState);
-        bool Transition(RHICommandBuffer* commandBuffer,
+            RHICommandBuffer * commandBuffer, RHIImageResourceState oldState, RHIImageResourceState newState);
+        bool Transition(RHICommandBuffer * commandBuffer,
                         RHIImageResourceState oldState,
                         RHIImageResourceState newState,
                         const RHIImageSubresourceRange& subresourceRange,
                         RHIQueue* srcQueue = nullptr,
                         RHIQueue* dstQueue = nullptr);
 
-        const RHIImageDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIImageDesc& GetDesc() const { return m_Desc; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-        vk::Image GetHandle() const
-        {
-            return m_Image;
-        }
+        vk::Image GetHandle() const { return m_Image; }
 
-        VmaAllocation GetAllocation() const
-        {
-            return m_Allocation;
-        }
+        VmaAllocation GetAllocation() const { return m_Allocation; }
 
-        RHIImageResourceState GetCurrentState() const
-        {
-            return m_CurrentState;
-        }
+        RHIImageResourceState GetCurrentState() const { return m_CurrentState; }
 
         ~RHIImageImpl();
 
         class Factory
         {
-        public:
+          public:
             static RHIImage* CreateFromRawData(RHIDevice* device,
                                                RHICommandBuffer* cmd,
                                                const RHIImageDesc& desc,
@@ -88,22 +65,19 @@ namespace Hazel
                                             bool detached = false);
         };
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIImageViewImpl<RHIBackend::Vulkan>;
         friend class RHISwapchainImpl<RHIBackend::Vulkan>;
         friend class Factory;
 
-        RHIImageImpl(RHIDevice* deviceOwner, VulkanMemoryAllocator* allocator, const RHIImageDesc& desc);
-        RHIImageImpl(RHIDevice* deviceOwner,
-                     const RHIImageDesc& desc,
-                     vk::Image image,
-                     bool isDetached);
+        RHIImageImpl(RHIDevice * deviceOwner, VulkanMemoryAllocator * allocator, const RHIImageDesc& desc);
+        RHIImageImpl(RHIDevice * deviceOwner, const RHIImageDesc& desc, vk::Image image, bool isDetached);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();
         void RegisterView(std::unique_ptr<RHIImageView> view);
-        void UnregisterView(RHIImageView* view);
+        void UnregisterView(RHIImageView * view);
 
         bool m_IsValid = false;
         RHIImageDesc m_Desc;

@@ -3,9 +3,9 @@
 //
 
 #pragma once
+#include <glm/glm.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <glm/glm.hpp>
 
 namespace Hazel
 {
@@ -20,13 +20,9 @@ namespace Hazel
 
         Transform(const glm::vec3& translation)
             : translation(translation)
-        {
-        }
+        {}
 
-        Transform(const glm::mat4& transform)
-        {
-            SetTransform(transform);
-        }
+        Transform(const glm::mat4& transform) { SetTransform(transform); }
 
         glm::mat4 GetTransform() const
         {
@@ -35,10 +31,7 @@ namespace Hazel
             return glm::translate(glm::mat4(1.0f), translation) * rotationMatrix * glm::scale(glm::mat4(1.0f), scale);
         }
 
-        glm::mat4 GetView() const
-        {
-            return glm::inverse(GetTransform());
-        }
+        glm::mat4 GetView() const { return glm::inverse(GetTransform()); }
 
         void SetTransform(const glm::mat4& transform)
         {
@@ -49,4 +42,4 @@ namespace Hazel
             rotation = glm::eulerAngles(orientation);
         }
     };
-}
+} // namespace Hazel

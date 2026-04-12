@@ -17,18 +17,11 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIResourceGroup)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         bool WriteBuffer(
-            uint32_t slot,
-            RHIBuffer* buffer,
-            uint64_t offset = 0,
-            uint64_t range = 0,
-            uint32_t arrayElement = 0);
+            uint32_t slot, RHIBuffer* buffer, uint64_t offset = 0, uint64_t range = 0, uint32_t arrayElement = 0);
         bool WriteBufferView(uint32_t slot, RHIBufferView* bufferView, uint32_t arrayElement = 0);
         bool WriteImageView(uint32_t slot,
                             RHIImageView* imageView,
@@ -46,20 +39,14 @@ namespace Hazel
 
         RHIResourceLayout* GetLayout() const;
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-        vk::DescriptorSet GetHandle() const
-        {
-            return m_DescriptorSet;
-        }
+        vk::DescriptorSet GetHandle() const { return m_DescriptorSet; }
 
-    private:
+      private:
         friend class RHIResourceHeapImpl<RHIBackend::Vulkan>;
 
-        RHIResourceGroupImpl(RHIResourceHeap* heapOwner, vk::Device device, RHIResourceLayout* layoutOwner);
+        RHIResourceGroupImpl(RHIResourceHeap * heapOwner, vk::Device device, RHIResourceLayout * layoutOwner);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

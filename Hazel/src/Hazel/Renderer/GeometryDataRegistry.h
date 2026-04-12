@@ -27,18 +27,20 @@ namespace Hazel
     struct alignas(16) GPUPageTerm
     {
         uint32_t GetPageIndex() const { return pageIndex; }
+
         void SetPageIndex(uint32_t index) { pageIndex = index; }
 
         uint32_t GetBufferIndex() const { return GetPageIndex() / kMaxPageCountPerBuffer; }
+
         uint32_t GetPageLocalIndexInBuffer() const { return GetPageIndex() % kMaxPageCountPerBuffer; }
 
-    private:
+      private:
         uint32_t pageIndex = 0;
     };
 
     class GeometryDataRegistry
     {
-    public:
+      public:
         GeometryDataRegistry() = delete;
 
         GeometryDataRegistry(Renderer* renderer);
@@ -47,7 +49,7 @@ namespace Hazel
         void RegisterMesh(GPUMeshAsset* meshAsset);
         void UnregisterMesh(GPUMeshAsset* meshAsset);
 
-    private:
+      private:
         void CreateNewPageBuffer();
 
         Renderer* m_Renderer = nullptr;
@@ -61,4 +63,4 @@ namespace Hazel
         std::vector<uint32_t> m_FreeVirtualPageIndices;
         std::array<GPUPageTerm, kMaxPageCount> m_VirtualPageTable;
     };
-} // Hazel
+} // namespace Hazel

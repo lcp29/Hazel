@@ -5,10 +5,10 @@
 #pragma once
 #include "Hazel/RHI/RHIFactory.h"
 
-#include <shaderc/shaderc.hpp>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <shaderc/shaderc.hpp>
 #include <string>
 
 namespace Hazel
@@ -36,7 +36,7 @@ namespace Hazel
 
     class GLSLFileIncluder : public shaderc::CompileOptions::IncluderInterface
     {
-    public:
+      public:
         shaderc_include_result* GetInclude(const char* requested_source,
                                            shaderc_include_type type,
                                            const char* requesting_source,
@@ -45,14 +45,8 @@ namespace Hazel
             std::filesystem::path requestingPath(requesting_source);
             std::filesystem::path requestedPath(requested_source);
             std::filesystem::path filePath;
-            if (requestedPath.is_absolute())
-            {
-                filePath = requestedPath;
-            }
-            else
-            {
-                filePath = requestingPath.parent_path() / requestedPath;
-            }
+            if (requestedPath.is_absolute()) { filePath = requestedPath; }
+            else { filePath = requestingPath.parent_path() / requestedPath; }
             auto requestedFileContent = ReadTextFile(filePath);
 
             auto* result = new shaderc_include_result;
@@ -105,11 +99,7 @@ namespace Hazel
         }
 
         auto result = compiler.CompileGlslToSpv(
-            source,
-            ToShadercShaderKind(desc.stage),
-            desc.path.string().c_str(),
-            desc.entryPoint.c_str(),
-            options);
+            source, ToShadercShaderKind(desc.stage), desc.path.string().c_str(), desc.entryPoint.c_str(), options);
 
         return result;
     }
@@ -139,26 +129,23 @@ namespace Hazel
 
             for (const auto& fragmentSlot : fragmentGroup.slots)
             {
-                auto slotIt = std::ranges::find_if(groupIt->slots,
-                                                   [&fragmentSlot](const RHIShaderSlotReflection& slot) {
-                                                       return slot.slot == fragmentSlot.slot;
-                                                   });
+                auto slotIt =
+                    std::ranges::find_if(groupIt->slots, [&fragmentSlot](const RHIShaderSlotReflection& slot) {
+                        return slot.slot == fragmentSlot.slot;
+                    });
 
-                if (slotIt == groupIt->slots.end())
-                {
-                    groupIt->slots.push_back(fragmentSlot);
-                }
+                if (slotIt == groupIt->slots.end()) { groupIt->slots.push_back(fragmentSlot); }
             }
         }
 
         for (const auto& fragmentPushConstant : fragmentReflection.pushConstants)
         {
-            auto pushConstantIt = std::ranges::find_if(mergedReflection.pushConstants,
-                                                       [&fragmentPushConstant](
-                                                       const RHIShaderPushConstantReflection& pushConstant) {
-                                                           return pushConstant.offset == fragmentPushConstant.offset &&
-                                                                  pushConstant.size == fragmentPushConstant.size;
-                                                       });
+            auto pushConstantIt =
+                std::ranges::find_if(mergedReflection.pushConstants,
+                                     [&fragmentPushConstant](const RHIShaderPushConstantReflection& pushConstant) {
+                                         return pushConstant.offset == fragmentPushConstant.offset
+                                                && pushConstant.size == fragmentPushConstant.size;
+                                     });
 
             if (pushConstantIt == mergedReflection.pushConstants.end())
             {
@@ -173,10 +160,9 @@ namespace Hazel
 
         for (auto& group : mergedReflection.resourceGroups)
         {
-            std::ranges::sort(group.slots,
-                              [](const RHIShaderSlotReflection& lhs, const RHIShaderSlotReflection& rhs) {
-                                  return lhs.slot < rhs.slot;
-                              });
+            std::ranges::sort(group.slots, [](const RHIShaderSlotReflection& lhs, const RHIShaderSlotReflection& rhs) {
+                return lhs.slot < rhs.slot;
+            });
         }
 
         std::ranges::sort(mergedReflection.pushConstants,
@@ -193,18 +179,15 @@ namespace Hazel
     {
         for (const auto& group : reflection.resourceGroups)
         {
-            if (group.set >= setData.size())
-            {
-                setData.resize(group.set + 1);
-            }
+            if (group.set >= setData.size()) { setData.resize(group.set + 1); }
 
             auto& layoutDesc = setData[group.set];
             for (const auto& slot : group.slots)
             {
-                auto bindingIt = std::ranges::find_if(layoutDesc.bindings,
-                                                      [&slot](const RHIResourceBindingSlotDesc& binding) {
-                                                          return binding.slot == slot.slot;
-                                                      });
+                auto bindingIt =
+                    std::ranges::find_if(layoutDesc.bindings, [&slot](const RHIResourceBindingSlotDesc& binding) {
+                        return binding.slot == slot.slot;
+                    });
 
                 if (bindingIt == layoutDesc.bindings.end())
                 {
@@ -214,8 +197,7 @@ namespace Hazel
                     bindingDesc.count = slot.count;
                     bindingDesc.stages = stage;
 
-                    if (group.set == kPerViewResourceSet &&
-                        (slot.slot >= 1 && slot.slot <= 3))
+                    if (group.set == kPerViewResourceSet && (slot.slot >= 1 && slot.slot <= 3))
                     {
                         bindingDesc.partiallyBound = true;
                     }
@@ -244,4 +226,4 @@ namespace Hazel
         }
         return ranges;
     }
-}
+} // namespace Hazel

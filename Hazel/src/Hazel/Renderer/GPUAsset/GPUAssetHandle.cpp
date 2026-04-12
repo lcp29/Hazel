@@ -3,6 +3,7 @@
 //
 
 #include "GPUAssetHandle.h"
+
 #include "GPUAsset.h"
 #include "Hazel/Renderer/Renderer.h"
 
@@ -26,4 +27,4 @@ namespace Hazel
             asset->Return();
         }
     }
-}
+} // namespace Hazel

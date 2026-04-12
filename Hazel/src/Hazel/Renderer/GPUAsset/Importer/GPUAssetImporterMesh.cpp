@@ -1,10 +1,9 @@
 // TODO: TEMP URGENT INTERVIEW: mesh GPU importer
 
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
-
 #include "Hazel/Asset/MeshAsset.h"
-#include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/GPUAsset/GPUMeshAsset.h"
+#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
+#include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/Renderer.h"
 
 #include <cstring>
@@ -78,10 +77,7 @@ namespace Hazel
         graphicsContext->ReleaseDefaultCommandBuffer(cmd);
 
         std::array<glm::vec3, 2> aabb = {meshData.aabbMin, meshData.aabbMax};
-        std::pair<glm::vec3, float> boundingSphere = {
-            meshData.boundingSphereCenter,
-            meshData.boundingSphereRadius
-        };
+        std::pair<glm::vec3, float> boundingSphere = {meshData.boundingSphereCenter, meshData.boundingSphereRadius};
 
         std::vector<GPUMeshletInfo> meshlets;
         meshlets.reserve(meshData.meshlets.size());

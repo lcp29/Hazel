@@ -61,10 +61,7 @@ namespace Hazel
         m_Device = device;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_Device)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_Device) { return; }
 
         vk::SamplerCreateInfo createInfo;
         createInfo.magFilter = VulkanConvertSamplerFilter(desc.magFilter);
@@ -93,39 +90,24 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHISampler, ~RHISamplerImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHISampler, ~RHISamplerImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHISampler, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterSampler(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterSampler(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHISampler, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterSampler(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterSampler(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHISampler, ReleaseWithoutUnregister)()
@@ -136,16 +118,10 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion([device, sampler]() {
-                if (device && sampler)
-                {
-                    device.destroySampler(sampler);
-                }
+                if (device && sampler) { device.destroySampler(sampler); }
             });
         }
-        else if (device && sampler)
-        {
-            device.destroySampler(sampler);
-        }
+        else if (device && sampler) { device.destroySampler(sampler); }
 
         m_Sampler = VK_NULL_HANDLE;
         m_Device = VK_NULL_HANDLE;
@@ -156,10 +132,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHISampler, ReleaseImmediateWithoutUnregister)()
     {
-        if (m_Device && m_Sampler)
-        {
-            m_Device.destroySampler(m_Sampler);
-        }
+        if (m_Device && m_Sampler) { m_Device.destroySampler(m_Sampler); }
 
         m_Sampler = VK_NULL_HANDLE;
         m_Device = VK_NULL_HANDLE;

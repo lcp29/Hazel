@@ -31,7 +31,7 @@ namespace Hazel
 
     class Instrumentor
     {
-    public:
+      public:
         Instrumentor(const Instrumentor&) = delete;
         Instrumentor(Instrumentor&&) = delete;
 
@@ -103,16 +103,12 @@ namespace Hazel
             return instance;
         }
 
-    private:
+      private:
         Instrumentor()
             : m_CurrentSession(nullptr)
-        {
-        }
+        {}
 
-        ~Instrumentor()
-        {
-            EndSession();
-        }
+        ~Instrumentor() { EndSession(); }
 
         void WriteHeader()
         {
@@ -146,18 +142,17 @@ namespace Hazel
 
     class InstrumentationTimer
     {
-    public:
+      public:
         InstrumentationTimer(const char* name)
             : m_Name(name)
-              , m_Stopped(false)
+            , m_Stopped(false)
         {
             m_StartTimepoint = std::chrono::steady_clock::now();
         }
 
         ~InstrumentationTimer()
         {
-            if (!m_Stopped)
-                Stop();
+            if (!m_Stopped) Stop();
         }
 
         void Stop()
@@ -173,7 +168,7 @@ namespace Hazel
             m_Stopped = true;
         }
 
-    private:
+      private:
         const char* m_Name;
         std::chrono::time_point<std::chrono::steady_clock> m_StartTimepoint;
         bool m_Stopped;
@@ -181,14 +176,12 @@ namespace Hazel
 
     namespace InstrumentorUtils
     {
-        template <size_t N>
-        struct ChangeResult
+        template <size_t N> struct ChangeResult
         {
             char Data[N];
         };
 
-        template <size_t N, size_t K>
-        constexpr auto CleanupOutputString(const char (&expr)[N], const char (&remove)[K])
+        template <size_t N, size_t K> constexpr auto CleanupOutputString(const char (&expr)[N], const char (&remove)[K])
         {
             ChangeResult<N> result = {};
 
@@ -200,15 +193,14 @@ namespace Hazel
                 while (matchIndex < K - 1 && srcIndex + matchIndex < N - 1
                        && expr[srcIndex + matchIndex] == remove[matchIndex])
                     matchIndex++;
-                if (matchIndex == K - 1)
-                    srcIndex += matchIndex;
+                if (matchIndex == K - 1) srcIndex += matchIndex;
                 result.Data[dstIndex++] = expr[srcIndex] == '"' ? '\'' : expr[srcIndex];
                 srcIndex++;
             }
             return result;
         }
     } // namespace InstrumentorUtils
-}     // namespace Hazel
+} // namespace Hazel
 
 #define HZ_PROFILE 0
 #if HZ_PROFILE

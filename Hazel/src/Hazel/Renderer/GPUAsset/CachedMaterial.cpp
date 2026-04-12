@@ -27,12 +27,9 @@ namespace Hazel
             seed = HashCombine(seed, std::hash<uint32_t>{}(static_cast<uint8_t>(attachment.colorWriteMask)));
             return seed;
         }
-    }
+    } // namespace
 
-    CachedMaterial::~CachedMaterial()
-    {
-        CachedMaterial::ReleaseImmediate();
-    }
+    CachedMaterial::~CachedMaterial() { CachedMaterial::ReleaseImmediate(); }
 
     uint64_t CachedMaterial::GetPipelineKey(const std::vector<RHIFormat>& colorAttachmentFormats,
                                             const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
@@ -90,4 +87,4 @@ namespace Hazel
     {
         m_Renderer->UnregisterMaterial(m_Shader, m_ShaderSourceVersion, m_MaterialID);
     }
-} // Hazel
+} // namespace Hazel

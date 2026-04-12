@@ -15,49 +15,29 @@ namespace Hazel
 
     RHI_VK_CLASS_IMPL(RHIBufferView)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
         ~RHIBufferViewImpl();
 
-        const RHIBufferViewDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIBufferViewDesc& GetDesc() const { return m_Desc; }
 
-        RHIFormat GetFormat() const
-        {
-            return m_Desc.format;
-        }
+        RHIFormat GetFormat() const { return m_Desc.format; }
 
-        uint64_t GetOffset() const
-        {
-            return m_Desc.offset;
-        }
+        uint64_t GetOffset() const { return m_Desc.offset; }
 
-        uint64_t GetRange() const
-        {
-            return m_Desc.range;
-        }
+        uint64_t GetRange() const { return m_Desc.range; }
 
-        vk::BufferView GetHandle() const
-        {
-            return m_BufferView;
-        }
+        vk::BufferView GetHandle() const { return m_BufferView; }
 
-    private:
+      private:
         friend class RHIBufferImpl<RHIBackend::Vulkan>;
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
 
-        RHIBufferViewImpl(RHIDevice* deviceOwner,
-                          RHIBuffer* bufferOwner,
-                          const RHIBufferViewDesc& desc,
-                          bool isDetached);
+        RHIBufferViewImpl(
+            RHIDevice * deviceOwner, RHIBuffer * bufferOwner, const RHIBufferViewDesc& desc, bool isDetached);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

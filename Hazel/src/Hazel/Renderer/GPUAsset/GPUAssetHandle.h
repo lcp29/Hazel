@@ -17,16 +17,16 @@ namespace Hazel
 
         GPUAssetHandle(GPUAsset* asset)
             : asset(asset)
-        {
-        }
+        {}
 
         GPUAssetHandle(GPUAsset* asset, bool returnAfterUse)
-            : asset(asset), returnAfterUse(returnAfterUse)
-        {
-        }
+            : asset(asset)
+            , returnAfterUse(returnAfterUse)
+        {}
 
         GPUAssetHandle(GPUAssetHandle&& other) noexcept
-            : asset(other.asset), returnAfterUse(other.returnAfterUse)
+            : asset(other.asset)
+            , returnAfterUse(other.returnAfterUse)
         {
             other.asset = nullptr;
             other.returnAfterUse = false;
@@ -34,10 +34,7 @@ namespace Hazel
 
         GPUAssetHandle& operator=(GPUAssetHandle&& other) noexcept
         {
-            if (this == &other)
-            {
-                return *this;
-            }
+            if (this == &other) { return *this; }
             asset = other.asset;
             returnAfterUse = other.returnAfterUse;
             other.asset = nullptr;
@@ -49,4 +46,4 @@ namespace Hazel
 
         ~GPUAssetHandle();
     };
-}
+} // namespace Hazel

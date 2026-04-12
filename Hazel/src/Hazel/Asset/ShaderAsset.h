@@ -17,22 +17,13 @@ namespace Hazel
         static ShaderAssetMeta Deserialize(const YAML::Node& node);
         static ShaderAssetMeta CreateDefault();
 
-        UUID GetUUID() const
-        {
-            return m_UUID;
-        }
+        UUID GetUUID() const { return m_UUID; }
 
-        uint64_t GetVersion() const
-        {
-            return m_Version;
-        }
+        uint64_t GetVersion() const { return m_Version; }
 
-        void VersionUp()
-        {
-            m_Version++;
-        }
+        void VersionUp() { m_Version++; }
 
-    private:
+      private:
         UUID m_UUID = 0;
         uint64_t m_Version = 0;
     };
@@ -46,57 +37,32 @@ namespace Hazel
 
     class ShaderAsset : public Asset
     {
-    public:
+      public:
         ShaderAsset() = delete;
 
-        ShaderAsset(AssetRegistryTerm* registryTerm,
-                    const ShaderAssetMeta& meta,
-                    ShaderAssetData shaderData)
-            : Asset(registryTerm), m_Meta(meta), m_Data(std::move(shaderData))
-        {
-        }
+        ShaderAsset(AssetRegistryTerm* registryTerm, const ShaderAssetMeta& meta, ShaderAssetData shaderData)
+            : Asset(registryTerm)
+            , m_Meta(meta)
+            , m_Data(std::move(shaderData))
+        {}
 
-        uint64_t GetVersion() const final
-        {
-            return m_Meta.GetVersion();
-        }
+        uint64_t GetVersion() const final { return m_Meta.GetVersion(); }
 
-        void VersionUp() final
-        {
-            m_Meta.VersionUp();
-        }
+        void VersionUp() final { m_Meta.VersionUp(); }
 
-        const ShaderAssetMeta& GetMeta() const
-        {
-            return m_Meta;
-        }
+        const ShaderAssetMeta& GetMeta() const { return m_Meta; }
 
-        ShaderAssetMeta& GetMeta()
-        {
-            return m_Meta;
-        }
+        ShaderAssetMeta& GetMeta() { return m_Meta; }
 
-        const ShaderAssetData& GetData() const
-        {
-            return m_Data;
-        }
+        const ShaderAssetData& GetData() const { return m_Data; }
 
-        ShaderAssetData& GetData()
-        {
-            return m_Data;
-        }
+        ShaderAssetData& GetData() { return m_Data; }
 
-        const RHIShaderReflection& GetReflection() const
-        {
-            return m_Data.reflection;
-        }
+        const RHIShaderReflection& GetReflection() const { return m_Data.reflection; }
 
-        RHIShaderReflection& GetReflection()
-        {
-            return m_Data.reflection;
-        }
+        RHIShaderReflection& GetReflection() { return m_Data.reflection; }
 
-    private:
+      private:
         ShaderAssetMeta m_Meta{};
         ShaderAssetData m_Data{};
     };

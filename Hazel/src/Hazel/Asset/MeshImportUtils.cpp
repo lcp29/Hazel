@@ -3,17 +3,17 @@
 //
 
 #include "MeshImportUtils.h"
+
 #include "Hazel/Project/GlobalSettingRegistry.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "glm/gtx/compatibility.hpp"
 
-#include <tiny_obj_loader.h>
-
 #include <array>
 #include <cmath>
 #include <limits>
 #include <queue>
+#include <tiny_obj_loader.h>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -21,10 +21,7 @@ namespace Hazel
 {
     std::pair<glm::vec3, float> ComputeRitterBoundingSphere(const std::vector<Vertex>& vertices)
     {
-        if (vertices.empty())
-        {
-            return {glm::vec3(0.0f), 0.0f};
-        }
+        if (vertices.empty()) { return {glm::vec3(0.0f), 0.0f}; }
 
         auto findFarthestPosition = [&vertices](const glm::vec3& origin) {
             const glm::vec3* farthest = &vertices.front().position;
@@ -55,16 +52,10 @@ namespace Hazel
         {
             const glm::vec3 centerToPoint = vertex.position - center;
             const float distanceSquared = glm::dot(centerToPoint, centerToPoint);
-            if (distanceSquared <= radius * radius)
-            {
-                continue;
-            }
+            if (distanceSquared <= radius * radius) { continue; }
 
             const float distance = std::sqrt(distanceSquared);
-            if (distance <= 0.0f)
-            {
-                continue;
-            }
+            if (distance <= 0.0f) { continue; }
 
             const float newRadius = (radius + distance) * 0.5f;
             center += centerToPoint * ((newRadius - radius) / distance);
@@ -111,10 +102,7 @@ namespace Hazel
                 b = std::max(lhs, rhs);
             }
 
-            bool operator==(const EdgeKey& other) const
-            {
-                return a == other.a && b == other.b;
-            }
+            bool operator==(const EdgeKey& other) const { return a == other.a && b == other.b; }
         };
 
         struct EdgeKeyHash
@@ -176,9 +164,8 @@ namespace Hazel
             return glm::vec2(data[baseIndex], data[baseIndex + 1]);
         }
 
-        bool TryGetSharedEdgeCornerIndex(const ObjTriangle& triangle,
-                                         uint32_t positionNodeIndex,
-                                         uint32_t& outLocalCorner)
+        bool
+        TryGetSharedEdgeCornerIndex(const ObjTriangle& triangle, uint32_t positionNodeIndex, uint32_t& outLocalCorner)
         {
             for (uint32_t localCorner = 0; localCorner < 3; ++localCorner)
             {
@@ -214,13 +201,9 @@ namespace Hazel
             const ObjCorner& rhsA = corners[rhsTriangle.cornerIndices[rhsCornerA]];
             const ObjCorner& rhsB = corners[rhsTriangle.cornerIndices[rhsCornerB]];
 
-            if (!lhsA.hasTexCoord || !lhsB.hasTexCoord || !rhsA.hasTexCoord || !rhsB.hasTexCoord)
-            {
-                return false;
-            }
+            if (!lhsA.hasTexCoord || !lhsB.hasTexCoord || !rhsA.hasTexCoord || !rhsB.hasTexCoord) { return false; }
 
-            return lhsA.vertex.texCoord.x == rhsA.vertex.texCoord.x
-                   && lhsA.vertex.texCoord.y == rhsA.vertex.texCoord.y
+            return lhsA.vertex.texCoord.x == rhsA.vertex.texCoord.x && lhsA.vertex.texCoord.y == rhsA.vertex.texCoord.y
                    && lhsB.vertex.texCoord.x == rhsB.vertex.texCoord.x
                    && lhsB.vertex.texCoord.y == rhsB.vertex.texCoord.y;
         }
@@ -263,10 +246,7 @@ namespace Hazel
             for (const auto& [edge, owners] : finalEdgeMap)
             {
                 (void)edge;
-                if (owners.size() < 2)
-                {
-                    continue;
-                }
+                if (owners.size() < 2) { continue; }
 
                 for (size_t i = 0; i < owners.size(); ++i)
                 {
@@ -292,18 +272,12 @@ namespace Hazel
                                      const uint32_t maxMeshletVertices,
                                      const uint32_t maxMeshletIndices)
         {
-            if ((meshlet.triangles.size() + 1) * 3 > maxMeshletIndices)
-            {
-                return false;
-            }
+            if ((meshlet.triangles.size() + 1) * 3 > maxMeshletIndices) { return false; }
 
             size_t uniqueVertexCount = meshlet.uniqueVertices.size();
             for (const uint32_t vertexIndex : triangle.vertexIndices)
             {
-                if (!meshlet.uniqueVertices.contains(vertexIndex))
-                {
-                    ++uniqueVertexCount;
-                }
+                if (!meshlet.uniqueVertices.contains(vertexIndex)) { ++uniqueVertexCount; }
             }
 
             return uniqueVertexCount <= maxMeshletVertices;
@@ -319,10 +293,7 @@ namespace Hazel
 
             for (uint32_t seedTriangle = 0; seedTriangle < static_cast<uint32_t>(finalTriangles.size()); ++seedTriangle)
             {
-                if (assignedTriangles[seedTriangle] != 0)
-                {
-                    continue;
-                }
+                if (assignedTriangles[seedTriangle] != 0) { continue; }
 
                 MeshletBuildState meshlet;
                 meshlet.triangles.push_back(seedTriangle);
@@ -355,18 +326,14 @@ namespace Hazel
                                 continue;
                             }
 
-                            const uint32_t sharedVertices = CountSharedVertices(
-                                finalTriangles[triangleIndex],
-                                candidate);
+                            const uint32_t sharedVertices =
+                                CountSharedVertices(finalTriangles[triangleIndex], candidate);
                             const uint32_t sharedEdges = sharedVertices >= 2 ? 1u : 0u;
 
                             uint32_t addedVertices = 0;
                             for (const uint32_t vertexIndex : candidate.vertexIndices)
                             {
-                                if (!meshlet.uniqueVertices.contains(vertexIndex))
-                                {
-                                    ++addedVertices;
-                                }
+                                if (!meshlet.uniqueVertices.contains(vertexIndex)) { ++addedVertices; }
                             }
 
                             if (bestCandidate < 0 || sharedEdges > bestSharedEdges
@@ -381,10 +348,7 @@ namespace Hazel
                         }
                     }
 
-                    if (bestCandidate < 0)
-                    {
-                        break;
-                    }
+                    if (bestCandidate < 0) { break; }
 
                     const uint32_t triangleIndex = static_cast<uint32_t>(bestCandidate);
                     meshlet.triangles.push_back(triangleIndex);
@@ -401,16 +365,15 @@ namespace Hazel
 
             return meshlets;
         }
-    }
+    } // namespace
 
     bool ImportMeshAssetData(const std::filesystem::path& filePath, bool generateMeshlets, MeshAssetData& outData)
     {
-        const float hardEdgeDegrees = GlobalSettings.Get(MeshImportHardEdgeDegreesString,
-                                                         DefaultMeshImportHardEdgeDegrees);
+        const float hardEdgeDegrees =
+            GlobalSettings.Get(MeshImportHardEdgeDegreesString, DefaultMeshImportHardEdgeDegrees);
         const float hardEdgeDotThreshold = std::cos(glm::radians(hardEdgeDegrees));
-        const float degenerateTriangleEpsilon = GlobalSettings.Get(
-            MeshImportDegenerateTriangleEpsilonString,
-            DefaultMeshImportDegenerateTriangleEpsilon);
+        const float degenerateTriangleEpsilon =
+            GlobalSettings.Get(MeshImportDegenerateTriangleEpsilonString, DefaultMeshImportDegenerateTriangleEpsilon);
 
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -420,10 +383,7 @@ namespace Hazel
         outData.aabbMin = glm::vec3(std::numeric_limits<float>::max());
         outData.aabbMax = glm::vec3(std::numeric_limits<float>::min());
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.string().c_str()))
-        {
-            return false;
-        }
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.string().c_str())) { return false; }
 
         std::unordered_map<PositionKey, uint32_t, PositionKeyHash> positionNodeMap;
         std::vector<ObjCorner> corners;
@@ -457,10 +417,7 @@ namespace Hazel
                     {
                         corner.vertex.texCoord = ReadVec2(attrib.texcoords, index.texcoord_index);
                     }
-                    if (corner.hasNormal)
-                    {
-                        corner.vertex.normal = ReadVec3(attrib.normals, index.normal_index);
-                    }
+                    if (corner.hasNormal) { corner.vertex.normal = ReadVec3(attrib.normals, index.normal_index); }
                     corner.vertex.tangent = glm::vec3(0.0f);
                     corner.triangleIndex = triangleIndex;
                     corner.localCornerIndex = localCorner;
@@ -478,12 +435,9 @@ namespace Hazel
                     }
 
                     const PositionKey key{corner.vertex.position};
-                    auto [it, inserted] = positionNodeMap.try_emplace(key,
-                                                                      static_cast<uint32_t>(positionNodeMap.size()));
-                    if (inserted)
-                    {
-                        cornersPerPositionNode.emplace_back();
-                    }
+                    auto [it, inserted] =
+                        positionNodeMap.try_emplace(key, static_cast<uint32_t>(positionNodeMap.size()));
+                    if (inserted) { cornersPerPositionNode.emplace_back(); }
 
                     corner.positionNodeIndex = it->second;
                     const uint32_t cornerIndex = static_cast<uint32_t>(corners.size());
@@ -508,21 +462,18 @@ namespace Hazel
                 if (crossLength <= degenerateTriangleEpsilon) { triangle.isDegenerate = true; }
                 else { triangle.faceNormal = cross / crossLength; }
 
-                corner0.angle = glm::acos(glm::clamp(
-                    glm::dot(glm::normalize(p1 - p0), glm::normalize(p2 - p0)) /
-                    (glm::length(p1 - p0) * glm::length(p2 - p0)),
-                    -1.0f,
-                    1.0f));
-                corner1.angle = glm::acos(glm::clamp(
-                    glm::dot(glm::normalize(p2 - p1), glm::normalize(p0 - p1)) /
-                    (glm::length(p2 - p1) * glm::length(p0 - p1)),
-                    -1.0f,
-                    1.0f));
-                corner2.angle = glm::acos(glm::clamp(
-                    glm::dot(glm::normalize(p0 - p2), glm::normalize(p1 - p2)) /
-                    (glm::length(p0 - p2) * glm::length(p1 - p2)),
-                    -1.0f,
-                    1.0f));
+                corner0.angle = glm::acos(glm::clamp(glm::dot(glm::normalize(p1 - p0), glm::normalize(p2 - p0))
+                                                         / (glm::length(p1 - p0) * glm::length(p2 - p0)),
+                                                     -1.0f,
+                                                     1.0f));
+                corner1.angle = glm::acos(glm::clamp(glm::dot(glm::normalize(p2 - p1), glm::normalize(p0 - p1))
+                                                         / (glm::length(p2 - p1) * glm::length(p0 - p1)),
+                                                     -1.0f,
+                                                     1.0f));
+                corner2.angle = glm::acos(glm::clamp(glm::dot(glm::normalize(p0 - p2), glm::normalize(p1 - p2))
+                                                         / (glm::length(p0 - p2) * glm::length(p1 - p2)),
+                                                     -1.0f,
+                                                     1.0f));
 
                 if (!corner0.hasNormal) { corner0.vertex.normal = triangle.faceNormal; }
                 if (!corner1.hasNormal) { corner1.vertex.normal = triangle.faceNormal; }
@@ -542,8 +493,7 @@ namespace Hazel
                     const float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
                     if (std::isfinite(f))
                     {
-                        const glm::vec3 tangent =
-                            f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+                        const glm::vec3 tangent = f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
                         corner0.vertex.tangent += tangent;
                         corner1.vertex.tangent += tangent;
                         corner2.vertex.tangent += tangent;
@@ -567,10 +517,7 @@ namespace Hazel
         std::vector<std::vector<uint32_t>> triangleAdjacency(triangles.size());
         for (const auto& [edge, triangleRefs] : edgeMap)
         {
-            if (triangleRefs.size() < 2)
-            {
-                continue;
-            }
+            if (triangleRefs.size() < 2) { continue; }
 
             for (size_t i = 0; i < triangleRefs.size(); ++i)
             {
@@ -578,20 +525,11 @@ namespace Hazel
                 {
                     const ObjTriangle& lhsTriangle = triangles[triangleRefs[i].triangleIndex];
                     const ObjTriangle& rhsTriangle = triangles[triangleRefs[j].triangleIndex];
-                    if (!AreSharedEdgeTexCoordsCompatible(lhsTriangle, rhsTriangle, corners, edge))
-                    {
-                        continue;
-                    }
+                    if (!AreSharedEdgeTexCoordsCompatible(lhsTriangle, rhsTriangle, corners, edge)) { continue; }
 
-                    if (lhsTriangle.isDegenerate || rhsTriangle.isDegenerate)
-                    {
-                        continue;
-                    }
+                    if (lhsTriangle.isDegenerate || rhsTriangle.isDegenerate) { continue; }
 
-                    if (glm::dot(lhsTriangle.faceNormal, rhsTriangle.faceNormal) < hardEdgeDotThreshold)
-                    {
-                        continue;
-                    }
+                    if (glm::dot(lhsTriangle.faceNormal, rhsTriangle.faceNormal) < hardEdgeDotThreshold) { continue; }
 
                     triangleAdjacency[triangleRefs[i].triangleIndex].push_back(triangleRefs[j].triangleIndex);
                     triangleAdjacency[triangleRefs[j].triangleIndex].push_back(triangleRefs[i].triangleIndex);
@@ -631,10 +569,7 @@ namespace Hazel
         {
             for (const uint32_t seedCornerIndex : cornerGroup)
             {
-                if (visitedCorners[seedCornerIndex] != 0)
-                {
-                    continue;
-                }
+                if (visitedCorners[seedCornerIndex] != 0) { continue; }
 
                 const uint32_t finalVertexIndex = static_cast<uint32_t>(finalVertices.size());
 
@@ -659,10 +594,7 @@ namespace Hazel
 
                     for (const uint32_t adjacentCornerIndex : cornerAdjacency[cornerIndex])
                     {
-                        if (visitedCorners[adjacentCornerIndex] != 0)
-                        {
-                            continue;
-                        }
+                        if (visitedCorners[adjacentCornerIndex] != 0) { continue; }
 
                         visitedCorners[adjacentCornerIndex] = 1;
                         pendingCorners.push(adjacentCornerIndex);
@@ -762,4 +694,4 @@ namespace Hazel
         outData.boundingSphereRadius = boundingSphere.second;
         return true;
     }
-}
+} // namespace Hazel

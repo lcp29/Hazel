@@ -21,11 +21,8 @@ namespace Hazel
 
     class Project
     {
-    public:
-        static bool HasActive()
-        {
-            return static_cast<bool>(s_ActiveProject);
-        }
+      public:
+        static bool HasActive() { return static_cast<bool>(s_ActiveProject); }
 
         static const std::filesystem::path& GetProjectDirectory()
         {
@@ -52,36 +49,21 @@ namespace Hazel
             return GetAssetDirectory() / path;
         }
 
-        ProjectConfig& GetConfig()
-        {
-            return m_Config;
-        }
+        ProjectConfig& GetConfig() { return m_Config; }
 
-        AssetManager* GetAssetManager()
-        {
-            return m_AssetManager.get();
-        }
+        AssetManager* GetAssetManager() { return m_AssetManager.get(); }
 
-        const AssetManager* GetAssetManager() const
-        {
-            return m_AssetManager.get();
-        }
+        const AssetManager* GetAssetManager() const { return m_AssetManager.get(); }
 
-        static Ref<Project> GetActive()
-        {
-            return s_ActiveProject;
-        }
+        static Ref<Project> GetActive() { return s_ActiveProject; }
 
         static Ref<Project> New();
         static Ref<Project> Load(const std::filesystem::path& path, Renderer* renderer);
         static bool SaveActive(const std::filesystem::path& path);
 
-        static void CloseActive()
-        {
-            s_ActiveProject.reset();
-        }
+        static void CloseActive() { s_ActiveProject.reset(); }
 
-    private:
+      private:
         ProjectConfig m_Config;
         std::filesystem::path m_ProjectDirectory;
         std::filesystem::path m_ProjectFilePath;

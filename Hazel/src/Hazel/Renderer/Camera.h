@@ -8,7 +8,7 @@ namespace Hazel
 {
     class Camera
     {
-    public:
+      public:
         constexpr static auto DefaultPerspectiveFovXString = "r.Camera.DefaultPerspectiveFovX";
         constexpr static auto DefaultPerspectiveNearString = "r.Camera.DefaultPerspectiveNear";
         constexpr static auto DefaultPerspectiveFarString = "r.Camera.DefaultPerspectiveFar";
@@ -37,15 +37,9 @@ namespace Hazel
         static Camera Orthographic(float orthoWidth, float orthoAspectRatio, float orthoNearClip, float orthoFarClip);
         static Camera Orthographic(const glm::mat4& projection);
 
-        const glm::mat4& GetProjection() const
-        {
-            return m_Projection;
-        }
+        const glm::mat4& GetProjection() const { return m_Projection; }
 
-        ProjectionType GetProjectionType() const
-        {
-            return m_ProjectionType;
-        }
+        ProjectionType GetProjectionType() const { return m_ProjectionType; }
 
         void SetProjectionType(ProjectionType type)
         {
@@ -56,10 +50,7 @@ namespace Hazel
         void SetViewportSize(uint32_t width, uint32_t height);
         void SetViewportSizeKeepFovY(uint32_t width, uint32_t height);
 
-        const glm::ivec2& GetViewportSize() const
-        {
-            return m_ViewportSize;
-        }
+        const glm::ivec2& GetViewportSize() const { return m_ViewportSize; }
 
         void SetFovX(float fovX);
         void SetAspectRatio(float aspectRatio);
@@ -71,50 +62,26 @@ namespace Hazel
         void SetOrthoNearClip(float orthoNearClip);
         void SetOrthoFarClip(float orthoFarClip);
 
-        float GetFovX() const
-        {
-            return m_FovX;
-        }
+        float GetFovX() const { return m_FovX; }
 
-        float GetAspectRatio() const
-        {
-            return m_AspectRatio;
-        }
+        float GetAspectRatio() const { return m_AspectRatio; }
 
-        float GetNearClip() const
-        {
-            return m_NearClip;
-        }
+        float GetNearClip() const { return m_NearClip; }
 
-        float GetFarClip() const
-        {
-            return m_FarClip;
-        }
+        float GetFarClip() const { return m_FarClip; }
 
-        float GetOrthoWidth() const
-        {
-            return m_OrthoWidth;
-        }
+        float GetOrthoWidth() const { return m_OrthoWidth; }
 
-        float GetOrthoAspectRatio() const
-        {
-            return m_OrthoAspectRatio;
-        }
+        float GetOrthoAspectRatio() const { return m_OrthoAspectRatio; }
 
-        float GetOrthoNearClip() const
-        {
-            return m_OrthoNearClip;
-        }
+        float GetOrthoNearClip() const { return m_OrthoNearClip; }
 
-        float GetOrthoFarClip() const
-        {
-            return m_OrthoFarClip;
-        }
+        float GetOrthoFarClip() const { return m_OrthoFarClip; }
 
         YAML::Node Serialize() const;
         static Camera Deserialize(const YAML::Node& node);
 
-    private:
+      private:
         // convention: x-right, y-up, z-backward
 
         Camera(float fovX,
@@ -126,20 +93,18 @@ namespace Hazel
                float orthoNearClip,
                float orthoFarClip)
             : m_FovX(fovX)
-              , m_AspectRatio(aspectRatio)
-              , m_NearClip(nearClip)
-              , m_FarClip(farClip)
-              , m_OrthoWidth(orthoWidth)
-              , m_OrthoAspectRatio(orthoAspectRatio)
-              , m_OrthoNearClip(orthoNearClip)
-              , m_OrthoFarClip(orthoFarClip)
-        {
-        }
+            , m_AspectRatio(aspectRatio)
+            , m_NearClip(nearClip)
+            , m_FarClip(farClip)
+            , m_OrthoWidth(orthoWidth)
+            , m_OrthoAspectRatio(orthoAspectRatio)
+            , m_OrthoNearClip(orthoNearClip)
+            , m_OrthoFarClip(orthoFarClip)
+        {}
 
         Camera(const glm::mat4& projection)
             : m_Projection(projection)
-        {
-        }
+        {}
 
         // functions for updating one representation from another
         void UpdateMatrices();
@@ -161,10 +126,8 @@ namespace Hazel
         float m_OrthoFarClip = DefaultOrthoFar;
 
         // projection matrix representation
-        glm::mat4 m_Projection = glm::perspective(DefaultPerspectiveFovX,
-                                                  1.0f,
-                                                  DefaultPerspectiveNear,
-                                                  DefaultPerspectiveFar);
+        glm::mat4 m_Projection =
+            glm::perspective(DefaultPerspectiveFovX, 1.0f, DefaultPerspectiveNear, DefaultPerspectiveFar);
 
         // viewport information
         glm::ivec2 m_ViewportSize{800, 800};

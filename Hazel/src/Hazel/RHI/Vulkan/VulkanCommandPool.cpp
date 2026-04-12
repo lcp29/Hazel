@@ -17,43 +17,28 @@ namespace Hazel
                                                          const RHICommandPoolDesc& desc,
                                                          uint32_t queueFamilyIndex)
         : m_DeviceOwner(deviceOwner)
-          , m_Desc(desc)
-          , m_Device(device)
-          , m_QueueFamilyIndex(queueFamilyIndex)
+        , m_Desc(desc)
+        , m_Device(device)
+        , m_QueueFamilyIndex(queueFamilyIndex)
     {
         vk::CommandPoolCreateInfo createInfo;
         createInfo.queueFamilyIndex = queueFamilyIndex;
-        if (desc.transient)
-        {
-            createInfo.flags |= vk::CommandPoolCreateFlagBits::eTransient;
-        }
-        if (desc.allowCommandBufferReset)
-        {
-            createInfo.flags |= vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-        }
+        if (desc.transient) { createInfo.flags |= vk::CommandPoolCreateFlagBits::eTransient; }
+        if (desc.allowCommandBufferReset) { createInfo.flags |= vk::CommandPoolCreateFlagBits::eResetCommandBuffer; }
 
         m_CommandPool = m_Device.createCommandPool(createInfo);
         m_IsValid = static_cast<bool>(m_CommandPool);
     }
 
-    RHI_VK_FUNC_IMPL(RHICommandPool, ~RHICommandPoolImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHICommandPool, ~RHICommandPoolImpl)() { Release(); }
 
-    RHICommandBuffer*RHI_VK_FUNC_IMPL(RHICommandPool, CreateCommandBuffer)(const RHICommandBufferDesc& desc,
-                                                                           bool isDetached)
+    RHICommandBuffer* RHI_VK_FUNC_IMPL(RHICommandPool, CreateCommandBuffer)(const RHICommandBufferDesc& desc,
+                                                                            bool isDetached)
     {
-        if (!m_IsValid)
-        {
-            return nullptr;
-        }
+        if (!m_IsValid) { return nullptr; }
 
         std::unique_ptr<RHICommandBuffer> commandBuffer(new RHICommandBuffer(this, m_Device, m_CommandPool, desc));
-        if (!commandBuffer || !commandBuffer->IsValid())
-        {
-            return nullptr;
-        }
+        if (!commandBuffer || !commandBuffer->IsValid()) { return nullptr; }
 
         commandBuffer->m_IsDetached = isDetached;
         RHICommandBuffer* commandBufferPtr = commandBuffer.get();
@@ -66,47 +51,29 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterCommandPool(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterCommandPool(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterCommandPool(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterCommandPool(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, ReleaseWithoutUnregister)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (const auto& commandBuffer : m_CommandBuffers)
         {
-            if (commandBuffer)
-            {
-                commandBuffer->ReleaseWithoutUnregister();
-            }
+            if (commandBuffer) { commandBuffer->ReleaseWithoutUnregister(); }
         }
         m_CommandBuffers.Clear();
 
@@ -140,27 +107,18 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, ReleaseImmediateWithoutUnregister)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (const auto& commandBuffer : m_CommandBuffers)
         {
-            if (commandBuffer)
-            {
-                commandBuffer->ReleaseImmediateWithoutUnregister();
-            }
+            if (commandBuffer) { commandBuffer->ReleaseImmediateWithoutUnregister(); }
         }
         m_CommandBuffers.Clear();
 
         auto pendingOperations = m_DeletionQueue.ExtractAll();
         DeletionQueue::Execute(std::move(pendingOperations));
 
-        if (m_Device && m_CommandPool)
-        {
-            m_Device.destroyCommandPool(m_CommandPool);
-        }
+        if (m_Device && m_CommandPool) { m_Device.destroyCommandPool(m_CommandPool); }
 
         m_CommandPool = VK_NULL_HANDLE;
         m_IsValid = false;

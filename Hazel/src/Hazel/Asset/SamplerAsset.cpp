@@ -16,9 +16,7 @@ namespace Hazel
         const std::unordered_map<std::string, RHISamplerFilter>& GetFilterMap()
         {
             static const std::unordered_map<std::string, RHISamplerFilter> s_FilterMap = {
-                {"Nearest", RHISamplerFilter::Nearest},
-                {"Linear", RHISamplerFilter::Linear}
-            };
+                {"Nearest", RHISamplerFilter::Nearest}, {"Linear", RHISamplerFilter::Linear}};
             return s_FilterMap;
         }
 
@@ -28,8 +26,7 @@ namespace Hazel
                 {"Repeat", RHISamplerAddressMode::Repeat},
                 {"MirroredRepeat", RHISamplerAddressMode::MirroredRepeat},
                 {"ClampToEdge", RHISamplerAddressMode::ClampToEdge},
-                {"ClampToBorder", RHISamplerAddressMode::ClampToBorder}
-            };
+                {"ClampToBorder", RHISamplerAddressMode::ClampToBorder}};
             return s_AddressModeMap;
         }
 
@@ -43,8 +40,7 @@ namespace Hazel
                 {"Greater", RHICompareOp::Greater},
                 {"NotEqual", RHICompareOp::NotEqual},
                 {"GreaterOrEqual", RHICompareOp::GreaterOrEqual},
-                {"Always", RHICompareOp::Always}
-            };
+                {"Always", RHICompareOp::Always}};
             return s_CompareOpMap;
         }
 
@@ -53,24 +49,17 @@ namespace Hazel
         {
             for (const auto& [name, mappedValue] : map)
             {
-                if (mappedValue == value)
-                {
-                    return name;
-                }
+                if (mappedValue == value) { return name; }
             }
 
             return {};
         }
 
         template <typename EnumType>
-        EnumType TryParseEnum(const YAML::Node& node,
-                              const std::unordered_map<std::string, EnumType>& map)
+        EnumType TryParseEnum(const YAML::Node& node, const std::unordered_map<std::string, EnumType>& map)
         {
             const auto it = map.find(node.as<std::string>());
-            if (it == map.end())
-            {
-                return (*map.begin()).second;
-            }
+            if (it == map.end()) { return (*map.begin()).second; }
             return it->second;
         }
     } // namespace
@@ -108,33 +97,26 @@ namespace Hazel
 
         auto& desc = meta.m_Desc;
         auto descNode = node["Desc"];
-        desc.minFilter = descNode["MinFilter"]
-                             ? TryParseEnum(descNode["MinFilter"], GetFilterMap())
-                             : RHISamplerFilter::Linear;
-        desc.magFilter = descNode["MagFilter"]
-                             ? TryParseEnum(descNode["MagFilter"], GetFilterMap())
-                             : RHISamplerFilter::Linear;
-        desc.mipFilter = descNode["MipFilter"]
-                             ? TryParseEnum(descNode["MipFilter"], GetFilterMap())
-                             : RHISamplerFilter::Linear;
-        desc.addressModeU = descNode["AddressModeU"]
-                                ? TryParseEnum(descNode["AddressModeU"], GetAddressModeMap())
-                                : RHISamplerAddressMode::Repeat;
-        desc.addressModeV = descNode["AddressModeV"]
-                                ? TryParseEnum(descNode["AddressModeV"], GetAddressModeMap())
-                                : RHISamplerAddressMode::Repeat;
-        desc.addressModeW = descNode["AddressModeW"]
-                                ? TryParseEnum(descNode["AddressModeW"], GetAddressModeMap())
-                                : RHISamplerAddressMode::Repeat;
+        desc.minFilter =
+            descNode["MinFilter"] ? TryParseEnum(descNode["MinFilter"], GetFilterMap()) : RHISamplerFilter::Linear;
+        desc.magFilter =
+            descNode["MagFilter"] ? TryParseEnum(descNode["MagFilter"], GetFilterMap()) : RHISamplerFilter::Linear;
+        desc.mipFilter =
+            descNode["MipFilter"] ? TryParseEnum(descNode["MipFilter"], GetFilterMap()) : RHISamplerFilter::Linear;
+        desc.addressModeU = descNode["AddressModeU"] ? TryParseEnum(descNode["AddressModeU"], GetAddressModeMap())
+                                                     : RHISamplerAddressMode::Repeat;
+        desc.addressModeV = descNode["AddressModeV"] ? TryParseEnum(descNode["AddressModeV"], GetAddressModeMap())
+                                                     : RHISamplerAddressMode::Repeat;
+        desc.addressModeW = descNode["AddressModeW"] ? TryParseEnum(descNode["AddressModeW"], GetAddressModeMap())
+                                                     : RHISamplerAddressMode::Repeat;
         desc.mipLodBias = descNode["MipLodBias"] ? descNode["MipLodBias"].as<float>() : 0.0f;
         desc.minLod = descNode["MinLod"] ? descNode["MinLod"].as<float>() : 0.0f;
         desc.maxLod = descNode["MaxLod"] ? descNode["MaxLod"].as<float>() : 0.0f;
         desc.maxAnisotropy = descNode["MaxAnisotropy"] ? descNode["MaxAnisotropy"].as<float>() : 0.0f;
         desc.enableAnisotropy = descNode["EnableAnisotropy"] ? descNode["EnableAnisotropy"].as<bool>() : false;
         desc.compareEnable = descNode["CompareEnable"] ? descNode["CompareEnable"].as<bool>() : false;
-        desc.compareOp = descNode["CompareOp"]
-                             ? TryParseEnum(descNode["CompareOp"], GetCompareOpMap())
-                             : RHICompareOp::Never;
+        desc.compareOp =
+            descNode["CompareOp"] ? TryParseEnum(descNode["CompareOp"], GetCompareOpMap()) : RHICompareOp::Never;
 
         return meta;
     }

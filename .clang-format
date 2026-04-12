@@ -1,14 +1,12 @@
 BasedOnStyle: LLVM
 Language: Cpp
 
-# 基本排版
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 120
 ContinuationIndentWidth: 4
 
-# 大括号：偏 Allman
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: true
@@ -26,14 +24,12 @@ BraceWrapping:
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
 
-# if / for 等单行也不压缩，减少以后插逻辑出问题
-AllowShortIfStatementsOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
-AllowShortBlocksOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: false
 
-# 函数、调用、参数列表
 BinPackArguments: false
 BinPackParameters: false
 BreakAfterReturnType: None
@@ -42,11 +38,9 @@ PackConstructorInitializers: Never
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 BreakConstructorInitializers: BeforeComma
 
-# 指针/引用贴类型
 PointerAlignment: Left
 ReferenceAlignment: Left
 
-# 空格
 SpaceBeforeParens: ControlStatements
 SpaceBeforeCpp11BracedList: false
 SpacesInParentheses: false
@@ -54,28 +48,22 @@ SpacesInContainerLiterals: false
 SpaceInEmptyParentheses: false
 SpacesInSquareBrackets: false
 
-# 运算符和换行
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeTernaryOperators: true
 
-# 缩进与 switch / namespace
 IndentCaseLabels: true
 IndentCaseBlocks: true
 NamespaceIndentation: All
 
-# 类内访问说明符
 EmptyLineBeforeAccessModifier: LogicalBlock
 IndentAccessModifiers: false
 
-# include
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 
-# 注释
 ReflowComments: false
 AlignTrailingComments: true
 
-# 其他细节
 Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 KeepEmptyLinesAtTheStartOfBlocks: false

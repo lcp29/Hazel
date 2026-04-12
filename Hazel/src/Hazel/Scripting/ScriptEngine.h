@@ -54,26 +54,21 @@ namespace Hazel
     {
         ScriptField Field;
 
-        ScriptFieldInstance()
-        {
-            memset(m_Buffer, 0, sizeof(m_Buffer));
-        }
+        ScriptFieldInstance() { memset(m_Buffer, 0, sizeof(m_Buffer)); }
 
-        template <typename T>
-        T GetValue()
+        template <typename T> T GetValue()
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
             return *reinterpret_cast<T*>(m_Buffer);
         }
 
-        template <typename T>
-        void SetValue(T value)
+        template <typename T> void SetValue(T value)
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
             memcpy(m_Buffer, &value, sizeof(T));
         }
 
-    private:
+      private:
         uint8_t m_Buffer[16];
 
         friend class ScriptEngine;
@@ -84,7 +79,7 @@ namespace Hazel
 
     class ScriptClass
     {
-    public:
+      public:
         ScriptClass() = default;
         ScriptClass(const std::string& classNamespace, const std::string& className, bool isCore = false);
 
@@ -92,12 +87,9 @@ namespace Hazel
         MonoMethod* GetMethod(const std::string& name, int parameterCount);
         MonoObject* InvokeMethod(MonoObject* instance, MonoMethod* method, void** params = nullptr);
 
-        const std::map<std::string, ScriptField>& GetFields() const
-        {
-            return m_Fields;
-        }
+        const std::map<std::string, ScriptField>& GetFields() const { return m_Fields; }
 
-    private:
+      private:
         std::string m_ClassNamespace;
         std::string m_ClassName;
 
@@ -110,43 +102,34 @@ namespace Hazel
 
     class ScriptInstance
     {
-    public:
+      public:
         ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
 
         void InvokeOnCreate();
         void InvokeOnUpdate(float ts);
 
-        Ref<ScriptClass> GetScriptClass()
-        {
-            return m_ScriptClass;
-        }
+        Ref<ScriptClass> GetScriptClass() { return m_ScriptClass; }
 
-        template <typename T>
-        T GetFieldValue(const std::string& name)
+        template <typename T> T GetFieldValue(const std::string& name)
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
 
             bool success = GetFieldValueInternal(name, s_FieldValueBuffer);
-            if (!success)
-                return T();
+            if (!success) return T();
 
             return *reinterpret_cast<T*>(s_FieldValueBuffer);
         }
 
-        template <typename T>
-        void SetFieldValue(const std::string& name, T value)
+        template <typename T> void SetFieldValue(const std::string& name, T value)
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
 
             SetFieldValueInternal(name, &value);
         }
 
-        MonoObject* GetManagedObject()
-        {
-            return m_Instance;
-        }
+        MonoObject* GetManagedObject() { return m_Instance; }
 
-    private:
+      private:
         bool GetFieldValueInternal(const std::string& name, void* buffer);
         bool SetFieldValueInternal(const std::string& name, const void* value);
 
@@ -165,7 +148,7 @@ namespace Hazel
 
     class ScriptEngine
     {
-    public:
+      public:
         static void Init();
         static void Shutdown();
 
@@ -194,7 +177,7 @@ namespace Hazel
 
         static MonoString* CreateString(const char* string);
 
-    private:
+      private:
         static void InitMono();
         static void ShutdownMono();
 
@@ -252,43 +235,26 @@ namespace Hazel
 
         inline ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType)
         {
-            if (fieldType == "None")
-                return ScriptFieldType::None;
-            if (fieldType == "Float")
-                return ScriptFieldType::Float;
-            if (fieldType == "Double")
-                return ScriptFieldType::Double;
-            if (fieldType == "Bool")
-                return ScriptFieldType::Bool;
-            if (fieldType == "Char")
-                return ScriptFieldType::Char;
-            if (fieldType == "Byte")
-                return ScriptFieldType::Byte;
-            if (fieldType == "Short")
-                return ScriptFieldType::Short;
-            if (fieldType == "Int")
-                return ScriptFieldType::Int;
-            if (fieldType == "Long")
-                return ScriptFieldType::Long;
-            if (fieldType == "UByte")
-                return ScriptFieldType::UByte;
-            if (fieldType == "UShort")
-                return ScriptFieldType::UShort;
-            if (fieldType == "UInt")
-                return ScriptFieldType::UInt;
-            if (fieldType == "ULong")
-                return ScriptFieldType::ULong;
-            if (fieldType == "Vector2")
-                return ScriptFieldType::Vector2;
-            if (fieldType == "Vector3")
-                return ScriptFieldType::Vector3;
-            if (fieldType == "Vector4")
-                return ScriptFieldType::Vector4;
-            if (fieldType == "Entity")
-                return ScriptFieldType::Entity;
+            if (fieldType == "None") return ScriptFieldType::None;
+            if (fieldType == "Float") return ScriptFieldType::Float;
+            if (fieldType == "Double") return ScriptFieldType::Double;
+            if (fieldType == "Bool") return ScriptFieldType::Bool;
+            if (fieldType == "Char") return ScriptFieldType::Char;
+            if (fieldType == "Byte") return ScriptFieldType::Byte;
+            if (fieldType == "Short") return ScriptFieldType::Short;
+            if (fieldType == "Int") return ScriptFieldType::Int;
+            if (fieldType == "Long") return ScriptFieldType::Long;
+            if (fieldType == "UByte") return ScriptFieldType::UByte;
+            if (fieldType == "UShort") return ScriptFieldType::UShort;
+            if (fieldType == "UInt") return ScriptFieldType::UInt;
+            if (fieldType == "ULong") return ScriptFieldType::ULong;
+            if (fieldType == "Vector2") return ScriptFieldType::Vector2;
+            if (fieldType == "Vector3") return ScriptFieldType::Vector3;
+            if (fieldType == "Vector4") return ScriptFieldType::Vector4;
+            if (fieldType == "Entity") return ScriptFieldType::Entity;
 
             HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;
         }
     } // namespace Utils
-}     // namespace Hazel
+} // namespace Hazel

@@ -13,38 +13,26 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIResourceSignature)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
         ~RHIResourceSignatureImpl();
 
-        const RHIResourceSignatureDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIResourceSignatureDesc& GetDesc() const { return m_Desc; }
 
-        vk::PipelineLayout GetPipelineLayout() const
-        {
-            return m_PipelineLayout;
-        }
+        vk::PipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHICommandBufferImpl<RHIBackend::Vulkan>;
         friend class RHIGraphicsPipelineImpl<RHIBackend::Vulkan>;
         friend class RHIComputePipelineImpl<RHIBackend::Vulkan>;
 
-        RHIResourceSignatureImpl(RHIDevice* deviceOwner, vk::Device device, const RHIResourceSignatureDesc& desc);
+        RHIResourceSignatureImpl(RHIDevice * deviceOwner, vk::Device device, const RHIResourceSignatureDesc& desc);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

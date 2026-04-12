@@ -2,13 +2,13 @@
 // Created by helmholtz on 2026/4/5.
 //
 
-#include "Hazel/RHI/RHI.h"
-#include "Hazel/Renderer/Renderer.h"
+#include "GPUAssetImporter.h"
 #include "Hazel/Asset/MeshAsset.h"
 #include "Hazel/Core/UUID.h"
-#include "GPUAssetImporter.h"
-#include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
+#include "Hazel/RHI/RHI.h"
 #include "Hazel/Renderer/GPUAsset/CachedMaterial.h"
+#include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
+#include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
 {
@@ -19,19 +19,12 @@ namespace Hazel
                                                 Renderer* renderer)
     {
         auto materialResult = renderer->ResolveGPUAssetBlocked(material, AssetType::Material);
-        if (!materialResult.asset)
-        {
-            return nullptr;
-        }
+        if (!materialResult.asset) { return nullptr; }
 
         auto shaderResult = renderer->ResolveGPUAssetBlocked(
-            static_cast<CachedMaterial*>(materialResult.asset)->GetShader(),
-            AssetType::Shader);
+            static_cast<CachedMaterial*>(materialResult.asset)->GetShader(), AssetType::Shader);
 
-        if (!shaderResult.asset)
-        {
-            return nullptr;
-        }
+        if (!shaderResult.asset) { return nullptr; }
 
         auto* cachedMaterial = static_cast<CachedMaterial*>(materialResult.asset);
         auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
@@ -43,51 +36,21 @@ namespace Hazel
         RHIResourceSignatureDesc resourceSignatureDesc{};
 
         pipelineDesc.resourceSignature = renderer->GetResourceBindingRegistry()->GetShaderResourceSignature(
-            cachedMaterial->GetShader(),
-            cachedMaterial->GetShaderSourceVersion());
+            cachedMaterial->GetShader(), cachedMaterial->GetShaderSourceVersion());
 
-        if (!pipelineDesc.resourceSignature || !pipelineDesc.resourceSignature->IsValid())
-        {
-            return nullptr;
-        }
+        if (!pipelineDesc.resourceSignature || !pipelineDesc.resourceSignature->IsValid()) { return nullptr; }
 
         pipelineDesc.vertexShader = shader->GetVertexShader();
         pipelineDesc.fragmentShader = shader->GetFragmentShader();
 
         pipelineDesc.vertexBindings = {
-            {
-                .binding = 0,
-                .stride = sizeof(Vertex),
-                .inputRate = RHIVertexInputRate::Vertex
-            }
-        };
+            {.binding = 0, .stride = sizeof(Vertex), .inputRate = RHIVertexInputRate::Vertex}};
 
         pipelineDesc.vertexAttributes = {
-            {
-                .location = 0,
-                .binding = 0,
-                .format = RHIFormat::RGB32SFloat,
-                .offset = offsetof(Vertex, position)
-            },
-            {
-                .location = 1,
-                .binding = 0,
-                .format = RHIFormat::RG32SFloat,
-                .offset = offsetof(Vertex, texCoord)
-            },
-            {
-                .location = 2,
-                .binding = 0,
-                .format = RHIFormat::RGB32SFloat,
-                .offset = offsetof(Vertex, normal)
-            },
-            {
-                .location = 3,
-                .binding = 0,
-                .format = RHIFormat::RGB32SFloat,
-                .offset = offsetof(Vertex, tangent)
-            }
-        };
+            {.location = 0, .binding = 0, .format = RHIFormat::RGB32SFloat, .offset = offsetof(Vertex, position)},
+            {.location = 1, .binding = 0, .format = RHIFormat::RG32SFloat, .offset = offsetof(Vertex, texCoord)},
+            {.location = 2, .binding = 0, .format = RHIFormat::RGB32SFloat, .offset = offsetof(Vertex, normal)},
+            {.location = 3, .binding = 0, .format = RHIFormat::RGB32SFloat, .offset = offsetof(Vertex, tangent)}};
 
         pipelineDesc.topology = RHIPrimitiveTopology::TriangleList;
         pipelineDesc.polygonMode = cachedMaterial->GetPipelineState().polygonMode;
@@ -104,11 +67,8 @@ namespace Hazel
         pipelineDesc.depthStencilFormat = depthStencilFormat;
 
         auto pipeline = renderer->GetDevice()->CreateGraphicsPipeline(pipelineDesc);
-        if (!pipeline || !pipeline->IsValid())
-        {
-            return nullptr;
-        }
+        if (!pipeline || !pipeline->IsValid()) { return nullptr; }
 
         return pipeline;
     }
-}
+} // namespace Hazel

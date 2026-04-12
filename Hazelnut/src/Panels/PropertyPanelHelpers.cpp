@@ -5,10 +5,7 @@
 
 namespace Hazel::PropertyPanelHelpers
 {
-    void DrawVec3Control(const std::string& label,
-                         glm::vec3& values,
-                         float resetValue,
-                         float columnWidth)
+    void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue, float columnWidth)
     {
         ImGuiIO& io = ImGui::GetIO();
         auto boldFont = io.Fonts->Fonts[0];
@@ -30,8 +27,7 @@ namespace Hazel::PropertyPanelHelpers
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
         ImGui::PushFont(boldFont);
-        if (ImGui::Button("X", buttonSize))
-            values.x = resetValue;
+        if (ImGui::Button("X", buttonSize)) values.x = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
@@ -44,8 +40,7 @@ namespace Hazel::PropertyPanelHelpers
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
         ImGui::PushFont(boldFont);
-        if (ImGui::Button("Y", buttonSize))
-            values.y = resetValue;
+        if (ImGui::Button("Y", buttonSize)) values.y = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
@@ -58,8 +53,7 @@ namespace Hazel::PropertyPanelHelpers
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
         ImGui::PushFont(boldFont);
-        if (ImGui::Button("Z", buttonSize))
-            values.z = resetValue;
+        if (ImGui::Button("Z", buttonSize)) values.z = resetValue;
         ImGui::PopFont();
         ImGui::PopStyleColor(3);
 
@@ -117,13 +111,22 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawFormatCombo(const char* label, RHIFormat& format)
     {
-        static constexpr RHIFormat formats[] = {
-            RHIFormat::R8UNorm, RHIFormat::R32SInt, RHIFormat::RG8UNorm,
-            RHIFormat::R32SFloat, RHIFormat::RG32SFloat, RHIFormat::RGB32SFloat, RHIFormat::RG16UNorm,
-            RHIFormat::BGRA8UNorm, RHIFormat::BGRA8SRGB, RHIFormat::RGBA8UNorm, RHIFormat::RGBA8SRGB,
-            RHIFormat::RGB10A2UNorm, RHIFormat::RGBA16SFloat, RHIFormat::D32SFloat,
-            RHIFormat::D32SFloatS8Uint, RHIFormat::S8Uint
-        };
+        static constexpr RHIFormat formats[] = {RHIFormat::R8UNorm,
+                                                RHIFormat::R32SInt,
+                                                RHIFormat::RG8UNorm,
+                                                RHIFormat::R32SFloat,
+                                                RHIFormat::RG32SFloat,
+                                                RHIFormat::RGB32SFloat,
+                                                RHIFormat::RG16UNorm,
+                                                RHIFormat::BGRA8UNorm,
+                                                RHIFormat::BGRA8SRGB,
+                                                RHIFormat::RGBA8UNorm,
+                                                RHIFormat::RGBA8SRGB,
+                                                RHIFormat::RGB10A2UNorm,
+                                                RHIFormat::RGBA16SFloat,
+                                                RHIFormat::D32SFloat,
+                                                RHIFormat::D32SFloatS8Uint,
+                                                RHIFormat::S8Uint};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetFormatName(format)))
@@ -136,8 +139,7 @@ namespace Hazel::PropertyPanelHelpers
                     format = value;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -173,10 +175,7 @@ namespace Hazel::PropertyPanelHelpers
                     polygonMode = value;
                     changed = true;
                 }
-                if (selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
+                if (selected) { ImGui::SetItemDefaultFocus(); }
             }
             ImGui::EndCombo();
         }
@@ -214,10 +213,7 @@ namespace Hazel::PropertyPanelHelpers
                     cullMode = value;
                     changed = true;
                 }
-                if (selected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
+                if (selected) { ImGui::SetItemDefaultFocus(); }
             }
             ImGui::EndCombo();
         }
@@ -251,8 +247,7 @@ namespace Hazel::PropertyPanelHelpers
     bool DrawViewTypeCombo(const char* label, RHIImageViewType& viewType)
     {
         static constexpr RHIImageViewType viewTypes[] = {
-            Image1D, Image2D, Image3D, Cube, Image1DArray, Image2DArray, CubeArray
-        };
+            Image1D, Image2D, Image3D, Cube, Image1DArray, Image2DArray, CubeArray};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetViewTypeName(viewType)))
@@ -265,8 +260,7 @@ namespace Hazel::PropertyPanelHelpers
                     viewType = value;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -294,8 +288,7 @@ namespace Hazel::PropertyPanelHelpers
                     filter = value;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -322,12 +315,10 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawAddressModeCombo(const char* label, RHISamplerAddressMode& addressMode)
     {
-        static constexpr RHISamplerAddressMode modes[] = {
-            RHISamplerAddressMode::Repeat,
-            RHISamplerAddressMode::MirroredRepeat,
-            RHISamplerAddressMode::ClampToEdge,
-            RHISamplerAddressMode::ClampToBorder
-        };
+        static constexpr RHISamplerAddressMode modes[] = {RHISamplerAddressMode::Repeat,
+                                                          RHISamplerAddressMode::MirroredRepeat,
+                                                          RHISamplerAddressMode::ClampToEdge,
+                                                          RHISamplerAddressMode::ClampToBorder};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetAddressModeName(addressMode)))
@@ -340,8 +331,7 @@ namespace Hazel::PropertyPanelHelpers
                     addressMode = value;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -376,10 +366,14 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawCompareOpCombo(const char* label, RHICompareOp& compareOp)
     {
-        static constexpr RHICompareOp compareOps[] = {
-            RHICompareOp::Never, RHICompareOp::Less, RHICompareOp::Equal, RHICompareOp::LessOrEqual,
-            RHICompareOp::Greater, RHICompareOp::NotEqual, RHICompareOp::GreaterOrEqual, RHICompareOp::Always
-        };
+        static constexpr RHICompareOp compareOps[] = {RHICompareOp::Never,
+                                                      RHICompareOp::Less,
+                                                      RHICompareOp::Equal,
+                                                      RHICompareOp::LessOrEqual,
+                                                      RHICompareOp::Greater,
+                                                      RHICompareOp::NotEqual,
+                                                      RHICompareOp::GreaterOrEqual,
+                                                      RHICompareOp::Always};
 
         bool changed = false;
         if (ImGui::BeginCombo(label, GetCompareOpName(compareOp)))
@@ -392,8 +386,7 @@ namespace Hazel::PropertyPanelHelpers
                     compareOp = value;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }
@@ -418,19 +411,10 @@ namespace Hazel::PropertyPanelHelpers
 
     std::string GetAssetLabel(const std::vector<AssetRegistryTerm*>& assets, UUID uuid)
     {
-        if (uuid == UUID(-1))
-        {
-            return "None";
-        }
+        if (uuid == UUID(-1)) { return "None"; }
 
-        auto it = std::ranges::find_if(assets,
-                                       [uuid](const AssetRegistryTerm* asset) {
-                                           return asset->uuid == uuid;
-                                       });
-        if (it == assets.end())
-        {
-            return "None";
-        }
+        auto it = std::ranges::find_if(assets, [uuid](const AssetRegistryTerm* asset) { return asset->uuid == uuid; });
+        if (it == assets.end()) { return "None"; }
 
         return (*it)->filePath.filename().string();
     }
@@ -452,8 +436,7 @@ namespace Hazel::PropertyPanelHelpers
                     value = UUID(-1);
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
 
             for (const auto& asset : assets)
@@ -465,8 +448,7 @@ namespace Hazel::PropertyPanelHelpers
                     value = asset->uuid;
                     changed = true;
                 }
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
+                if (selected) ImGui::SetItemDefaultFocus();
             }
 
             ImGui::EndCombo();
@@ -474,4 +456,4 @@ namespace Hazel::PropertyPanelHelpers
 
         return changed;
     }
-}
+} // namespace Hazel::PropertyPanelHelpers

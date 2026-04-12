@@ -1,14 +1,12 @@
 #include "SceneHierarchyPanel.h"
+
 #include "Hazel/Scene/Components.h"
 
 #include <imgui.h>
 
 namespace Hazel
 {
-    SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
-    {
-        SetContext(context);
-    }
+    SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context) { SetContext(context); }
 
     void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
     {
@@ -39,10 +37,7 @@ namespace Hazel
             for (auto& entity : m_EntityDeletionQueue)
             {
                 m_Context->DestroyEntity(entity);
-                if (m_SelectionContext == entity)
-                {
-                    m_SelectionContext = {};
-                }
+                if (m_SelectionContext == entity) { m_SelectionContext = {}; }
                 m_SelectionVersion++;
             }
 
@@ -56,8 +51,7 @@ namespace Hazel
             if (ImGui::BeginPopupContextWindow(nullptr,
                                                ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
             {
-                if (ImGui::MenuItem("Create Empty Entity"))
-                    m_Context->CreateEntity("Empty Entity");
+                if (ImGui::MenuItem("Create Empty Entity")) m_Context->CreateEntity("Empty Entity");
 
                 ImGui::EndPopup();
             }
@@ -76,13 +70,10 @@ namespace Hazel
         auto& tag = entity.GetComponent<TagComponent>().tag;
         auto& relationship = entity.GetComponent<EntityRelationshipComponent>();
 
-        ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) |
-                                   ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+        ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0)
+                                   | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-        if (relationship.childCount == 0)
-        {
-            flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-        }
+        if (relationship.childCount == 0) { flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen; }
 
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((void*)static_cast<uint64_t>((uint32_t)entity), flags, tag.c_str());
@@ -96,15 +87,9 @@ namespace Hazel
         bool newEntityCreated = false;
         if (ImGui::BeginPopupContextItem())
         {
-            if (ImGui::MenuItem("Create Entity"))
-            {
-                newEntityCreated = true;
-            }
+            if (ImGui::MenuItem("Create Entity")) { newEntityCreated = true; }
 
-            if (ImGui::MenuItem("Delete Entity"))
-            {
-                entityDeleted = true;
-            }
+            if (ImGui::MenuItem("Delete Entity")) { entityDeleted = true; }
 
             ImGui::EndPopup();
         }
@@ -122,10 +107,7 @@ namespace Hazel
                     currentChild = childRelationship.nextSibling;
                 }
             }
-            if (relationship.childCount > 0)
-            {
-                ImGui::TreePop();
-            }
+            if (relationship.childCount > 0) { ImGui::TreePop(); }
         }
 
         if (newEntityCreated)
@@ -135,8 +117,8 @@ namespace Hazel
             newEntityRelationship.parent = entity;
             if (relationship.firstChild != entt::null)
             {
-                auto& firstChildRelationship = Entity{relationship.firstChild, m_Context.get()}
-                    .GetComponent<EntityRelationshipComponent>();
+                auto& firstChildRelationship =
+                    Entity{relationship.firstChild, m_Context.get()}.GetComponent<EntityRelationshipComponent>();
                 firstChildRelationship.prevSibling = static_cast<entt::entity>(newEntity);
                 newEntityRelationship.nextSibling = relationship.firstChild;
             }
@@ -144,9 +126,6 @@ namespace Hazel
             relationship.childCount++;
         }
 
-        if (entityDeleted)
-        {
-            m_EntityDeletionQueue.push_back(entity);
-        }
+        if (entityDeleted) { m_EntityDeletionQueue.push_back(entity); }
     }
-}
+} // namespace Hazel

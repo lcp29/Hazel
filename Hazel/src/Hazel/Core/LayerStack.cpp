@@ -4,10 +4,7 @@
 
 namespace Hazel
 {
-    LayerStack::~LayerStack()
-    {
-        Clear();
-    }
+    LayerStack::~LayerStack() { Clear(); }
 
     void LayerStack::Clear()
     {
@@ -26,10 +23,7 @@ namespace Hazel
         m_LayerInsertIndex++;
     }
 
-    void LayerStack::PushOverlay(Layer* overlay)
-    {
-        m_Layers.emplace_back(overlay);
-    }
+    void LayerStack::PushOverlay(Layer* overlay) { m_Layers.emplace_back(overlay); }
 
     void LayerStack::PopLayer(Layer* layer)
     {

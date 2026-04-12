@@ -1,12 +1,12 @@
 #pragma once
 
-#include <entt.hpp>
+#include "../Renderer/GPUAsset/CachedMaterial.h"
+#include "../Renderer/GPUAsset/GPUMeshAsset.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
-#include "../Renderer/GPUAsset/GPUMeshAsset.h"
-#include "../Renderer/GPUAsset/CachedMaterial.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 
+#include <entt.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -17,8 +17,7 @@
 
 namespace YAML
 {
-    template <>
-    struct convert<glm::vec2>
+    template <> struct convert<glm::vec2>
     {
         static Node encode(const glm::vec2& rhs)
         {
@@ -31,8 +30,7 @@ namespace YAML
 
         static bool decode(const Node& node, glm::vec2& rhs)
         {
-            if (!node.IsSequence() || node.size() != 2)
-                return false;
+            if (!node.IsSequence() || node.size() != 2) return false;
 
             rhs.x = node[0].as<float>();
             rhs.y = node[1].as<float>();
@@ -40,8 +38,7 @@ namespace YAML
         }
     };
 
-    template <>
-    struct convert<glm::vec3>
+    template <> struct convert<glm::vec3>
     {
         static Node encode(const glm::vec3& rhs)
         {
@@ -55,8 +52,7 @@ namespace YAML
 
         static bool decode(const Node& node, glm::vec3& rhs)
         {
-            if (!node.IsSequence() || node.size() != 3)
-                return false;
+            if (!node.IsSequence() || node.size() != 3) return false;
 
             rhs.x = node[0].as<float>();
             rhs.y = node[1].as<float>();
@@ -65,8 +61,7 @@ namespace YAML
         }
     };
 
-    template <>
-    struct convert<glm::vec4>
+    template <> struct convert<glm::vec4>
     {
         static Node encode(const glm::vec4& rhs)
         {
@@ -81,8 +76,7 @@ namespace YAML
 
         static bool decode(const Node& node, glm::vec4& rhs)
         {
-            if (!node.IsSequence() || node.size() != 4)
-                return false;
+            if (!node.IsSequence() || node.size() != 4) return false;
 
             rhs.x = node[0].as<float>();
             rhs.y = node[1].as<float>();
@@ -92,8 +86,7 @@ namespace YAML
         }
     };
 
-    template <>
-    struct convert<Hazel::UUID>
+    template <> struct convert<Hazel::UUID>
     {
         static Node encode(const Hazel::UUID& uuid)
         {
@@ -121,8 +114,7 @@ namespace Hazel
 
         IDComponent(const UUID& id)
             : ID(id)
-        {
-        }
+        {}
 
         YAML::Node Serialize() const
         {
@@ -148,8 +140,7 @@ namespace Hazel
 
         TagComponent(const std::string& tag)
             : tag(tag)
-        {
-        }
+        {}
 
         YAML::Node Serialize() const
         {
@@ -177,13 +168,9 @@ namespace Hazel
 
         TransformComponent(const glm::vec3& translation)
             : translation(translation)
-        {
-        }
+        {}
 
-        TransformComponent(const glm::mat4& transform)
-        {
-            SetTransform(transform);
-        }
+        TransformComponent(const glm::mat4& transform) { SetTransform(transform); }
 
         glm::mat4 GetTransform() const
         {
@@ -283,9 +270,8 @@ namespace Hazel
         {
             CameraComponent component;
             component.camera = Camera::Deserialize(node["Camera"]);
-            component.renderTextureUUID = node["RenderTextureUUID"]
-                                              ? node["RenderTextureUUID"][0].as<UUID>()
-                                              : UUID(-1);
+            component.renderTextureUUID =
+                node["RenderTextureUUID"] ? node["RenderTextureUUID"][0].as<UUID>() : UUID(-1);
             component.isPrimary = node["IsPrimary"].as<bool>();
             component.isViewportCamera = node["IsViewportCamera"].as<bool>();
             component.priority = node["Priority"].as<int>();
@@ -338,8 +324,7 @@ namespace Hazel
         ScriptableEntity* (*instantiateScript)();
         void (*destroyScript)(NativeScriptComponent*);
 
-        template <typename T>
-        void Bind()
+        template <typename T> void Bind()
         {
             instantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
             destroyScript = [](NativeScriptComponent* nsc) {
@@ -349,10 +334,8 @@ namespace Hazel
         }
     };
 
-    template <typename... Component>
-    struct ComponentGroup
-    {
-    };
+    template <typename... Component> struct ComponentGroup
+    {};
 
     using AllComponents = ComponentGroup<TransformComponent,
                                          MeshRendererComponent,

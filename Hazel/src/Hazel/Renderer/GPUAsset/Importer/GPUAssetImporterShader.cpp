@@ -1,7 +1,6 @@
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
-
 #include "Hazel/Asset/ShaderAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
+#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Renderer/ShaderCommon.h"
 

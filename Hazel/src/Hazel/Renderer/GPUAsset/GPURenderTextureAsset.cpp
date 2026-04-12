@@ -3,6 +3,7 @@
 //
 
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
+
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Utils/ImageUtils.h"
 
@@ -14,12 +15,9 @@ namespace Hazel
     {
         RHIImagePlanes GetImagePlanesFromFormat(RHIFormat format)
         {
-            static const std::unordered_set depthFormats =
-                {RHIFormat::D32SFloat, RHIFormat::D32SFloatS8Uint};
-            static const std::unordered_set stencilFormats =
-                {RHIFormat::D32SFloatS8Uint, RHIFormat::S8Uint};
-            static const std::unordered_set colorFormats =
-            {
+            static const std::unordered_set depthFormats = {RHIFormat::D32SFloat, RHIFormat::D32SFloatS8Uint};
+            static const std::unordered_set stencilFormats = {RHIFormat::D32SFloatS8Uint, RHIFormat::S8Uint};
+            static const std::unordered_set colorFormats = {
                 RHIFormat::R8UNorm,
                 RHIFormat::R32SInt,
                 RHIFormat::RG8UNorm,
@@ -35,21 +33,12 @@ namespace Hazel
                 RHIFormat::RGBA16SFloat,
             };
             RHIImagePlanes imagePlane;
-            if (depthFormats.contains(format))
-            {
-                imagePlane |= RHIImagePlaneFlagBits::Depth;
-            }
-            if (stencilFormats.contains(format))
-            {
-                imagePlane |= RHIImagePlaneFlagBits::Stencil;
-            }
-            if (colorFormats.contains(format))
-            {
-                imagePlane |= RHIImagePlaneFlagBits::Color;
-            }
+            if (depthFormats.contains(format)) { imagePlane |= RHIImagePlaneFlagBits::Depth; }
+            if (stencilFormats.contains(format)) { imagePlane |= RHIImagePlaneFlagBits::Stencil; }
+            if (colorFormats.contains(format)) { imagePlane |= RHIImagePlaneFlagBits::Color; }
             return imagePlane;
         }
-    }
+    } // namespace
 
     std::unique_ptr<GPURenderTextureAsset> CreateGPURenderTextureAsset(Renderer* renderer,
                                                                        UUID uuid,
@@ -76,10 +65,7 @@ namespace Hazel
         {
             imageDesc.usages |= RHIImageUsageFlagBits::DepthStencilAttachment;
         }
-        else
-        {
-            imageDesc.usages |= RHIImageUsageFlagBits::ColorAttachment;
-        }
+        else { imageDesc.usages |= RHIImageUsageFlagBits::ColorAttachment; }
 
         if (resolvedDesc.useMipmap)
         {
@@ -124,13 +110,8 @@ namespace Hazel
             imageViews.push_back(imageView);
         }
 
-        return std::make_unique<GPURenderTextureAsset>(uuid,
-                                                       sourceVersion,
-                                                       renderer,
-                                                       resolvedDesc,
-                                                       std::move(images),
-                                                       std::move(imageViews),
-                                                       lastReferencedFrame);
+        return std::make_unique<GPURenderTextureAsset>(
+            uuid, sourceVersion, renderer, resolvedDesc, std::move(images), std::move(imageViews), lastReferencedFrame);
     }
 
     GPURenderTextureAsset::GPURenderTextureAsset(UUID uuid,
@@ -140,27 +121,20 @@ namespace Hazel
                                                  std::vector<RHIImage*> images,
                                                  std::vector<RHIImageView*> imageViews,
                                                  uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::RenderTexture, renderer, sourceVersion, lastReferencedFrame),
-          m_IsValid(true),
-          m_PerFrame(desc.perFrame),
-          m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
-          m_Desc(desc),
-          m_Images(std::move(images)),
-          m_ImageViews(std::move(imageViews))
-    {
-    }
+        : GPUAsset(uuid, AssetType::RenderTexture, renderer, sourceVersion, lastReferencedFrame)
+        , m_IsValid(true)
+        , m_PerFrame(desc.perFrame)
+        , m_MaxFramesInFlight(renderer->GetMaxFramesInFlight())
+        , m_Desc(desc)
+        , m_Images(std::move(images))
+        , m_ImageViews(std::move(imageViews))
+    {}
 
-    GPURenderTextureAsset::~GPURenderTextureAsset()
-    {
-        GPURenderTextureAsset::ReleaseImmediate();
-    }
+    GPURenderTextureAsset::~GPURenderTextureAsset() { GPURenderTextureAsset::ReleaseImmediate(); }
 
     void GPURenderTextureAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (auto& image : m_Images)
         {
@@ -173,10 +147,7 @@ namespace Hazel
 
     void GPURenderTextureAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (auto& image : m_Images)
         {
@@ -198,10 +169,7 @@ namespace Hazel
         return m_Images[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0];
     }
 
-    const std::vector<RHIImage*>& GPURenderTextureAsset::GetAllImages() const
-    {
-        return m_Images;
-    }
+    const std::vector<RHIImage*>& GPURenderTextureAsset::GetAllImages() const { return m_Images; }
 
     RHIImageView* GPURenderTextureAsset::GetDefaultImageView() const
     {

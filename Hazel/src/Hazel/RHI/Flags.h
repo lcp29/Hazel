@@ -8,69 +8,51 @@
 
 namespace Hazel
 {
-    template <typename T>
-    struct InRHIFlagScope : std::false_type
-    {
-    };
+    template <typename T> struct InRHIFlagScope : std::false_type
+    {};
 
     template <typename BitType>
         requires InRHIFlagScope<BitType>::value
     class Flags
     {
-    public:
+      public:
         using UnderlyingType = std::underlying_type_t<BitType>;
 
         UnderlyingType value;
 
         Flags()
             : value(0)
-        {
-        }
+        {}
 
         constexpr Flags(const UnderlyingType& value)
             : value(value)
-        {
-        }
+        {}
 
         constexpr Flags(const BitType& value)
             : value(static_cast<UnderlyingType>(value))
-        {
-        }
+        {}
 
         constexpr Flags(const Flags& other)
             : value(other.value)
-        {
-        }
+        {}
 
-        constexpr operator UnderlyingType() const
-        {
-            return value;
-        }
+        constexpr operator UnderlyingType() const { return value; }
 
-        constexpr operator bool() const
-        {
-            return value != 0;
-        }
+        constexpr operator bool() const { return value != 0; }
 
         constexpr Flags operator|(const Flags& rhs) const
         {
             return static_cast<UnderlyingType>(value) | static_cast<UnderlyingType>(rhs.value);
         }
 
-        constexpr Flags operator|(const UnderlyingType& rhs) const
-        {
-            return static_cast<UnderlyingType>(value) | rhs;
-        }
+        constexpr Flags operator|(const UnderlyingType& rhs) const { return static_cast<UnderlyingType>(value) | rhs; }
 
         constexpr Flags operator&(const Flags& rhs) const
         {
             return static_cast<UnderlyingType>(value) & static_cast<UnderlyingType>(rhs.value);
         }
 
-        constexpr Flags operator~() const
-        {
-            return ~static_cast<UnderlyingType>(value);
-        }
+        constexpr Flags operator~() const { return ~static_cast<UnderlyingType>(value); }
 
         bool operator==(const Flags&) const = default;
 

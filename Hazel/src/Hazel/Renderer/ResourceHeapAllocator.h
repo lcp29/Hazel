@@ -15,7 +15,7 @@ namespace Hazel
 
     class ResourceHeapAllocator
     {
-    public:
+      public:
         ResourceHeapAllocator() = delete;
         ResourceHeapAllocator(Renderer* renderer);
         ~ResourceHeapAllocator();
@@ -41,7 +41,7 @@ namespace Hazel
         void FreeGroup(RHIResourceGroup* group);
         void Release();
 
-    private:
+      private:
         Renderer* m_Renderer = nullptr;
         bool m_IsValid = false;
         std::mutex m_Mutex;

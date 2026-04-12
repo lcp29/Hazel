@@ -34,10 +34,7 @@ namespace Hazel
     RHISurface* RHI_VK_FUNC_IMPL(RHIInstance, CreateSurface)(const RHISurfaceDesc& desc)
     {
         std::unique_ptr<RHISurface> surface(new RHISurface(this, m_Instance, desc));
-        if (!surface || !surface->IsValid())
-        {
-            return nullptr;
-        }
+        if (!surface || !surface->IsValid()) { return nullptr; }
 
         RHISurface* surfacePtr = surface.get();
         RegisterSurface(std::move(surface));
@@ -48,16 +45,10 @@ namespace Hazel
                                                            const RHIDeviceCapabilities& caps,
                                                            const RHISurface* surface)
     {
-        if (!adapter || !adapter->CanCreateDevice(caps))
-        {
-            return nullptr;
-        }
+        if (!adapter || !adapter->CanCreateDevice(caps)) { return nullptr; }
 
         std::unique_ptr<RHIDevice> device(new RHIDevice(this, m_Instance, *adapter, caps, surface));
-        if (!device || !device->IsValid())
-        {
-            return nullptr;
-        }
+        if (!device || !device->IsValid()) { return nullptr; }
 
         RHIDevice* devicePtr = device.get();
         RegisterDevice(std::move(device));
@@ -73,62 +64,50 @@ namespace Hazel
 
         auto instanceBuilder =
             builder.set_app_name(desc.appName.c_str())
-                   .require_api_version(1, 3, 0)
-                   .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
-                   .set_engine_name(desc.engineName.c_str())
-                   .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
-                   .enable_validation_layers(desc.useValidation)
-                   .add_debug_messenger_severity(VulkanConvertDebugMessageSeverity(desc.debugMessageSeverity))
-                   .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType));
+                .require_api_version(1, 3, 0)
+                .set_app_version(desc.appVersion.major, desc.appVersion.minor, desc.appVersion.patch)
+                .set_engine_name(desc.engineName.c_str())
+                .set_engine_version(desc.engineVersion.major, desc.engineVersion.minor, desc.engineVersion.patch)
+                .enable_validation_layers(desc.useValidation)
+                .add_debug_messenger_severity(VulkanConvertDebugMessageSeverity(desc.debugMessageSeverity))
+                .add_debug_messenger_type(VulkanConvertDebugMessageType(desc.debugMessageType));
 
         if (desc.useValidation)
         {
             instanceBuilder.add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT)
-                           .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
+                .add_validation_feature_enable(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT);
         }
 
         if (desc.useCustomDebugMessenger)
         {
             instanceBuilder.set_debug_callback_user_data_pointer(&m_DebugCallbackContext)
-                           .set_debug_callback([](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-                                                  VkDebugUtilsMessageTypeFlagsEXT type,
-                                                  const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                                  void* callbackContext) -> VkBool32 {
-                               if (!callbackContext)
-                               {
-                                   return VK_FALSE;
-                               }
+                .set_debug_callback([](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                       VkDebugUtilsMessageTypeFlagsEXT type,
+                                       const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                       void* callbackContext) -> VkBool32 {
+                    if (!callbackContext) { return VK_FALSE; }
 
-                               auto* context = static_cast<VulkanDebugMessageContext*>(callbackContext);
-                               DebugMessage message{};
-                               message.backend = RHIBackend::Vulkan;
-                               message.severity = severity;
-                               message.type = type;
-                               message.messageIdNumber = callbackData->messageIdNumber;
-                               message.messageIdName = callbackData->pMessageIdName;
-                               message.message = callbackData->pMessage;
-                               context->callback(message, context->userData);
-                               return VK_FALSE;
-                           });
+                    auto* context = static_cast<VulkanDebugMessageContext*>(callbackContext);
+                    DebugMessage message{};
+                    message.backend = RHIBackend::Vulkan;
+                    message.severity = severity;
+                    message.type = type;
+                    message.messageIdNumber = callbackData->messageIdNumber;
+                    message.messageIdName = callbackData->pMessageIdName;
+                    message.message = callbackData->pMessage;
+                    context->callback(message, context->userData);
+                    return VK_FALSE;
+                });
         }
-        else
-        {
-            instanceBuilder.use_default_debug_messenger();
-        }
+        else { instanceBuilder.use_default_debug_messenger(); }
 
         auto instance = instanceBuilder.build();
 
-        if (!instance.has_value())
-        {
-            return;
-        }
+        if (!instance.has_value()) { return; }
 
         m_Instance = instance.value();
         m_DynamicLoader = vk::detail::DispatchLoaderDynamic(m_Instance, vkGetInstanceProcAddr);
-        if (desc.useValidation)
-        {
-            m_DebugMessenger = instance.value().debug_messenger;
-        }
+        if (desc.useValidation) { m_DebugMessenger = instance.value().debug_messenger; }
 
         m_IsValid = true;
     }
@@ -146,33 +125,21 @@ namespace Hazel
         m_IsValid = instance.m_IsValid;
     }
 
-    RHI_VK_FUNC_IMPL(RHIInstance, ~RHIInstanceImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIInstance, ~RHIInstanceImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         for (const auto& device : m_Devices)
         {
-            if (device)
-            {
-                device->ReleaseWithoutUnregister();
-            }
+            if (device) { device->ReleaseWithoutUnregister(); }
         }
         m_Devices.Clear();
 
         for (const auto& surface : m_Surfaces)
         {
-            if (surface)
-            {
-                surface->ReleaseWithoutUnregister();
-            }
+            if (surface) { surface->ReleaseWithoutUnregister(); }
         }
         m_Surfaces.Clear();
 
@@ -198,18 +165,12 @@ namespace Hazel
         m_Devices.Register(std::move(device));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice* device)
-    {
-        m_Devices.Unregister(device);
-    }
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice* device) { m_Devices.Unregister(device); }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, RegisterSurface)(std::unique_ptr<RHISurface> surface)
     {
         m_Surfaces.Register(std::move(surface));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface* surface)
-    {
-        m_Surfaces.Unregister(surface);
-    }
+    void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface* surface) { m_Surfaces.Unregister(surface); }
 } // namespace Hazel

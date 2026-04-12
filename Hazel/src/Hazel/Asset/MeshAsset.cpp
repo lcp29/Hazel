@@ -32,4 +32,4 @@ namespace Hazel
         meta.m_GenerateMeshlets = false;
         return meta;
     }
-} // Hazel
+} // namespace Hazel

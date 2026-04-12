@@ -6,10 +6,7 @@
 
 namespace Hazel
 {
-    GPUGraphicsPipelineAsset::~GPUGraphicsPipelineAsset()
-    {
-        GPUGraphicsPipelineAsset::ReleaseImmediate();
-    }
+    GPUGraphicsPipelineAsset::~GPUGraphicsPipelineAsset() { GPUGraphicsPipelineAsset::ReleaseImmediate(); }
 
     void GPUGraphicsPipelineAsset::Release()
     {
@@ -21,10 +18,7 @@ namespace Hazel
         lock.unlock();
         m_Condition.notify_all();
 
-        if (pipeline)
-        {
-            pipeline->Release();
-        }
+        if (pipeline) { pipeline->Release(); }
     }
 
     void GPUGraphicsPipelineAsset::ReleaseImmediate()
@@ -37,9 +31,6 @@ namespace Hazel
         lock.unlock();
         m_Condition.notify_all();
 
-        if (pipeline)
-        {
-            pipeline->ReleaseImmediate();
-        }
+        if (pipeline) { pipeline->ReleaseImmediate(); }
     }
-} // Hazel
+} // namespace Hazel

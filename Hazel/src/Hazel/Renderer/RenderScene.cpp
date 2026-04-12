@@ -10,8 +10,7 @@ namespace Hazel
 {
     RenderScene::RenderScene(Renderer* renderer)
         : m_Renderer(renderer)
-    {
-    }
+    {}
 
     void RenderScene::Update(const std::vector<RenderSceneUpdatePayload>& payload)
     {
@@ -21,42 +20,42 @@ namespace Hazel
             switch (object.type)
             {
                 case RenderSceneUpdatePayload::Type::ChangeTransform:
-                {
-                    if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity)->transform = object.changeTransform.transform;
+                        if (m_RenderObjects.contains(object.entity))
+                        {
+                            m_RenderObjects.at(object.entity)->transform = object.changeTransform.transform;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case RenderSceneUpdatePayload::Type::ChangeMaterial:
-                {
-                    if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity)->material = object.changeMaterial.material;
+                        if (m_RenderObjects.contains(object.entity))
+                        {
+                            m_RenderObjects.at(object.entity)->material = object.changeMaterial.material;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case RenderSceneUpdatePayload::Type::ChangeMesh:
-                {
-                    if (m_RenderObjects.contains(object.entity))
                     {
-                        m_RenderObjects.at(object.entity)->mesh = object.changeMesh.mesh;
+                        if (m_RenderObjects.contains(object.entity))
+                        {
+                            m_RenderObjects.at(object.entity)->mesh = object.changeMesh.mesh;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case RenderSceneUpdatePayload::Type::Add:
-                {
-                    auto renderObject = std::make_unique<RenderObject>(object.add.renderObject);
-                    auto* pointer = renderObject.get();
-                    m_RenderObjects[object.entity] = std::move(renderObject);
-                    m_RenderObjectsUnsorted.insert(pointer);
-                    break;
-                }
+                    {
+                        auto renderObject = std::make_unique<RenderObject>(object.add.renderObject);
+                        auto* pointer = renderObject.get();
+                        m_RenderObjects[object.entity] = std::move(renderObject);
+                        m_RenderObjectsUnsorted.insert(pointer);
+                        break;
+                    }
                 case RenderSceneUpdatePayload::Type::Remove:
-                {
-                    m_RenderObjects.erase(object.entity);
-                    break;
-                }
+                    {
+                        m_RenderObjects.erase(object.entity);
+                        break;
+                    }
             }
         }
     }
@@ -77,15 +76,11 @@ namespace Hazel
             if (material.asset)
             {
                 auto itInMultimap = m_RenderObjectsSortedByShader.emplace(
-                    static_cast<CachedMaterial*>(material.asset)->GetShader(),
-                    *it);
+                    static_cast<CachedMaterial*>(material.asset)->GetShader(), *it);
                 m_RenderObjectLocationInMap[*it] = itInMultimap;
                 it = m_RenderObjectsUnsorted.erase(it);
             }
-            else
-            {
-                ++it;
-            }
+            else { ++it; }
         }
     }
-} // Hazel
+} // namespace Hazel

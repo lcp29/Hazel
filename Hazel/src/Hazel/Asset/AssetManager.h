@@ -4,17 +4,16 @@
 
 #pragma once
 
+#include "../Renderer/GPUAsset/GPUMeshAsset.h"
+#include "ComputeShaderAsset.h"
+#include "Hazel/Core/UUID.h"
+#include "MaterialAsset.h"
 #include "RenderTextureAsset.h"
 #include "SamplerAsset.h"
-#include "ComputeShaderAsset.h"
 #include "ShaderAsset.h"
 #include "TextureAsset.h"
-#include "MaterialAsset.h"
-#include "Hazel/Core/UUID.h"
-#include "../Renderer/GPUAsset/GPUMeshAsset.h"
 
 #include <FileWatch.hpp>
-
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -30,7 +29,7 @@ namespace Hazel
 
     class AssetManager
     {
-    public:
+      public:
         AssetManager() = delete;
 
         AssetManager(Project* project, Renderer* renderer);
@@ -46,7 +45,7 @@ namespace Hazel
         Asset* RequestAsset(UUID uuid);
         Asset* RequestAssetBlocked(UUID uuid);
 
-    private:
+      private:
         Asset* LoadAssetFromRegistry(UUID uuid, AssetRegistryTerm* registry);
 
         Project* m_Project = nullptr;

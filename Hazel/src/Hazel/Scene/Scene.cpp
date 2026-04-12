@@ -15,8 +15,8 @@ namespace Hazel
         glm::mat4 BuildTransformMatrix(const TransformComponent& transform)
         {
             const glm::mat4 rotationMatrix = glm::toMat4(glm::quat(transform.rotation));
-            return glm::translate(glm::mat4(1.0f), transform.translation) * rotationMatrix *
-                   glm::scale(glm::mat4(1.0f), transform.scale);
+            return glm::translate(glm::mat4(1.0f), transform.translation) * rotationMatrix
+                   * glm::scale(glm::mat4(1.0f), transform.scale);
         }
     } // namespace
 
@@ -26,9 +26,7 @@ namespace Hazel
         m_ViewportCameraController.SetCamera(&m_ViewportCamera);
     }
 
-    Scene::~Scene()
-    {
-    }
+    Scene::~Scene() {}
 
     template <typename... Component>
     static void
@@ -57,13 +55,11 @@ namespace Hazel
         CopyComponent<Component...>(dst, src, enttMap);
     }
 
-    template <typename... Component>
-    static void CopyComponentIfExists(Entity dst, Entity src)
+    template <typename... Component> static void CopyComponentIfExists(Entity dst, Entity src)
     {
         (
             [&]() {
-                if (src.HasComponent<Component>())
-                    dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+                if (src.HasComponent<Component>()) dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
             }(),
             ...);
     }
@@ -101,10 +97,7 @@ namespace Hazel
         return newScene;
     }
 
-    Entity Scene::CreateEntity(const std::string& name)
-    {
-        return CreateEntityWithUUID(UUID(), name);
-    }
+    Entity Scene::CreateEntity(const std::string& name) { return CreateEntityWithUUID(UUID(), name); }
 
     Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
     {
@@ -144,10 +137,7 @@ namespace Hazel
         if (relationship.parent != entt::null)
         {
             auto& parentRelationship = m_Registry.get<EntityRelationshipComponent>(relationship.parent);
-            if (parentRelationship.firstChild == entity)
-            {
-                parentRelationship.firstChild = relationship.nextSibling;
-            }
+            if (parentRelationship.firstChild == entity) { parentRelationship.firstChild = relationship.nextSibling; }
             parentRelationship.childCount--;
         }
         if (relationship.childCount > 0)
@@ -245,14 +235,11 @@ namespace Hazel
         }
     }
 
-    void Scene::OnUpdateEditor(Timestep ts)
-    {
-    }
+    void Scene::OnUpdateEditor(Timestep ts) {}
 
     void Scene::OnViewportResize(uint32_t width, uint32_t height)
     {
-        if (m_ViewportWidth == width && m_ViewportHeight == height)
-            return;
+        if (m_ViewportWidth == width && m_ViewportHeight == height) return;
 
         m_ViewportWidth = width;
         m_ViewportHeight = height;
@@ -260,10 +247,7 @@ namespace Hazel
         m_ViewportCamera.SetViewportSizeKeepFovY(width, height);
     }
 
-    void Scene::Step(int frames)
-    {
-        m_StepFrames = frames;
-    }
+    void Scene::Step(int frames) { m_StepFrames = frames; }
 
     Entity Scene::DuplicateEntity(Entity entity)
     {
@@ -280,8 +264,7 @@ namespace Hazel
         for (auto entity : view)
         {
             const TagComponent& tc = view.get<TagComponent>(entity);
-            if (tc.tag == name)
-                return Entity{entity, this};
+            if (tc.tag == name) return Entity{entity, this};
         }
         return {};
     }
@@ -289,8 +272,7 @@ namespace Hazel
     Entity Scene::GetEntityByUUID(UUID uuid)
     {
         // TODO(Yan): Maybe should be assert
-        if (m_EntityMap.contains(uuid))
-            return {m_EntityMap.at(uuid), this};
+        if (m_EntityMap.contains(uuid)) return {m_EntityMap.at(uuid), this};
 
         return {};
     }
@@ -365,14 +347,8 @@ namespace Hazel
         for (auto entity : meshRendererEntities)
         {
             const auto& comp = meshRendererEntities.get<MeshRendererComponent>(entity);
-            if (comp.meshUUID != UUID(-1))
-            {
-                uuids.push_back(comp.meshUUID);
-            }
-            if (comp.materialUUID != UUID(-1))
-            {
-                uuids.push_back(comp.materialUUID);
-            }
+            if (comp.meshUUID != UUID(-1)) { uuids.push_back(comp.meshUUID); }
+            if (comp.materialUUID != UUID(-1)) { uuids.push_back(comp.materialUUID); }
         }
         return uuids;
     }
@@ -381,10 +357,7 @@ namespace Hazel
     {
         const auto& relationship = m_Registry.get<EntityRelationshipComponent>(entity);
         const auto localTransform = BuildTransformMatrix(m_Registry.get<TransformComponent>(entity));
-        if (relationship.parent == entt::null)
-        {
-            return localTransform;
-        }
+        if (relationship.parent == entt::null) { return localTransform; }
 
         return GetWorldTransform(relationship.parent) * localTransform;
     }
@@ -404,56 +377,30 @@ namespace Hazel
         auto child = relationship.firstChild;
         while (child != entt::null)
         {
-            const auto childGlobalTransform = globalTransform * BuildTransformMatrix(
-                                                  m_Registry.get<TransformComponent>(child));
+            const auto childGlobalTransform =
+                globalTransform * BuildTransformMatrix(m_Registry.get<TransformComponent>(child));
             AddTransformPayloadsForSubtree(child, childGlobalTransform);
             child = m_Registry.get<EntityRelationshipComponent>(child).nextSibling;
         }
     }
 
-    template <typename T>
-    void Scene::OnComponentAdded(Entity entity, T& component)
-    {
-        static_assert(sizeof(T) == 0);
-    }
+    template <typename T> void Scene::OnComponentAdded(Entity entity, T& component) { static_assert(sizeof(T) == 0); }
 
-    template <>
-    void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component) {}
 
-    template <>
-    void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component) {}
 
     template <>
     void Scene::OnComponentAdded<EntityRelationshipComponent>(Entity entity, EntityRelationshipComponent& component)
-    {
-    }
+    {}
 
-    template <>
-    void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component) {}
 
-    template <>
-    void Scene::OnComponentAdded<MeshRendererComponent>(Entity entity, MeshRendererComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<MeshRendererComponent>(Entity entity, MeshRendererComponent& component) {}
 
-    template <>
-    void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component) {}
 
-    template <>
-    void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component) {}
 
-    template <>
-    void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
-    {
-    }
+    template <> void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component) {}
 } // namespace Hazel

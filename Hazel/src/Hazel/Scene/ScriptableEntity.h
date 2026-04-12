@@ -6,31 +6,19 @@ namespace Hazel
 {
     class ScriptableEntity
     {
-    public:
-        virtual ~ScriptableEntity()
-        {
-        }
+      public:
+        virtual ~ScriptableEntity() {}
 
-        template <typename T>
-        T& GetComponent()
-        {
-            return m_Entity.GetComponent<T>();
-        }
+        template <typename T> T& GetComponent() { return m_Entity.GetComponent<T>(); }
 
-    protected:
-        virtual void OnCreate()
-        {
-        }
+      protected:
+        virtual void OnCreate() {}
 
-        virtual void OnDestroy()
-        {
-        }
+        virtual void OnDestroy() {}
 
-        virtual void OnUpdate(Timestep ts)
-        {
-        }
+        virtual void OnUpdate(Timestep ts) {}
 
-    private:
+      private:
         Entity m_Entity;
         friend class Scene;
     };

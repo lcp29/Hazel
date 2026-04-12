@@ -1,19 +1,19 @@
 #pragma once
 
-#include "Hazel/Scene/Scene.h"
-#include "GeometryDataRegistry.h"
-#include "ResourceBindingRegistry.h"
-#include "RenderScene.h"
 #include "GPUAsset/GPUAssetHandle.h"
+#include "GeometryDataRegistry.h"
 #include "Hazel/Asset/MaterialAsset.h"
-#include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
 #include "Hazel/Renderer/Camera.h"
-#include "Hazel/Renderer/GraphicsContext.h"
+#include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
+#include "Hazel/Renderer/GraphicsContext.h"
 #include "Hazel/Renderer/RendererAPI.h"
 #include "Hazel/Renderer/ResourceHeapAllocator.h"
+#include "Hazel/Scene/Scene.h"
+#include "RenderScene.h"
+#include "ResourceBindingRegistry.h"
 
 #include <memory>
 #include <vector>
@@ -26,11 +26,10 @@ namespace Hazel
 
     class Renderer
     {
-    public:
+      public:
         constexpr static auto SwapchainFormatString = "r.Swapchain.Format";
         constexpr static auto MaxFramesInFlightString = "r.Swapchain.MaxFramesInFlight";
-        constexpr static auto GPUAssetGarbageCollectFrameThresholdString =
-            "r.GPUAsset.GarbageCollectFrameThreshold";
+        constexpr static auto GPUAssetGarbageCollectFrameThresholdString = "r.GPUAsset.GarbageCollectFrameThreshold";
 
         constexpr static int kDefaultGPUAssetGarbageCollectFrameThreshold = 600;
 
@@ -46,6 +45,7 @@ namespace Hazel
         };
 
         Renderer(GraphicsContext* graphicsContext, Window* window);
+
         ~Renderer() { Release(); }
 
         void BeginSwapchainTargetRendering();
@@ -62,25 +62,39 @@ namespace Hazel
         void EndFrame();
 
         GraphicsContext* GetGraphicsContext() const { return m_GraphicsContext; }
+
         RHIAdapter GetAdapter() const { return m_GraphicsContext->GetAdapter(); }
+
         RHIDevice* GetDevice() const { return m_Device; }
+
         RHIInstance* GetInstance() const { return m_Instance; }
+
         RHISwapchain* GetSwapchain() const { return m_Swapchain; }
 
         FrameData& GetFrameData(uint64_t frameIndex) { return m_Frames[frameIndex % m_MaxFramesInFlight]; }
+
         uint64_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+
         uint64_t GetCurrentFrameInFlightIndex() const { return m_CurrentFrame % m_MaxFramesInFlight; }
+
         FrameData& GetCurrentFrameData() { return m_Frames[GetCurrentFrameInFlightIndex()]; }
+
         int GetMaxFramesInFlight() const { return m_MaxFramesInFlight; }
 
         GPUAsset* GetDefaultGPUAsset(AssetType type);
+
         GPURenderTextureAsset* GetDefaultRenderTexture() const { return m_DefaultRenderTexture.get(); }
 
         GPUTextureAsset* GetErrorTexture() const { return m_ErrorTexture.get(); }
+
         uint32_t GetErrorTextureBindingSlot() const { return m_ErrorTextureBindingSlot; }
+
         GPUTextureAsset* GetWhiteTexture() const { return m_WhiteTexture.get(); }
+
         uint32_t GetWhiteTextureBindingSlot() const { return m_WhiteTextureBindingSlot; }
+
         GPUSamplerAsset* GetDefaultSampler() const { return m_DefaultSampler.get(); }
+
         uint32_t GetDefaultSamplerBindingSlot() const { return m_DefaultSamplerBindingSlot; }
 
         uint32_t GetWhiteTextureWithDefaultSamplerBindingSlot() const
@@ -100,20 +114,16 @@ namespace Hazel
 
         GPUAssetHandle ResolveGPUGraphicsPipeline(UUID material,
                                                   const std::vector<RHIFormat>& colorAttachmentFormats,
-                                                  const std::vector<RHIColorBlendAttachmentDesc>&
-                                                  colorBlendAttachments,
+                                                  const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                                   RHIFormat depthStencilFormat);
-        GPUAssetHandle ResolveGPUGraphicsPipelineBlocked(UUID material,
-                                                         const std::vector<RHIFormat>& colorAttachmentFormats,
-                                                         const std::vector<RHIColorBlendAttachmentDesc>&
-                                                         colorBlendAttachments,
-                                                         RHIFormat depthStencilFormat);
-        GPUAssetHandle ResolveGPURenderTexture(const RenderTextureDesc& desc,
-                                               uint64_t lastReferencedFrame = -1);
-        GPUAssetHandle ResolveGPURenderBuffer(const RenderBufferDesc& desc,
-                                              uint64_t lastReferencedFrame = -1);
-        GPUAssetHandle ResolveGPUSampler(const RHISamplerDesc& desc,
-                                         uint64_t lastReferencedFrame = -1);
+        GPUAssetHandle
+        ResolveGPUGraphicsPipelineBlocked(UUID material,
+                                          const std::vector<RHIFormat>& colorAttachmentFormats,
+                                          const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                          RHIFormat depthStencilFormat);
+        GPUAssetHandle ResolveGPURenderTexture(const RenderTextureDesc& desc, uint64_t lastReferencedFrame = -1);
+        GPUAssetHandle ResolveGPURenderBuffer(const RenderBufferDesc& desc, uint64_t lastReferencedFrame = -1);
+        GPUAssetHandle ResolveGPUSampler(const RHISamplerDesc& desc, uint64_t lastReferencedFrame = -1);
 
         uint32_t RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material);
         void UnregisterMaterial(UUID shader, uint64_t shaderSourceVersion, uint32_t materialID);
@@ -121,11 +131,15 @@ namespace Hazel
         void UnregisterShader(UUID uuid, uint64_t sourceVersion);
 
         GPUAssetRegistry* GetGPUAssetRegistry() const { return m_GPUAssetRegistry.get(); }
+
         ResourceHeapAllocator* GetResourceHeapAllocator() const { return m_ResourceHeapAllocator.get(); }
+
         ResourceBindingRegistry* GetResourceBindingRegistry() const { return m_ResourceBindingRegistry.get(); }
+
         GeometryDataRegistry* GetGeometryDataRegistry() const { return m_GeometryDataRegistry.get(); }
 
         RenderScene* GetRenderScene() const { return m_RenderScene.get(); }
+
         void ClearRenderScene() const { m_RenderScene->Clear(); }
 
         void RunGraphicsPass(RHICommandBuffer* cmd,
@@ -148,13 +162,13 @@ namespace Hazel
                              RHIRect2D scissorArea);
 
         // TODO: TEMP URGENT INTERVIEW
-        void SetCameras(const std::vector<SceneCameraView> cameras) { m_Cameras = cameras; }
+        void SetCameras(const std::vector<SceneCameraView>& cameras) { m_Cameras = cameras; }
 
         void Step() { m_CurrentFrame++; }
 
         void Release();
 
-    private:
+      private:
         void CreatePerFrameData();
         void DestroyPerFrameData();
         void CreateSwapchainResources();
@@ -162,10 +176,8 @@ namespace Hazel
         void RecreateDefaultRenderTexture();
         void CreateDefaultResources();
         GPUAssetHandle ResolveGPUAssetWhileLoading(Asset* asset, AssetType type);
-        template <typename TAsset, typename... Args>
-        GPUAssetHandle ResolveDirectGPUAsset(Args&&... args);
-        template <typename TAsset, typename... Args>
-        GPUAssetHandle ResolveDirectGPUAssetBlocked(Args&&... args);
+        template <typename TAsset, typename... Args> GPUAssetHandle ResolveDirectGPUAsset(Args&&... args);
+        template <typename TAsset, typename... Args> GPUAssetHandle ResolveDirectGPUAssetBlocked(Args&&... args);
         std::unique_ptr<GPUAsset> LoadGPUAsset(Asset* asset);
 
         // synchronized from global setting

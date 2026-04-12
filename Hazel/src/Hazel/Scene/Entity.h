@@ -9,59 +9,44 @@ namespace Hazel
 
     class Entity
     {
-    public:
+      public:
         Entity() = default;
 
         Entity(entt::entity handle, Scene* scene)
             : m_EntityHandle(handle)
-              , m_Scene(scene)
-        {
-        }
+            , m_Scene(scene)
+        {}
 
         Entity(const Entity& other) = default;
 
-        template <typename T, typename... Args>
-        T& AddComponent(Args&&... args)
+        template <typename T, typename... Args> T& AddComponent(Args&&... args)
         {
             HZ_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
             T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
             m_Scene->OnComponentAdded<T>(*this, component);
-            if constexpr (std::is_same_v<T, MeshRendererComponent>)
-            {
-                AddMeshRendererPayload(component);
-            }
+            if constexpr (std::is_same_v<T, MeshRendererComponent>) { AddMeshRendererPayload(component); }
             return component;
         }
 
-        template <typename T, typename... Args>
-        T& AddOrReplaceComponent(Args&&... args)
+        template <typename T, typename... Args> T& AddOrReplaceComponent(Args&&... args)
         {
             T& component = m_Scene->m_Registry.emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
             m_Scene->OnComponentAdded<T>(*this, component);
             return component;
         }
 
-        template <typename T>
-        T& GetComponent()
+        template <typename T> T& GetComponent()
         {
             HZ_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
             return m_Scene->m_Registry.get<T>(m_EntityHandle);
         }
 
-        template <typename T>
-        bool HasComponent()
-        {
-            return m_Scene->m_Registry.any_of<T>(m_EntityHandle);
-        }
+        template <typename T> bool HasComponent() { return m_Scene->m_Registry.any_of<T>(m_EntityHandle); }
 
-        template <typename T>
-        void RemoveComponent()
+        template <typename T> void RemoveComponent()
         {
             HZ_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
-            if constexpr (std::is_same_v<T, MeshRendererComponent>)
-            {
-                RemoveMeshRendererPayload();
-            }
+            if constexpr (std::is_same_v<T, MeshRendererComponent>) { RemoveMeshRendererPayload(); }
             m_Scene->m_Registry.remove<T>(m_EntityHandle);
         }
 
@@ -93,7 +78,7 @@ namespace Hazel
 
         Scene* GetScene() const { return m_Scene; }
 
-    private:
+      private:
         glm::mat4 GetGlobalTransform() const;
         void AddMeshRendererPayload(const MeshRendererComponent& component);
         void RemoveMeshRendererPayload();

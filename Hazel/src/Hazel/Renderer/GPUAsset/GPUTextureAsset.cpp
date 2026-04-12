@@ -3,21 +3,16 @@
 //
 
 #include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
+
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
 {
-    GPUTextureAsset::~GPUTextureAsset()
-    {
-        GPUTextureAsset::ReleaseImmediate();
-    }
+    GPUTextureAsset::~GPUTextureAsset() { GPUTextureAsset::ReleaseImmediate(); }
 
     void GPUTextureAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Image->Release();
 
@@ -28,10 +23,7 @@ namespace Hazel
 
     void GPUTextureAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         m_Image->ReleaseImmediate();
 

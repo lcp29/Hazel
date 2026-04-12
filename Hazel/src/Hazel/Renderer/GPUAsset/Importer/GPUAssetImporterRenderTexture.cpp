@@ -1,7 +1,6 @@
-#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
-
 #include "Hazel/Asset/RenderTextureAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
+#include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel

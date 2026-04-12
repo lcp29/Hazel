@@ -3,16 +3,17 @@
 //
 
 #include "AssetImporter.h"
+
 #include "AssetManager.h"
 #include "AssetUtils.h"
 #include "ComputeShaderAsset.h"
+#include "Hazel/Renderer/ShaderCommon.h"
 #include "MaterialAsset.h"
 #include "MeshAsset.h"
 #include "MeshImportUtils.h"
 #include "RenderTextureAsset.h"
 #include "ShaderAsset.h"
 #include "TextureAsset.h"
-#include "Hazel/Renderer/ShaderCommon.h"
 
 #include <filesystem>
 #include <ranges>
@@ -31,17 +32,11 @@ namespace Hazel
         shaderFileDesc.debugName = registryTerm->filePath.filename().string() + " [CS]";
         shaderFileDesc.macroDefinitions.push_back({"COMPUTE_SHADER", ""});
         auto compileResult = CompileShaderFileToSPIRV(shaderFileDesc);
-        if (compileResult.GetCompilationStatus() != shaderc_compilation_status_success)
-        {
-            return nullptr;
-        }
+        if (compileResult.GetCompilationStatus() != shaderc_compilation_status_success) { return nullptr; }
 
         ComputeShaderAssetData data;
         data.binary.assign(compileResult.cbegin(), compileResult.cend());
-        if (!ReflectShaderSPIRV(data.binary, data.reflection))
-        {
-            return nullptr;
-        }
+        if (!ReflectShaderSPIRV(data.binary, data.reflection)) { return nullptr; }
 
         return std::make_unique<ComputeShaderAsset>(registryTerm, meta, std::move(data));
     }
@@ -51,10 +46,7 @@ namespace Hazel
         auto meta = ReadMetaFromFile<MeshAssetMeta>(GetMetaPathFromAssetPath(registryTerm->filePath));
 
         MeshAssetData data;
-        if (!ImportMeshAssetData(registryTerm->filePath, meta.GenerateMeshlets(), data))
-        {
-            return nullptr;
-        }
+        if (!ImportMeshAssetData(registryTerm->filePath, meta.GenerateMeshlets(), data)) { return nullptr; }
 
         return std::make_unique<MeshAsset>(registryTerm, meta, std::move(data));
     }
@@ -71,10 +63,7 @@ namespace Hazel
         }
 
         auto* shaderAsset = static_cast<ShaderAsset*>(assetManager->RequestAssetBlocked(meta.GetShader()));
-        if (!shaderAsset)
-        {
-            return nullptr;
-        }
+        if (!shaderAsset) { return nullptr; }
 
         for (auto [i, metaProperty] : std::views::enumerate(meta.GetProperties()))
         {
@@ -160,16 +149,10 @@ namespace Hazel
         data.fragmentBinary.assign(fragmentCompileResult.cbegin(), fragmentCompileResult.cend());
 
         RHIShaderReflection vertexReflection;
-        if (!ReflectShaderSPIRV(data.vertexBinary, vertexReflection))
-        {
-            return nullptr;
-        }
+        if (!ReflectShaderSPIRV(data.vertexBinary, vertexReflection)) { return nullptr; }
 
         RHIShaderReflection fragmentReflection;
-        if (!ReflectShaderSPIRV(data.fragmentBinary, fragmentReflection))
-        {
-            return nullptr;
-        }
+        if (!ReflectShaderSPIRV(data.fragmentBinary, fragmentReflection)) { return nullptr; }
 
         data.reflection = MergeShaderReflections(vertexReflection, fragmentReflection);
         return std::make_unique<ShaderAsset>(registryTerm, meta, std::move(data));
@@ -191,30 +174,19 @@ namespace Hazel
 
         if (stbi_is_hdr(filePathString.c_str()) == 1)
         {
-            pixels = stbi_loadf(filePathString.c_str(),
-                                &width,
-                                &height,
-                                &channels,
-                                STBI_rgb);
+            pixels = stbi_loadf(filePathString.c_str(), &width, &height, &channels, STBI_rgb);
             bytesPerPixel = 3 * 4;
             isHDR = true;
         }
         else
         {
-            pixels = stbi_load(filePathString.c_str(),
-                               &width,
-                               &height,
-                               &channels,
-                               STBI_rgb_alpha);
+            pixels = stbi_load(filePathString.c_str(), &width, &height, &channels, STBI_rgb_alpha);
             bytesPerPixel = 4;
         }
 
         if (!pixels || width <= 0 || height <= 0)
         {
-            if (pixels)
-            {
-                stbi_image_free(pixels);
-            }
+            if (pixels) { stbi_image_free(pixels); }
             return nullptr;
         }
 
@@ -238,4 +210,4 @@ namespace Hazel
         auto meta = ReadMetaFromFile<SamplerAssetMeta>(GetMetaPathFromAssetPath(registryTerm->filePath));
         return std::make_unique<SamplerAsset>(registryTerm, meta);
     }
-} // Hazel
+} // namespace Hazel

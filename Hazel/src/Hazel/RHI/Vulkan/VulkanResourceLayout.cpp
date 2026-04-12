@@ -17,10 +17,7 @@ namespace Hazel
         m_Device = device;
         m_Desc = desc;
 
-        if (!m_DeviceOwner || !m_Device)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_Device) { return; }
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         bindings.reserve(desc.bindings.size());
@@ -40,10 +37,7 @@ namespace Hazel
                 requireUpdateAfterBindPool = true;
             }
 
-            if (bindingDesc.partiallyBound)
-            {
-                localBindingFlags |= vk::DescriptorBindingFlagBits::ePartiallyBound;
-            }
+            if (bindingDesc.partiallyBound) { localBindingFlags |= vk::DescriptorBindingFlagBits::ePartiallyBound; }
 
             bindings.emplace_back(bindingDesc.slot,
                                   VulkanConvertResourceBindingType(bindingDesc.type),
@@ -63,47 +57,29 @@ namespace Hazel
         }
         descriptorSetLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
         m_DescriptorSetLayout = m_Device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-        if (!m_DescriptorSetLayout)
-        {
-            return;
-        }
+        if (!m_DescriptorSetLayout) { return; }
 
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIResourceLayout, ~RHIResourceLayoutImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIResourceLayout, ~RHIResourceLayoutImpl)() { Release(); }
 
     void RHI_VK_FUNC_IMPL(RHIResourceLayout, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterResourceLayout(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterResourceLayout(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceLayout, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner && !m_IsDetached)
-        {
-            deviceOwner->UnregisterResourceLayout(this);
-        }
+        if (deviceOwner && !m_IsDetached) { deviceOwner->UnregisterResourceLayout(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceLayout, ReleaseWithoutUnregister)()
@@ -113,16 +89,10 @@ namespace Hazel
         if (m_DeviceOwner)
         {
             m_DeviceOwner->EnqueueDeletion([device, descriptorSetLayout]() {
-                if (device && descriptorSetLayout)
-                {
-                    device.destroyDescriptorSetLayout(descriptorSetLayout);
-                }
+                if (device && descriptorSetLayout) { device.destroyDescriptorSetLayout(descriptorSetLayout); }
             });
         }
-        else if (device && descriptorSetLayout)
-        {
-            device.destroyDescriptorSetLayout(descriptorSetLayout);
-        }
+        else if (device && descriptorSetLayout) { device.destroyDescriptorSetLayout(descriptorSetLayout); }
 
         m_DescriptorSetLayout = VK_NULL_HANDLE;
         m_IsValid = false;
@@ -133,10 +103,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIResourceLayout, ReleaseImmediateWithoutUnregister)()
     {
-        if (m_Device && m_DescriptorSetLayout)
-        {
-            m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout);
-        }
+        if (m_Device && m_DescriptorSetLayout) { m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout); }
 
         m_DescriptorSetLayout = VK_NULL_HANDLE;
         m_IsValid = false;

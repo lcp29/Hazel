@@ -15,7 +15,7 @@ namespace Hazel
 {
     class DeletionQueue
     {
-    public:
+      public:
         struct Operation
         {
             std::function<void()> func;
@@ -26,8 +26,7 @@ namespace Hazel
 
             Operation(std::function<void()> func)
                 : func(std::move(func))
-            {
-            }
+            {}
 
             template <typename F>
                 requires(!std::same_as<std::remove_cvref_t<F>, Operation>
@@ -35,15 +34,11 @@ namespace Hazel
                          && std::is_invocable_r_v<void, F>)
             Operation(F&& f)
                 : func(std::forward<F>(f))
-            {
-            }
+            {}
 
             void operator()() const
             {
-                if (func)
-                {
-                    func();
-                }
+                if (func) { func(); }
             }
         };
 
@@ -51,8 +46,7 @@ namespace Hazel
         {
             bool operator()(const Operation& a, const Operation& b) const
             {
-                if (a.seq != b.seq)
-                    return a.seq > b.seq;
+                if (a.seq != b.seq) return a.seq > b.seq;
                 return a.time < b.time;
             }
         };
@@ -89,10 +83,7 @@ namespace Hazel
             m_Operations.push(std::move(operation));
         }
 
-        void Flush()
-        {
-            Execute(ExtractAll());
-        }
+        void Flush() { Execute(ExtractAll()); }
 
         OperationSet ExtractAll()
         {
@@ -125,7 +116,7 @@ namespace Hazel
             }
         }
 
-    private:
+      private:
         std::mutex m_Mutex;
         OperationSet m_Operations;
         uint64_t m_CurrentTime = 0;

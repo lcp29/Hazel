@@ -35,20 +35,11 @@ namespace Hazel
                     break;
             }
 
-            if (desc.mapOnCreate)
-            {
-                allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-            }
+            if (desc.mapOnCreate) { allocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT; }
 
-            if (desc.deviceMemory)
-            {
-                allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            }
+            if (desc.deviceMemory) { allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; }
 
-            if (desc.hostCoherent)
-            {
-                allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            }
+            if (desc.hostCoherent) { allocationCreateInfo.requiredFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT; }
 
             return allocationCreateInfo;
         }
@@ -56,28 +47,21 @@ namespace Hazel
 
     RHI_VK_FUNC_IMPL(RHIBuffer, RHIBufferImpl)(RHIDevice* deviceOwner,
                                                VulkanMemoryAllocator* allocatorOwner,
-                                               const RHIBufferDesc& desc
-    )
+                                               const RHIBufferDesc& desc)
     {
         m_DeviceOwner = deviceOwner;
         m_AllocatorOwner = allocatorOwner;
         m_Desc = desc;
         m_PersistentMapping = desc.mapOnCreate;
 
-        if (!m_DeviceOwner || !m_AllocatorOwner || desc.size == 0)
-        {
-            return;
-        }
+        if (!m_DeviceOwner || !m_AllocatorOwner || desc.size == 0) { return; }
 
         vk::BufferCreateInfo bufferCreateInfo;
         bufferCreateInfo.size = desc.size;
         bufferCreateInfo.usage = VulkanConvertBufferUsages(desc.usages);
         bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
-        if (desc.allowGpuAddress)
-        {
-            bufferCreateInfo.usage |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
-        }
+        if (desc.allowGpuAddress) { bufferCreateInfo.usage |= vk::BufferUsageFlagBits::eShaderDeviceAddress; }
 
         if (bufferCreateInfo.usage == vk::BufferUsageFlags())
         {
@@ -90,11 +74,7 @@ namespace Hazel
         VkBuffer buffer = VK_NULL_HANDLE;
         const VkBufferCreateInfo vkBufferCreateInfo = bufferCreateInfo;
         if (!m_AllocatorOwner->CreateBuffer(
-            vkBufferCreateInfo,
-            allocationCreateInfo,
-            &buffer,
-            &m_Allocation,
-            &allocationInfo))
+                vkBufferCreateInfo, allocationCreateInfo, &buffer, &m_Allocation, &allocationInfo))
         {
             m_Allocation = VK_NULL_HANDLE;
             return;
@@ -113,18 +93,15 @@ namespace Hazel
         m_IsValid = true;
     }
 
-    RHI_VK_FUNC_IMPL(RHIBuffer, ~RHIBufferImpl)()
-    {
-        Release();
-    }
+    RHI_VK_FUNC_IMPL(RHIBuffer, ~RHIBufferImpl)() { Release(); }
 
-    RHIBuffer*RHI_VK_FUNC_IMPL(RHIBuffer, Factory)::CreateFromRawData(RHIDevice* device,
-                                                                      RHICommandBuffer* cmd,
-                                                                      const RHIBufferDesc& desc,
-                                                                      const void* data,
-                                                                      size_t dataSize,
-                                                                      RHIQueue* queue,
-                                                                      bool staged)
+    RHIBuffer* RHI_VK_FUNC_IMPL(RHIBuffer, Factory)::CreateFromRawData(RHIDevice* device,
+                                                                       RHICommandBuffer* cmd,
+                                                                       const RHIBufferDesc& desc,
+                                                                       const void* data,
+                                                                       size_t dataSize,
+                                                                       RHIQueue* queue,
+                                                                       bool staged)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!device || !data);
 
@@ -142,10 +119,7 @@ namespace Hazel
         }
 
         auto* stagingBuffer = device->CreateBuffer(stageAndTargetDesc);
-        if (!stagingBuffer || !stagingBuffer->IsValid())
-        {
-            return nullptr;
-        }
+        if (!stagingBuffer || !stagingBuffer->IsValid()) { return nullptr; }
 
         void* mappedData = stagingBuffer->Map();
         if (!mappedData)
@@ -157,10 +131,7 @@ namespace Hazel
         std::memcpy(mappedData, data, dataSize);
         stagingBuffer->Unmap();
 
-        if (!staged)
-        {
-            return stagingBuffer;
-        }
+        if (!staged) { return stagingBuffer; }
 
         stageAndTargetDesc.cpuAccess = desc.cpuAccess;
         stageAndTargetDesc.mapOnCreate = desc.mapOnCreate;
@@ -189,22 +160,13 @@ namespace Hazel
         return targetBuffer;
     }
 
-    void*RHI_VK_FUNC_IMPL(RHIBuffer, Map)()
+    void* RHI_VK_FUNC_IMPL(RHIBuffer, Map)()
     {
-        if (!m_IsValid)
-        {
-            return nullptr;
-        }
+        if (!m_IsValid) { return nullptr; }
 
-        if (m_MappedData)
-        {
-            return m_MappedData;
-        }
+        if (m_MappedData) { return m_MappedData; }
 
-        if (!m_AllocatorOwner)
-        {
-            return nullptr;
-        }
+        if (!m_AllocatorOwner) { return nullptr; }
 
         m_MappedData = m_AllocatorOwner->MapMemory(m_Allocation);
         return m_MappedData;
@@ -212,10 +174,7 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, Unmap)()
     {
-        if (!m_IsValid || !m_MappedData || !m_AllocatorOwner || m_PersistentMapping)
-        {
-            return;
-        }
+        if (!m_IsValid || !m_MappedData || !m_AllocatorOwner || m_PersistentMapping) { return; }
 
         m_AllocatorOwner->UnmapMemory(m_Allocation);
         m_MappedData = nullptr;
@@ -223,42 +182,27 @@ namespace Hazel
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, Release)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseWithoutUnregister();
-        if (deviceOwner)
-        {
-            deviceOwner->UnregisterBuffer(this);
-        }
+        if (deviceOwner) { deviceOwner->UnregisterBuffer(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, ReleaseImmediate)()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
 
         auto* deviceOwner = m_DeviceOwner;
         ReleaseImmediateWithoutUnregister();
-        if (deviceOwner)
-        {
-            deviceOwner->UnregisterBuffer(this);
-        }
+        if (deviceOwner) { deviceOwner->UnregisterBuffer(this); }
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, ReleaseWithoutUnregister)()
     {
         for (const auto& view : m_Views)
         {
-            if (view)
-            {
-                view->ReleaseWithoutUnregister();
-            }
+            if (view) { view->ReleaseWithoutUnregister(); }
         }
         m_Views.Clear();
 
@@ -266,10 +210,7 @@ namespace Hazel
         const auto buffer = static_cast<VkBuffer>(m_Buffer);
         const auto allocation = m_Allocation;
 
-        if (!m_PersistentMapping && m_MappedData && m_AllocatorOwner)
-        {
-            m_AllocatorOwner->UnmapMemory(m_Allocation);
-        }
+        if (!m_PersistentMapping && m_MappedData && m_AllocatorOwner) { m_AllocatorOwner->UnmapMemory(m_Allocation); }
 
         if (m_DeviceOwner)
         {
@@ -277,10 +218,7 @@ namespace Hazel
                 VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
             });
         }
-        else
-        {
-            VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
-        }
+        else { VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation); }
 
         m_Buffer = VK_NULL_HANDLE;
         m_Allocation = VK_NULL_HANDLE;
@@ -296,10 +234,7 @@ namespace Hazel
     {
         for (const auto& view : m_Views)
         {
-            if (view)
-            {
-                view->ReleaseImmediateWithoutUnregister();
-            }
+            if (view) { view->ReleaseImmediateWithoutUnregister(); }
         }
         m_Views.Clear();
 
@@ -307,10 +242,7 @@ namespace Hazel
         const auto buffer = static_cast<VkBuffer>(m_Buffer);
         const auto allocation = m_Allocation;
 
-        if (!m_PersistentMapping && m_MappedData && m_AllocatorOwner)
-        {
-            m_AllocatorOwner->UnmapMemory(m_Allocation);
-        }
+        if (!m_PersistentMapping && m_MappedData && m_AllocatorOwner) { m_AllocatorOwner->UnmapMemory(m_Allocation); }
 
         VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
 
@@ -324,7 +256,7 @@ namespace Hazel
         m_AllocatorOwner = nullptr;
     }
 
-    RHIBufferView*RHI_VK_FUNC_IMPL(RHIBuffer, CreateView)(const RHIBufferViewDesc& desc, bool isDetached)
+    RHIBufferView* RHI_VK_FUNC_IMPL(RHIBuffer, CreateView)(const RHIBufferViewDesc& desc, bool isDetached)
     {
         HZ_RHI_DEBUG_RETURN_NULL_IF(!m_IsValid || !m_DeviceOwner);
 
@@ -336,8 +268,5 @@ namespace Hazel
         m_Views.Register(std::move(view));
     }
 
-    void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView* view)
-    {
-        m_Views.Unregister(view);
-    }
+    void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView* view) { m_Views.Unregister(view); }
 } // namespace Hazel

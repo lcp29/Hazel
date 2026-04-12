@@ -35,13 +35,8 @@ namespace Hazel
     {
         return m_Allocator
                && vmaCreateImage(
-                   m_Allocator,
-                   &imageCreateInfo,
-                   &allocationCreateInfo,
-                   image,
-                   allocation,
-                   allocationInfo)
-               == VK_SUCCESS;
+                      m_Allocator, &imageCreateInfo, &allocationCreateInfo, image, allocation, allocationInfo)
+                      == VK_SUCCESS;
     }
 
     bool VulkanMemoryAllocator::CreateBuffer(const VkBufferCreateInfo& bufferCreateInfo,
@@ -52,13 +47,8 @@ namespace Hazel
     {
         return m_Allocator
                && vmaCreateBuffer(
-                   m_Allocator,
-                   &bufferCreateInfo,
-                   &allocationCreateInfo,
-                   buffer,
-                   allocation,
-                   allocationInfo)
-               == VK_SUCCESS;
+                      m_Allocator, &bufferCreateInfo, &allocationCreateInfo, buffer, allocation, allocationInfo)
+                      == VK_SUCCESS;
     }
 
     void* VulkanMemoryAllocator::MapMemory(VmaAllocation allocation) const
@@ -67,7 +57,7 @@ namespace Hazel
         if (m_Allocator && allocation
             && vmaMapMemory(m_Allocator, allocation, &mappedData)
 
-            == VK_SUCCESS)
+                   == VK_SUCCESS)
         {
             return mappedData;
         }
@@ -77,10 +67,7 @@ namespace Hazel
 
     void VulkanMemoryAllocator::UnmapMemory(VmaAllocation allocation) const
     {
-        if (m_Allocator && allocation)
-        {
-            vmaUnmapMemory(m_Allocator, allocation);
-        }
+        if (m_Allocator && allocation) { vmaUnmapMemory(m_Allocator, allocation); }
     }
 
     VulkanMemoryAllocator::~VulkanMemoryAllocator()
@@ -101,25 +88,16 @@ namespace Hazel
 
     void VulkanMemoryAllocator::Destroy(VmaAllocator allocator)
     {
-        if (allocator)
-        {
-            vmaDestroyAllocator(allocator);
-        }
+        if (allocator) { vmaDestroyAllocator(allocator); }
     }
 
     void VulkanMemoryAllocator::DestroyBuffer(VmaAllocator allocator, VkBuffer buffer, VmaAllocation allocation)
     {
-        if (allocator && buffer && allocation)
-        {
-            vmaDestroyBuffer(allocator, buffer, allocation);
-        }
+        if (allocator && buffer && allocation) { vmaDestroyBuffer(allocator, buffer, allocation); }
     }
 
     void VulkanMemoryAllocator::DestroyImage(VmaAllocator allocator, VkImage image, VmaAllocation allocation)
     {
-        if (allocator && image && allocation)
-        {
-            vmaDestroyImage(allocator, image, allocation);
-        }
+        if (allocator && image && allocation) { vmaDestroyImage(allocator, image, allocation); }
     }
 } // namespace Hazel

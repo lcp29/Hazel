@@ -13,22 +13,16 @@ namespace Hazel
         constexpr auto s_DefaultSubmitStageMask = vk::PipelineStageFlagBits2::eAllCommands;
     }
 
-    RHI_VK_FUNC_IMPL(RHIQueue, RHIQueueImpl)(RHIDevice* device,
-                                             RHIQueueType type,
-                                             uint32_t familyIndex,
-                                             vk::Queue queue,
-                                             uint32_t queueIndex)
+    RHI_VK_FUNC_IMPL(RHIQueue, RHIQueueImpl)(
+        RHIDevice* device, RHIQueueType type, uint32_t familyIndex, vk::Queue queue, uint32_t queueIndex)
         : m_Type(type)
-          , m_FamilyIndex(familyIndex)
-          , m_QueueIndex(queueIndex)
-          , m_Queue(queue)
+        , m_FamilyIndex(familyIndex)
+        , m_QueueIndex(queueIndex)
+        , m_Queue(queue)
     {
         m_DeviceOwner = device;
 
-        if (!device)
-        {
-            return;
-        }
+        if (!device) { return; }
 
         vk::SemaphoreTypeCreateInfo typeInfo;
         typeInfo.semaphoreType = vk::SemaphoreType::eTimeline;
@@ -40,10 +34,7 @@ namespace Hazel
 
         m_TimelineValue = 0;
 
-        if (result != vk::Result::eSuccess)
-        {
-            return;
-        }
+        if (result != vk::Result::eSuccess) { return; }
 
         m_IsValid = true;
     }
@@ -83,10 +74,7 @@ namespace Hazel
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
         auto result = m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE);
-        if (result != vk::Result::eSuccess)
-        {
-            return RHISyncPoint();
-        }
+        if (result != vk::Result::eSuccess) { return RHISyncPoint(); }
 
         RHISyncPoint syncPoint;
         syncPoint.value = m_TimelineValue;
@@ -117,10 +105,7 @@ namespace Hazel
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        if (m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess)
-        {
-            return {};
-        }
+        if (m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess) { return {}; }
 
         return {m_TimelineValue, this, true};
     }
@@ -143,9 +128,7 @@ namespace Hazel
             HZ_RHI_DEBUG_FAIL_IF(!waitSyncPoint.valid || !waitSyncPoint.queue);
 
             waitSemaphoreInfos.emplace_back(
-                waitSyncPoint.queue->GetSignalSemaphore(),
-                waitSyncPoint.value,
-                s_DefaultSubmitStageMask);
+                waitSyncPoint.queue->GetSignalSemaphore(), waitSyncPoint.value, s_DefaultSubmitStageMask);
         }
 
         submitInfo.pWaitSemaphoreInfos = waitSemaphoreInfos.data();
@@ -155,17 +138,11 @@ namespace Hazel
         return m_Queue.submit2(1, &submitInfo, VK_NULL_HANDLE) == vk::Result::eSuccess;
     }
 
-    RHI_VK_FUNC_IMPL(RHIQueue, ~RHIQueueImpl)()
-    {
-        ReleaseFromOwner();
-    }
+    RHI_VK_FUNC_IMPL(RHIQueue, ~RHIQueueImpl)() { ReleaseFromOwner(); }
 
     void RHI_VK_FUNC_IMPL(RHIQueue, ReleaseFromOwner)()
     {
-        if (m_DeviceOwner && m_SignalSemaphore)
-        {
-            m_DeviceOwner->GetHandle().destroySemaphore(m_SignalSemaphore);
-        }
+        if (m_DeviceOwner && m_SignalSemaphore) { m_DeviceOwner->GetHandle().destroySemaphore(m_SignalSemaphore); }
 
         m_SignalSemaphore = VK_NULL_HANDLE;
         m_IsValid = false;

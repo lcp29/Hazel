@@ -8,10 +8,7 @@
 
 namespace Hazel
 {
-    GPUMeshAsset::~GPUMeshAsset()
-    {
-        GPUMeshAsset::ReleaseImmediate();
-    }
+    GPUMeshAsset::~GPUMeshAsset() { GPUMeshAsset::ReleaseImmediate(); }
 
     void GPUMeshAsset::Release()
     {
@@ -44,4 +41,4 @@ namespace Hazel
             m_IndexBuffer = nullptr;
         }
     }
-} // Hazel
+} // namespace Hazel

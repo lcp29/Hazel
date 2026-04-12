@@ -3,6 +3,7 @@
 //
 
 #include "Hazel/Renderer/GPUAsset/GPURenderBufferAsset.h"
+
 #include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel
@@ -32,17 +33,10 @@ namespace Hazel
                 buffers[i] = renderer->GetDevice()->CreateBuffer(bufferDesc);
             }
         }
-        else
-        {
-            buffers.push_back(renderer->GetDevice()->CreateBuffer(bufferDesc));
-        }
+        else { buffers.push_back(renderer->GetDevice()->CreateBuffer(bufferDesc)); }
 
-        return std::make_unique<GPURenderBufferAsset>(uuid,
-                                                      sourceVersion,
-                                                      renderer,
-                                                      desc,
-                                                      std::move(buffers),
-                                                      lastReferencedFrame);
+        return std::make_unique<GPURenderBufferAsset>(
+            uuid, sourceVersion, renderer, desc, std::move(buffers), lastReferencedFrame);
     }
 
     GPURenderBufferAsset::GPURenderBufferAsset(UUID uuid,
@@ -51,32 +45,22 @@ namespace Hazel
                                                const RenderBufferDesc& desc,
                                                std::vector<RHIBuffer*> buffers,
                                                uint64_t lastReferencedFrame)
-        : GPUAsset(uuid, AssetType::RenderBuffer, renderer, sourceVersion, lastReferencedFrame),
-          m_IsValid(true),
-          m_PerFrame(desc.perFrame),
-          m_Desc(desc),
-          m_MaxFramesInFlight(renderer->GetMaxFramesInFlight()),
-          m_Buffers(std::move(buffers))
-    {
-    }
+        : GPUAsset(uuid, AssetType::RenderBuffer, renderer, sourceVersion, lastReferencedFrame)
+        , m_IsValid(true)
+        , m_PerFrame(desc.perFrame)
+        , m_Desc(desc)
+        , m_MaxFramesInFlight(renderer->GetMaxFramesInFlight())
+        , m_Buffers(std::move(buffers))
+    {}
 
-    GPURenderBufferAsset::~GPURenderBufferAsset()
-    {
-        GPURenderBufferAsset::ReleaseImmediate();
-    }
+    GPURenderBufferAsset::~GPURenderBufferAsset() { GPURenderBufferAsset::ReleaseImmediate(); }
 
     void GPURenderBufferAsset::Release()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
         for (auto* buffer : m_Buffers)
         {
-            if (buffer)
-            {
-                buffer->Release();
-            }
+            if (buffer) { buffer->Release(); }
         }
         m_Buffers.clear();
         m_IsValid = false;
@@ -84,16 +68,10 @@ namespace Hazel
 
     void GPURenderBufferAsset::ReleaseImmediate()
     {
-        if (!m_IsValid)
-        {
-            return;
-        }
+        if (!m_IsValid) { return; }
         for (auto* buffer : m_Buffers)
         {
-            if (buffer)
-            {
-                buffer->ReleaseImmediate();
-            }
+            if (buffer) { buffer->ReleaseImmediate(); }
         }
         m_Buffers.clear();
         m_IsValid = false;
@@ -103,4 +81,4 @@ namespace Hazel
     {
         return m_PerFrame ? m_Buffers[m_Renderer->GetCurrentFrameInFlightIndex()] : m_Buffers[0];
     }
-} // Hazel
+} // namespace Hazel

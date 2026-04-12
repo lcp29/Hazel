@@ -15,11 +15,8 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHISwapchain)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         RHISwapchainAcquireResult AcquireImage(uint64_t timeout);
         RHIImage* FetchImage(uint32_t frameNumber) const;
@@ -29,36 +26,21 @@ namespace Hazel
         void ReleaseImmediate();
         ~RHISwapchainImpl();
 
-        const RHISwapchainDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHISwapchainDesc& GetDesc() const { return m_Desc; }
 
-        RHIFormat GetFormat() const
-        {
-            return m_Format;
-        }
+        RHIFormat GetFormat() const { return m_Format; }
 
-        uint32_t GetImageCount() const
-        {
-            return m_ImageCount;
-        }
+        uint32_t GetImageCount() const { return m_ImageCount; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-        vk::SwapchainKHR GetHandle() const
-        {
-            return m_Swapchain;
-        }
+        vk::SwapchainKHR GetHandle() const { return m_Swapchain; }
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
 
         RHISwapchainImpl(vk::PhysicalDevice physicalDevice,
-                         RHIDevice* deviceOwner,
+                         RHIDevice * deviceOwner,
 
                          const RHISwapchainDesc& desc,
                          uint32_t presentQueueFamilyIndex);

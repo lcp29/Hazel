@@ -13,37 +13,25 @@ namespace Hazel
 {
     RHI_VK_CLASS_IMPL(RHIResourceLayout)
     {
-    public:
-        bool IsValid() const
-        {
-            return m_IsValid;
-        }
+      public:
+        bool IsValid() const { return m_IsValid; }
 
         void Release();
         void ReleaseImmediate();
         ~RHIResourceLayoutImpl();
 
-        const RHIResourceLayoutDesc& GetDesc() const
-        {
-            return m_Desc;
-        }
+        const RHIResourceLayoutDesc& GetDesc() const { return m_Desc; }
 
-        vk::DescriptorSetLayout GetDescriptorSetLayout() const
-        {
-            return m_DescriptorSetLayout;
-        }
+        vk::DescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout; }
 
-        bool IsDetached() const
-        {
-            return m_IsDetached;
-        }
+        bool IsDetached() const { return m_IsDetached; }
 
-    private:
+      private:
         friend class RHIDeviceImpl<RHIBackend::Vulkan>;
         friend class RHIResourceSignatureImpl<RHIBackend::Vulkan>;
         friend class RHIResourceGroupImpl<RHIBackend::Vulkan>;
 
-        RHIResourceLayoutImpl(RHIDevice* deviceOwner, vk::Device device, const RHIResourceLayoutDesc& desc);
+        RHIResourceLayoutImpl(RHIDevice * deviceOwner, vk::Device device, const RHIResourceLayoutDesc& desc);
 
         void ReleaseWithoutUnregister();
         void ReleaseImmediateWithoutUnregister();

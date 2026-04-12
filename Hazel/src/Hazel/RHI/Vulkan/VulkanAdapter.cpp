@@ -14,10 +14,7 @@ namespace Hazel
 {
     bool RHI_VK_FUNC_IMPL(RHIAdapter, CanCreateDevice)(const RHIDeviceCapabilities& caps) const
     {
-        if (m_Properties.apiVersion < vk::ApiVersion13)
-        {
-            return false;
-        }
+        if (m_Properties.apiVersion < vk::ApiVersion13) { return false; }
 
         if ((caps.queueTypes & RHIQueueTypeFlagBits::Graphics)
             && !(m_Capabilities.queueTypes & RHIQueueTypeFlagBits::Graphics))
@@ -39,26 +36,20 @@ namespace Hazel
 
         if (caps.supportSubgroup)
         {
-            if (!m_Capabilities.supportSubgroup)
-            {
-                return false;
-            }
+            if (!m_Capabilities.supportSubgroup) { return false; }
             // we are not checking subgroup size range but just getting it
         }
 
         // required features supported by almost all devices
-        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing &&
-              m_RequiredVulkanFeatures.supportDynamicRendering &&
-              m_RequiredVulkanFeatures.supportGpuAddress &&
-              m_RequiredVulkanFeatures.supportDescriptorPartiallyBound &&
-              m_RequiredVulkanFeatures.supportTimelineSemaphore &&
-              m_RequiredVulkanFeatures.supportSynchronization2 &&
-              m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics &&
-              m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics &&
-              m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount &&
-              m_RequiredVulkanFeatures.supportDescriptorBindingStorageBufferUpdateAfterBind &&
-              m_RequiredVulkanFeatures.supportDescriptorBindingSampledImageUpdateAfterBind &&
-              m_RequiredVulkanFeatures.supportRuntimeDescriptorArray))
+        if (!(m_RequiredVulkanFeatures.supportDescriptorIndexing && m_RequiredVulkanFeatures.supportDynamicRendering
+              && m_RequiredVulkanFeatures.supportGpuAddress && m_RequiredVulkanFeatures.supportDescriptorPartiallyBound
+              && m_RequiredVulkanFeatures.supportTimelineSemaphore && m_RequiredVulkanFeatures.supportSynchronization2
+              && m_RequiredVulkanFeatures.supportFragmentStoresAndAtomics
+              && m_RequiredVulkanFeatures.supportVertexPipelineStoresAndAtomics
+              && m_RequiredVulkanFeatures.supportDescriptorBindingVariableDescriptorCount
+              && m_RequiredVulkanFeatures.supportDescriptorBindingStorageBufferUpdateAfterBind
+              && m_RequiredVulkanFeatures.supportDescriptorBindingSampledImageUpdateAfterBind
+              && m_RequiredVulkanFeatures.supportRuntimeDescriptorArray))
         {
             return false;
         }
@@ -77,10 +68,7 @@ namespace Hazel
         const auto hasExtension = [&extensionProperties](const char* extensionName) {
             for (const auto& extensionProperty : extensionProperties)
             {
-                if (std::strcmp(extensionProperty.extensionName, extensionName) == 0)
-                {
-                    return true;
-                }
+                if (std::strcmp(extensionProperty.extensionName, extensionName) == 0) { return true; }
             }
             return false;
         };
@@ -110,10 +98,7 @@ namespace Hazel
 
         for (const auto& queueFamily : queueFamilyProperties)
         {
-            if (queueFamily.queueCount == 0)
-            {
-                continue;
-            }
+            if (queueFamily.queueCount == 0) { continue; }
 
             if ((queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics)
             {

@@ -30,17 +30,14 @@ namespace Hazel
 {
     Renderer::Renderer(GraphicsContext* graphicsContext, Window* window)
         : m_GraphicsContext(graphicsContext)
-          , m_Instance(graphicsContext->GetInstance())
-          , m_Device(graphicsContext->GetDevice())
-          , m_Window(window)
+        , m_Instance(graphicsContext->GetInstance())
+        , m_Device(graphicsContext->GetDevice())
+        , m_Window(window)
     {
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
-            m_Instance->GetHandle(),
-            static_cast<GLFWwindow*>(m_Window->GetNativeWindow()),
-            nullptr,
-            &surface);
+            m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
 #endif
         m_WindowSurface = m_GraphicsContext->GetSurface();
 
@@ -90,10 +87,7 @@ namespace Hazel
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAsset(uuid);
 
-        if (!asset)
-        {
-            return {GetDefaultGPUAsset(type), false};
-        }
+        if (!asset) { return {GetDefaultGPUAsset(type), false}; }
 
         auto currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
 
@@ -151,10 +145,7 @@ namespace Hazel
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAssetBlocked(uuid);
 
-        if (!asset)
-        {
-            return {GetDefaultGPUAsset(type), false};
-        }
+        if (!asset) { return {GetDefaultGPUAsset(type), false}; }
 
         {
             auto& gpuState = asset->GetGPUAssetState();
@@ -185,10 +176,7 @@ namespace Hazel
                 return {currentAsset};
             }
 
-            if (currentAsset)
-            {
-                currentAsset->Return();
-            }
+            if (currentAsset) { currentAsset->Return(); }
 
             if (gpuState.state == GPUAssetLoadState::Loading)
             {
@@ -221,10 +209,7 @@ namespace Hazel
                     return {currentAsset};
                 }
 
-                if (currentAsset)
-                {
-                    currentAsset->Return();
-                }
+                if (currentAsset) { currentAsset->Return(); }
 
                 return {GetDefaultGPUAsset(asset->GetType()), false};
             }
@@ -242,10 +227,7 @@ namespace Hazel
                                          RHIFormat depthStencilFormat)
     {
         return ResolveDirectGPUAsset<GPUGraphicsPipelineAsset>(
-            material,
-            colorAttachmentFormats,
-            colorBlendAttachments,
-            depthStencilFormat);
+            material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
     }
 
     GPUAssetHandle
@@ -255,10 +237,7 @@ namespace Hazel
                                                 RHIFormat depthStencilFormat)
     {
         return ResolveDirectGPUAssetBlocked<GPUGraphicsPipelineAsset>(
-            material,
-            colorAttachmentFormats,
-            colorBlendAttachments,
-            depthStencilFormat);
+            material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
     }
 
     GPUAssetHandle Renderer::ResolveGPURenderTexture(const RenderTextureDesc& desc, uint64_t lastReferencedFrame)
@@ -381,8 +360,7 @@ namespace Hazel
             GetResourceBindingRegistry()->RegisterSampler(GPUAssetHandle(m_DefaultSampler.get(), false));
 
         m_WhiteTextureWithDefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSamplerWithImage(
-            GPUAssetHandle(m_WhiteTexture.get(), false),
-            GPUAssetHandle(m_DefaultSampler.get(), false));
+            GPUAssetHandle(m_WhiteTexture.get(), false), GPUAssetHandle(m_DefaultSampler.get(), false));
 
         cmd->End();
 
@@ -395,10 +373,8 @@ namespace Hazel
 
     std::unique_ptr<GPUAsset> Renderer::LoadGPUAsset(Asset* asset)
     {
-        if (asset)
-        {
-            asset->VersionUp();
-        }
+        if (!asset) { return nullptr; }
+        asset->VersionUp();
         switch (asset->GetType())
         {
             case AssetType::ComputeShader:
@@ -494,9 +470,7 @@ namespace Hazel
         depthStencilAttachmentDesc.state = RHIImageResourceState::DepthStencilAttachment;
 
         m_DefaultRenderTexture->GetImage()->Transition(
-            cmd,
-            m_DefaultRenderTexture->GetImage()->GetCurrentState(),
-            RHIImageResourceState::ColorAttachment);
+            cmd, m_DefaultRenderTexture->GetImage()->GetCurrentState(), RHIImageResourceState::ColorAttachment);
         m_DefaultDepthRenderTexture->GetImage()->Transition(cmd,
                                                             m_DefaultDepthRenderTexture->GetImage()->GetCurrentState(),
                                                             RHIImageResourceState::DepthStencilAttachment);
@@ -529,9 +503,7 @@ namespace Hazel
         auto* swapchainImageView = m_Swapchain->FetchImageView(frameData.frameNumber);
 
         swapchainImage->Transition(
-            frameData.commandBuffer,
-            swapchainImage->GetCurrentState(),
-            RHIImageResourceState::ColorAttachment);
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::ColorAttachment);
 
         RHIRenderingAttachmentDesc colorAttachmentDesc{};
         colorAttachmentDesc.imageView = swapchainImageView;
@@ -555,9 +527,7 @@ namespace Hazel
 
         auto* swapchainImage = m_Swapchain->FetchImage(frameData.frameNumber);
         swapchainImage->Transition(
-            frameData.commandBuffer,
-            swapchainImage->GetCurrentState(),
-            RHIImageResourceState::Present);
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::Present);
     }
 
     void Renderer::OnResize()
@@ -609,8 +579,7 @@ namespace Hazel
     {
         auto& frameData = GetCurrentFrameData();
 
-        if (m_CurrentFrame >= m_MaxFramesInFlight)
-            m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint);
+        if (m_CurrentFrame >= m_MaxFramesInFlight) m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint);
 
         GetResourceBindingRegistry()->UpdateResourceGroupForPendingOperations(
             m_ResourceBindingRegistry->GetPerViewResourceGroup());
@@ -702,10 +671,7 @@ namespace Hazel
         for (auto& plane : worldFrustumPlanes)
         {
             const float normalLength = glm::length(glm::vec3(plane));
-            if (normalLength > 0.0f)
-            {
-                plane /= normalLength;
-            }
+            if (normalLength > 0.0f) { plane /= normalLength; }
         }
 
         std::vector<RHIFormat> colorAttachmentFormats;
@@ -715,7 +681,7 @@ namespace Hazel
         renderingInfo.renderOffset = renderArea.offset;
         renderingInfo.renderViewSize = renderArea.extent;
 
-        for (auto colorDescription : colorAttachmentDescriptions)
+        for (const auto& colorDescription : colorAttachmentDescriptions)
         {
             renderingInfo.colorAttachments.push_back(colorDescription);
             colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
@@ -762,19 +728,14 @@ namespace Hazel
 
             GetResourceBindingRegistry()->BindUserUploadResources(cmd, shader->GetUUID(), shader->GetSourceVersion());
             GetResourceBindingRegistry()->BindMaterialPropertyResources(
-                cmd,
-                shader->GetUUID(),
-                shader->GetSourceVersion());
+                cmd, shader->GetUUID(), shader->GetSourceVersion());
 
             for (; it != end; ++it)
             {
                 auto* renderObject = it->second;
 
                 auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
-                if (!meshResult.asset)
-                {
-                    continue;
-                }
+                if (!meshResult.asset) { continue; }
                 auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
 
                 bool shouldCull = false;
@@ -783,10 +744,7 @@ namespace Hazel
                 {
                     glm::vec4 objectPlane = worldToObjectPlaneTransform * worldPlane;
                     const float normalLength = glm::length(glm::vec3(objectPlane));
-                    if (normalLength <= 0.0f)
-                    {
-                        continue;
-                    }
+                    if (normalLength <= 0.0f) { continue; }
                     objectPlane /= normalLength;
 
                     const float distance =
@@ -797,27 +755,15 @@ namespace Hazel
                         break;
                     }
                 }
-                if (shouldCull)
-                {
-                    continue;
-                }
+                if (shouldCull) { continue; }
 
                 auto materialResult = ResolveGPUAsset(renderObject->material, AssetType::Material);
-                if (!materialResult.asset)
-                {
-                    continue;
-                }
+                if (!materialResult.asset) { continue; }
                 auto* material = static_cast<CachedMaterial*>(materialResult.asset);
 
                 auto pipelineResult = ResolveGPUGraphicsPipeline(
-                    renderObject->material,
-                    colorAttachmentFormats,
-                    colorBlendAttachments,
-                    depthStencilFormat);
-                if (!pipelineResult.asset)
-                {
-                    continue;
-                }
+                    renderObject->material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
+                if (!pipelineResult.asset) { continue; }
                 auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
 
                 cmd->BindGraphicsPipeline(pipeline->GetPipeline());
@@ -827,14 +773,14 @@ namespace Hazel
                 auto materialID = material->GetMaterialID();
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
-                                       shader->GetSourceVersion()),
+                                                                                            shader->GetSourceVersion()),
                                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
                                    0,
                                    64,
                                    &renderObject->transform);
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
-                                       shader->GetSourceVersion()),
+                                                                                            shader->GetSourceVersion()),
                                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
                                    64,
                                    4,
@@ -843,7 +789,7 @@ namespace Hazel
                 uint32_t entityID = renderObject->enttEntity;
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
-                                       shader->GetSourceVersion()),
+                                                                                            shader->GetSourceVersion()),
                                    RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
                                    68,
                                    4,
@@ -854,10 +800,7 @@ namespace Hazel
                                  viewportArea.extent.width,
                                  viewportArea.extent.height);
                 cmd->SetScissor(
-                    scissorArea.offset.x,
-                    scissorArea.offset.y,
-                    scissorArea.extent.width,
-                    scissorArea.extent.height);
+                    scissorArea.offset.x, scissorArea.offset.y, scissorArea.extent.width, scissorArea.extent.height);
                 cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
 
                 cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);
@@ -898,20 +841,14 @@ namespace Hazel
         for (auto& plane : worldFrustumPlanes)
         {
             const float normalLength = glm::length(glm::vec3(plane));
-            if (normalLength > 0.0f)
-            {
-                plane /= normalLength;
-            }
+            if (normalLength > 0.0f) { plane /= normalLength; }
         }
 
         std::vector<RHIFormat> colorAttachmentFormats;
         auto depthStencilFormat = RHIFormat::Undefined;
 
         auto materialResult = ResolveGPUAsset(overrideMaterial, AssetType::Material);
-        if (!materialResult.asset)
-        {
-            return;
-        }
+        if (!materialResult.asset) { return; }
         auto shaderResult =
             ResolveGPUAsset(static_cast<CachedMaterial*>(materialResult.asset)->GetShader(), AssetType::Shader);
 
@@ -922,7 +859,7 @@ namespace Hazel
         renderingInfo.renderOffset = renderArea.offset;
         renderingInfo.renderViewSize = renderArea.extent;
 
-        for (auto colorDescription : colorAttachmentDescriptions)
+        for (const auto& colorDescription : colorAttachmentDescriptions)
         {
             renderingInfo.colorAttachments.push_back(colorDescription);
             colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
@@ -935,19 +872,10 @@ namespace Hazel
             depthStencilFormat = depthStencilAttachmentDescription->imageView->GetFormat();
         }
 
-        if (!shaderResult.asset)
-        {
-            return;
-        }
+        if (!shaderResult.asset) { return; }
         auto pipelineResult = ResolveGPUGraphicsPipeline(
-            overrideMaterial,
-            colorAttachmentFormats,
-            colorBlendAttachments,
-            depthStencilFormat);
-        if (!pipelineResult.asset)
-        {
-            return;
-        }
+            overrideMaterial, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
+        if (!pipelineResult.asset) { return; }
         auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
 
         cmd->BeginRendering(renderingInfo);
@@ -964,10 +892,7 @@ namespace Hazel
         for (auto* renderObject : renderObjects | std::views::values)
         {
             auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
-            if (!meshResult.asset)
-            {
-                continue;
-            }
+            if (!meshResult.asset) { continue; }
             auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
 
             bool shouldCull = false;
@@ -976,10 +901,7 @@ namespace Hazel
             {
                 glm::vec4 objectPlane = worldToObjectPlaneTransform * worldPlane;
                 const float normalLength = glm::length(glm::vec3(objectPlane));
-                if (normalLength <= 0.0f)
-                {
-                    continue;
-                }
+                if (normalLength <= 0.0f) { continue; }
                 objectPlane /= normalLength;
 
                 const float distance =
@@ -990,10 +912,7 @@ namespace Hazel
                     break;
                 }
             }
-            if (shouldCull)
-            {
-                continue;
-            }
+            if (shouldCull) { continue; }
 
             cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
             cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
@@ -1024,15 +943,9 @@ namespace Hazel
                 &entityID);
 
             cmd->SetViewport(
-                viewportArea.offset.x,
-                viewportArea.offset.y,
-                viewportArea.extent.width,
-                viewportArea.extent.height);
+                viewportArea.offset.x, viewportArea.offset.y, viewportArea.extent.width, viewportArea.extent.height);
             cmd->SetScissor(
-                scissorArea.offset.x,
-                scissorArea.offset.y,
-                scissorArea.extent.width,
-                scissorArea.extent.height);
+                scissorArea.offset.x, scissorArea.offset.y, scissorArea.extent.width, scissorArea.extent.height);
             cmd->SetBlendConstants(0.0f, 0.0f, 0.0f, 0.0f);
 
             cmd->DrawIndexed(mesh->GetIndices().size(), 1, 0, 0, 0);

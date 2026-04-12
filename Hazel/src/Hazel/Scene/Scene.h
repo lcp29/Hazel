@@ -3,9 +3,9 @@
 #include "Hazel/Core/Timestep.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Renderer/Camera.h"
-#include "ViewportCameraController.h"
 #include "Hazel/Renderer/RenderScene.h"
 #include "Transform.h"
+#include "ViewportCameraController.h"
 
 #include <entt.hpp>
 
@@ -27,7 +27,7 @@ namespace Hazel
 
     class Scene
     {
-    public:
+      public:
         Scene();
         ~Scene();
 
@@ -54,15 +54,9 @@ namespace Hazel
 
         std::vector<UUID> GetInitialAssetUUIDs() const;
 
-        auto& GetMapUUIDToEntity()
-        {
-            return m_EntityMap;
-        }
+        auto& GetMapUUIDToEntity() { return m_EntityMap; }
 
-        const Camera& GetViewportCamera() const
-        {
-            return m_ViewportCamera;
-        }
+        const Camera& GetViewportCamera() const { return m_ViewportCamera; }
 
         SceneCameraView GetSceneViewportCamera()
         {
@@ -77,43 +71,21 @@ namespace Hazel
             return ret;
         }
 
-        void SetViewportCamera(const Camera& camera)
-        {
-            m_ViewportCamera = camera;
-        }
+        void SetViewportCamera(const Camera& camera) { m_ViewportCamera = camera; }
 
-        bool IsRunning() const
-        {
-            return m_IsRunning;
-        }
+        bool IsRunning() const { return m_IsRunning; }
 
-        bool IsPaused() const
-        {
-            return m_IsPaused;
-        }
+        bool IsPaused() const { return m_IsPaused; }
 
-        void SetPaused(bool paused)
-        {
-            m_IsPaused = paused;
-        }
+        void SetPaused(bool paused) { m_IsPaused = paused; }
 
         void Step(int frames = 1);
 
-        std::string GetName() const
-        {
-            return m_Name;
-        }
+        std::string GetName() const { return m_Name; }
 
-        void SetName(const std::string& name)
-        {
-            m_Name = name;
-        }
+        void SetName(const std::string& name) { m_Name = name; }
 
-        template <typename... Components>
-        auto GetAllEntitiesWith()
-        {
-            return m_Registry.view<Components...>();
-        }
+        template <typename... Components> auto GetAllEntitiesWith() { return m_Registry.view<Components...>(); }
 
         void AddToRenderSceneUpdatePayload(RenderSceneUpdatePayload payload)
         {
@@ -127,19 +99,12 @@ namespace Hazel
             return payload;
         }
 
-        entt::registry& GetRegistry()
-        {
-            return m_Registry;
-        }
+        entt::registry& GetRegistry() { return m_Registry; }
 
-        ViewportCameraController& GetViewportCameraController()
-        {
-            return m_ViewportCameraController;
-        }
+        ViewportCameraController& GetViewportCameraController() { return m_ViewportCameraController; }
 
-    private:
-        template <typename T>
-        void OnComponentAdded(Entity entity, T& component);
+      private:
+        template <typename T> void OnComponentAdded(Entity entity, T& component);
         glm::mat4 GetWorldTransform(entt::entity entity) const;
         void AddTransformPayloadsForSubtree(entt::entity entity, const glm::mat4& globalTransform);
 
