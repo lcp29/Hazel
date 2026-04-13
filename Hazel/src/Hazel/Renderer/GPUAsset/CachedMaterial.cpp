@@ -85,6 +85,21 @@ namespace Hazel
 
     void CachedMaterial::ReleaseImmediate()
     {
+        for (auto& property : m_Properties | std::views::values)
+        {
+            if (property.type == MaterialAssetPropertyType::Texture)
+            {
+                m_Renderer->UnregisterBindlessTexture(property.bindlessID);
+            }
+            else if (property.type == MaterialAssetPropertyType::Sampler)
+            {
+                m_Renderer->UnregisterBindlessSampler(property.bindlessID);
+            }
+            else if (property.type == MaterialAssetPropertyType::SamplerWithTexture)
+            {
+                m_Renderer->UnregisterBindlessSamplerWithImage(property.bindlessID);
+            }
+        }
         m_Renderer->UnregisterMaterial(m_Shader, m_ShaderSourceVersion, m_MaterialID);
     }
 } // namespace Hazel

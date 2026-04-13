@@ -716,6 +716,7 @@ namespace Hazel
 
     void ResourceBindingRegistry::CreateOrUpdatePerShaderResources()
     {
+        std::scoped_lock lock(m_ShaderMaterialMutex);
         for (const auto& slot : m_ShaderMaterials | std::views::values)
         {
             slot->BuildResources();
@@ -724,8 +725,10 @@ namespace Hazel
 
     void ResourceBindingRegistry::UpdateUserUploadDataForShader(UUID shader, uint64_t sourceVersion)
     {
+        std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
         if (it == m_ShaderMaterials.end()) { return; }
+        lock.unlock();
 
         const auto currentFrame = m_Renderer->GetCurrentFrameInFlightIndex();
         auto& slot = it->second;

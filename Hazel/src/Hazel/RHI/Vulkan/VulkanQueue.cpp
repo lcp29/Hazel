@@ -89,6 +89,8 @@ namespace Hazel
     {
         HZ_RHI_DEBUG_RETURN_VALUE_IF(!m_IsValid || !semaphore, {});
 
+		std::scoped_lock lock(m_QueueSubmitMutex);
+
         m_TimelineValue++;
 
         vk::SemaphoreSubmitInfo waitSemaphoreInfo;
@@ -115,6 +117,8 @@ namespace Hazel
                                                                    vk::Semaphore semaphore)
     {
         HZ_RHI_DEBUG_FAIL_IF(!m_IsValid || !semaphore);
+
+        std::scoped_lock lock(m_QueueSubmitMutex);
 
         vk::SemaphoreSubmitInfo signalSemaphoreInfo;
         signalSemaphoreInfo.semaphore = semaphore;

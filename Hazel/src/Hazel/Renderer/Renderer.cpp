@@ -583,7 +583,7 @@ namespace Hazel
     {
         auto& frameData = GetCurrentFrameData();
 
-        if (m_CurrentFrame >= m_MaxFramesInFlight) m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint);
+        if (m_CurrentFrame >= m_MaxFramesInFlight) { m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint); }
 
         GetResourceBindingRegistry()->UpdateResourceGroupForPendingOperations(
             m_ResourceBindingRegistry->GetPerViewResourceGroup());

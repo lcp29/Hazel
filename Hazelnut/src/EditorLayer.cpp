@@ -1120,7 +1120,7 @@ namespace Hazel
             m_ClickedEntity = {};
         }
         auto initialRenderScenePayload = newScene->GetInitialRenderSceneUpdatePayloads();
-        m_Renderer->GetRenderScene()->Update(std::move(initialRenderScenePayload));
+        m_Renderer->GetRenderScene()->Update(initialRenderScenePayload);
     }
 
     void EditorLayer::SaveScene()
