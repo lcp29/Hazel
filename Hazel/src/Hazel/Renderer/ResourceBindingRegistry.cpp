@@ -70,10 +70,13 @@ namespace Hazel
                     auto& assetMeta = m_UserUploadAssetBufferMap[i][slot.variableName];
                     assetMeta.name = slot.variableName;
                     assetMeta.slot = slot.slot;
-                    assetMeta.type =
-                        slot.type == RHIResourceBindingType::SampledImage   ? UserUploadAssetMeta::Type::SampledImage
-                        : slot.type == RHIResourceBindingType::StorageImage ? UserUploadAssetMeta::Type::StorageImage
-                                                                            : UserUploadAssetMeta::Type::Buffer;
+                    assetMeta.type = slot.type == RHIResourceBindingType::Sampler
+                                         ? UserUploadAssetMeta::Type::Sampler
+                                     : slot.type == RHIResourceBindingType::SampledImage
+                                         ? UserUploadAssetMeta::Type::SampledImage
+                                     : slot.type == RHIResourceBindingType::StorageImage
+                                         ? UserUploadAssetMeta::Type::StorageImage
+                                         : UserUploadAssetMeta::Type::Buffer;
                 }
             }
             break;
@@ -205,6 +208,13 @@ namespace Hazel
                     slot.buffer = asset.buffer;
                     m_UserUploadResourceGroup[frameInFlightIndex]->WriteBuffer(
                         slot.slot, asset.buffer, 0, asset.buffer->GetDesc().size);
+                }
+                break;
+            case UserUploadAssetMeta::Type::Sampler:
+                if (asset.sampler && slot.sampler != asset.sampler)
+                {
+                    slot.sampler = asset.sampler;
+                    m_UserUploadResourceGroup[frameInFlightIndex]->WriteSampler(slot.slot, asset.sampler);
                 }
                 break;
             case UserUploadAssetMeta::Type::SampledImage:
@@ -712,6 +722,15 @@ namespace Hazel
         auto& buffer = m_UserUploadAssetBuffers[name];
         buffer.name = name;
         buffer.image = imageView;
+    }
+
+    void ResourceBindingRegistry::SetSampler(std::string name, const GPUAssetHandle* handle)
+    {
+        if (!handle || !handle->asset || handle->asset->GetType() != AssetType::Sampler) { return; }
+        auto* asset = static_cast<GPUSamplerAsset*>(handle->asset);
+        auto& buffer = m_UserUploadAssetBuffers[name];
+        buffer.name = name;
+        buffer.sampler = asset->GetHandle();
     }
 
     void ResourceBindingRegistry::CreateOrUpdatePerShaderResources()

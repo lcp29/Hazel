@@ -67,6 +67,7 @@ namespace Hazel
         std::string name{};
         RHIBuffer* buffer = nullptr;
         RHIImageView* image = nullptr;
+        RHISampler* sampler = nullptr;
 	};
 
 	struct UserUploadAssetMeta
@@ -74,6 +75,7 @@ namespace Hazel
 		enum class Type
 		{
 			Buffer,
+			Sampler,
 			SampledImage,
 			StorageImage
         };
@@ -82,6 +84,7 @@ namespace Hazel
         uint32_t slot;
         RHIBuffer* buffer = nullptr;
         RHIImageView* image = nullptr;
+        RHISampler* sampler = nullptr;
 	};
 
     struct UserUploadValueMeta
@@ -239,6 +242,7 @@ namespace Hazel
 
 		void SetBuffer(std::string name, const GPUAssetHandle* handle);
         void SetImage(std::string name, const GPUAssetHandle* handle);
+        void SetSampler(std::string name, const GPUAssetHandle* handle);
 
         // per-shader resources
         void CreateOrUpdatePerShaderResources();

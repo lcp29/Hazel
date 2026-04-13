@@ -9,6 +9,31 @@ option(HAZEL_BUILD_HAZELNUT "Build Hazelnut" ON)
 
 set(HAZEL_VENDOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/vendor)
 
+find_program(CLANG_FORMAT_EXE NAMES clang-format REQUIRED)
+
+file(GLOB_RECURSE HAZEL_FORMAT_FILES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Hazel/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Hazel/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Hazel/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Hazel/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Hazel/*.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Platform/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Platform/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Platform/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Platform/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazel/src/Platform/*.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazelnut/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazelnut/src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazelnut/src/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazelnut/src/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hazelnut/src/*.inl
+)
+
+add_custom_target(hazel-format
+    COMMAND ${CLANG_FORMAT_EXE} --style=file -i ${HAZEL_FORMAT_FILES}
+    COMMENT "Running clang-format on Hazel and Hazelnut sources"
+)
+
 add_subdirectory(${HAZEL_VENDOR_DIR}/Glad ${CMAKE_CURRENT_BINARY_DIR}/vendor/Glad)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)

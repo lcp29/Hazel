@@ -27,6 +27,7 @@ cmake-build-release/
 
 # VS
 out/
+CMakeSettings.json
 
 # DLL files
 **.dll
