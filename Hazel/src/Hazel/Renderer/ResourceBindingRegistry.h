@@ -175,21 +175,6 @@ namespace Hazel
         std::vector<std::vector<uint8_t>> m_MaterialIsDirty;
     };
 
-    struct PendingResourceOperation
-    {
-        enum class SlotType
-        {
-            Texture,
-            Sampler,
-            CombinedImageSampler
-        };
-
-        SlotType type;
-        uint32_t slot;
-        GPUAsset* texture = nullptr;
-        GPUAsset* sampler = nullptr;
-    };
-
     class ResourceBindingRegistry
     {
       public:
@@ -224,8 +209,6 @@ namespace Hazel
             return m_CombinedImageSamplers;
         }
 
-        void UpdateResourceGroupForPendingOperations(RHIResourceGroup* group);
-
         template <typename T> void SetValue(std::string name, const T& value)
         {
             if (!m_UserUploadValueBuffers.contains(name))
@@ -246,6 +229,7 @@ namespace Hazel
 
         // per-shader resources
         void CreateOrUpdatePerShaderResources();
+        void CreateOrUpdatePerShaderResourcesForShader(UUID shader, uint64_t version);
 
         void RegisterShader(UUID shader, uint64_t sourceVersion, const RHIShaderReflection& reflection);
         void UnregisterShader(UUID shader, uint64_t sourceVersion);
@@ -297,9 +281,6 @@ namespace Hazel
         std::vector<std::pair<GPUAssetHandle, GPUAssetHandle>> m_CombinedImageSamplers;
         std::vector<uint32_t> m_CombinedImageSamplerFreeList;
         std::vector<uint8_t> m_CombinedImageSamplerFreeMap;
-
-        std::mutex m_PendingResourceOperationMutex;
-        std::vector<PendingResourceOperation> m_PendingResourceOperations;
 
         std::unordered_map<std::string, UserUploadValueBuffer> m_UserUploadValueBuffers;
 		std::unordered_map<std::string, UserUploadAssetBuffer> m_UserUploadAssetBuffers;

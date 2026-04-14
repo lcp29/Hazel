@@ -70,13 +70,11 @@ namespace Hazel
                     auto& assetMeta = m_UserUploadAssetBufferMap[i][slot.variableName];
                     assetMeta.name = slot.variableName;
                     assetMeta.slot = slot.slot;
-                    assetMeta.type = slot.type == RHIResourceBindingType::Sampler
-                                         ? UserUploadAssetMeta::Type::Sampler
-                                     : slot.type == RHIResourceBindingType::SampledImage
-                                         ? UserUploadAssetMeta::Type::SampledImage
-                                     : slot.type == RHIResourceBindingType::StorageImage
-                                         ? UserUploadAssetMeta::Type::StorageImage
-                                         : UserUploadAssetMeta::Type::Buffer;
+                    assetMeta.type =
+                        slot.type == RHIResourceBindingType::Sampler        ? UserUploadAssetMeta::Type::Sampler
+                        : slot.type == RHIResourceBindingType::SampledImage ? UserUploadAssetMeta::Type::SampledImage
+                        : slot.type == RHIResourceBindingType::StorageImage ? UserUploadAssetMeta::Type::StorageImage
+                                                                            : UserUploadAssetMeta::Type::Buffer;
                 }
             }
             break;
@@ -742,6 +740,13 @@ namespace Hazel
         }
     }
 
+    void ResourceBindingRegistry::CreateOrUpdatePerShaderResourcesForShader(UUID shader, uint64_t version)
+    {
+        std::scoped_lock lock(m_ShaderMaterialMutex);
+        if (!m_ShaderMaterials.contains({shader, version})) { return; }
+        m_ShaderMaterials[{shader, version}]->BuildResources();
+    }
+
     void ResourceBindingRegistry::UpdateUserUploadDataForShader(UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
@@ -839,30 +844,29 @@ namespace Hazel
         auto* asset = textureResult.asset;
 
         std::unique_lock textureLock(m_TextureMutex);
-        std::unique_lock operationLock(m_PendingResourceOperationMutex);
+
+        uint32_t index;
 
         if (!m_TextureFreeList.empty())
         {
-            const uint32_t index = m_TextureFreeList.back();
+            index = m_TextureFreeList.back();
             m_TextureFreeList.pop_back();
             m_TextureFreeMap[index] = false;
             m_Textures[index] = std::move(textureResult);
-
-            m_PendingResourceOperations.emplace_back(PendingResourceOperation{
-                .type = PendingResourceOperation::SlotType::Texture, .slot = index, .texture = asset});
-
-            return index;
+        }
+        else
+        {
+            m_Textures.push_back(std::move(textureResult));
+            index = m_Textures.size() - 1;
+            m_TextureFreeMap[index] = false;
         }
 
-        m_Textures.push_back(std::move(textureResult));
-        m_TextureFreeMap[m_Textures.size() - 1] = false;
+        GetPerViewResourceGroup()->WriteImageView(kTextureBindingSlot,
+                                                  static_cast<GPUTextureAsset*>(asset)->GetDefaultImageView(),
+                                                  RHIImageResourceState::ShaderRead,
+                                                  index);
 
-        m_PendingResourceOperations.emplace_back(
-            PendingResourceOperation{.type = PendingResourceOperation::SlotType::Texture,
-                                     .slot = static_cast<uint32_t>(m_Textures.size() - 1),
-                                     .texture = asset});
-
-        return m_Textures.size() - 1;
+        return index;
     }
 
     uint32_t ResourceBindingRegistry::RegisterSampler(GPUAssetHandle samplerResult)
@@ -872,30 +876,27 @@ namespace Hazel
         auto* asset = samplerResult.asset;
 
         std::unique_lock lock(m_SamplerMutex);
-        std::unique_lock operationLock(m_PendingResourceOperationMutex);
+
+        uint32_t index;
 
         if (!m_SamplerFreeList.empty())
         {
-            const uint32_t index = m_SamplerFreeList.back();
+            index = m_SamplerFreeList.back();
             m_SamplerFreeList.pop_back();
             m_SamplerFreeMap[index] = false;
             m_Samplers[index] = std::move(samplerResult);
-
-            m_PendingResourceOperations.emplace_back(PendingResourceOperation{
-                .type = PendingResourceOperation::SlotType::Sampler, .slot = index, .sampler = asset});
-
-            return index;
+        }
+        else
+        {
+            m_Samplers.push_back(std::move(samplerResult));
+            index = m_Samplers.size() - 1;
+            m_SamplerFreeMap[index] = false;
         }
 
-        m_Samplers.push_back(std::move(samplerResult));
-        m_SamplerFreeMap[m_Samplers.size() - 1] = false;
+        GetPerViewResourceGroup()->WriteSampler(
+            kSamplerBindingSlot, static_cast<GPUSamplerAsset*>(asset)->GetHandle(), index);
 
-        m_PendingResourceOperations.emplace_back(
-            PendingResourceOperation{.type = PendingResourceOperation::SlotType::Sampler,
-                                     .slot = static_cast<uint32_t>(m_Samplers.size() - 1),
-                                     .sampler = asset});
-
-        return m_Samplers.size() - 1;
+        return index;
     }
 
     uint32_t ResourceBindingRegistry::RegisterSamplerWithImage(GPUAssetHandle textureResult,
@@ -907,35 +908,31 @@ namespace Hazel
         auto* samplerAsset = samplerResult.asset;
 
         std::unique_lock lock(m_CombinedImageSamplerMutex);
-        std::unique_lock operationLock(m_PendingResourceOperationMutex);
+
+        uint32_t index;
 
         if (!m_CombinedImageSamplerFreeList.empty())
         {
-            const uint32_t index = m_CombinedImageSamplerFreeList.back();
+            index = m_CombinedImageSamplerFreeList.back();
             m_CombinedImageSamplerFreeList.pop_back();
             m_CombinedImageSamplerFreeMap[index] = false;
-            m_CombinedImageSamplers[index] =
-                std::move(std::make_pair(std::move(textureResult), std::move(samplerResult)));
-
-            m_PendingResourceOperations.emplace_back(
-                PendingResourceOperation{.type = PendingResourceOperation::SlotType::CombinedImageSampler,
-                                         .slot = index,
-                                         .texture = textureAsset,
-                                         .sampler = samplerAsset});
-
-            return index;
+            m_CombinedImageSamplers[index] = std::make_pair(std::move(textureResult), std::move(samplerResult));
+        }
+        else
+        {
+            m_CombinedImageSamplers.emplace_back(std::move(textureResult), std::move(samplerResult));
+            index = m_CombinedImageSamplers.size() - 1;
+            m_CombinedImageSamplerFreeMap[index] = false;
         }
 
-        m_CombinedImageSamplers.emplace_back(std::move(textureResult), std::move(samplerResult));
-        m_CombinedImageSamplerFreeMap[m_CombinedImageSamplers.size() - 1] = false;
+        GetPerViewResourceGroup()->WriteSamplerWithImage(
+            kCombinedImageSamplerBindingSlot,
+            static_cast<GPUSamplerAsset*>(samplerAsset)->GetHandle(),
+            static_cast<GPUTextureAsset*>(textureAsset)->GetDefaultImageView(),
+            RHIImageResourceState::ShaderRead,
+            index);
 
-        m_PendingResourceOperations.emplace_back(
-            PendingResourceOperation{.type = PendingResourceOperation::SlotType::CombinedImageSampler,
-                                     .slot = static_cast<uint32_t>(m_CombinedImageSamplers.size() - 1),
-                                     .texture = textureAsset,
-                                     .sampler = samplerAsset});
-
-        return m_CombinedImageSamplers.size() - 1;
+        return index;
     }
 
     void ResourceBindingRegistry::UnregisterTexture(uint32_t index)
@@ -961,56 +958,5 @@ namespace Hazel
         m_CombinedImageSamplers[index] = {nullptr, nullptr};
         m_CombinedImageSamplerFreeMap[index] = true;
         m_CombinedImageSamplerFreeList.push_back(index);
-    }
-
-    void ResourceBindingRegistry::UpdateResourceGroupForPendingOperations(RHIResourceGroup* group)
-    {
-        std::unique_lock operationLock(m_PendingResourceOperationMutex);
-        if (m_PendingResourceOperations.empty()) { return; }
-        auto pendingOperations = m_PendingResourceOperations;
-        m_PendingResourceOperations.clear();
-        operationLock.unlock();
-
-        for (auto& operation : pendingOperations)
-        {
-            switch (operation.type)
-            {
-                case PendingResourceOperation::SlotType::Texture:
-                    {
-                        if (operation.texture)
-                        {
-                            group->WriteImageView(
-                                kTextureBindingSlot,
-                                static_cast<GPUTextureAsset*>(operation.texture)->GetDefaultImageView(),
-                                RHIImageResourceState::ShaderRead,
-                                operation.slot);
-                        }
-                        break;
-                    }
-                case PendingResourceOperation::SlotType::Sampler:
-                    {
-                        if (operation.sampler)
-                        {
-                            group->WriteSampler(kSamplerBindingSlot,
-                                                static_cast<GPUSamplerAsset*>(operation.sampler)->GetHandle(),
-                                                operation.slot);
-                        }
-                        break;
-                    }
-                case PendingResourceOperation::SlotType::CombinedImageSampler:
-                    {
-                        if (operation.texture && operation.sampler)
-                        {
-                            group->WriteSamplerWithImage(
-                                kCombinedImageSamplerBindingSlot,
-                                static_cast<GPUSamplerAsset*>(operation.sampler)->GetHandle(),
-                                static_cast<GPUTextureAsset*>(operation.texture)->GetDefaultImageView(),
-                                RHIImageResourceState::ShaderRead,
-                                operation.slot);
-                        }
-                        break;
-                    }
-            }
-        }
     }
 } // namespace Hazel

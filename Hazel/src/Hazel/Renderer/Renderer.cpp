@@ -34,26 +34,34 @@ namespace Hazel
         , m_Device(graphicsContext->GetDevice())
         , m_Window(window)
     {
+		// surface and swapchain init
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
             m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
 #endif
         m_WindowSurface = m_GraphicsContext->GetSurface();
-
         m_MaxFramesInFlight = GlobalSettings.Get(MaxFramesInFlightString, m_MaxFramesInFlight);
         m_SwapchainImageFormat = GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
+        CreateSwapchainResources();
+
         m_GPUAssetGarbageCollectFrameThreshold =
             GlobalSettings.Get(GPUAssetGarbageCollectFrameThresholdString, m_GPUAssetGarbageCollectFrameThreshold);
 
-        m_GPUAssetRegistry = std::make_unique<GPUAssetRegistry>();
-        m_ResourceBindingRegistry = std::make_unique<ResourceBindingRegistry>(this);
-        CreateSwapchainResources();
-        CreatePerFrameData();
         m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
+
+		// assets
+        m_GPUAssetRegistry = std::make_unique<GPUAssetRegistry>();
+
+        m_ResourceBindingRegistry = std::make_unique<ResourceBindingRegistry>(this);
+        m_ResourceBindingRegistry->CreatePerViewResources();
+
+        CreatePerFrameData();
+
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
-        m_ResourceBindingRegistry->CreatePerViewResources();
+
+		// render scene
         m_RenderScene = std::make_unique<RenderScene>(this);
         m_GeometryDataRegistry = std::make_unique<GeometryDataRegistry>(this);
     }
@@ -585,10 +593,6 @@ namespace Hazel
 
         if (m_CurrentFrame >= m_MaxFramesInFlight) { m_Device->WaitSyncPoint(&frameData.renderCompleteSyncPoint); }
 
-        GetResourceBindingRegistry()->UpdateResourceGroupForPendingOperations(
-            m_ResourceBindingRegistry->GetPerViewResourceGroup());
-        GetResourceBindingRegistry()->CreateOrUpdatePerShaderResources();
-
         frameData.commandBuffer->Reset();
         frameData.commandBuffer->Begin(true);
 
@@ -722,6 +726,8 @@ namespace Hazel
             auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
 
             GetResourceBindingRegistry()->UpdateUserUploadDataForShader(shader->GetUUID(), shader->GetSourceVersion());
+            GetResourceBindingRegistry()->CreateOrUpdatePerShaderResourcesForShader(shader->GetUUID(),
+                                                                                    shader->GetSourceVersion());
 
             if (firstBind)
             {
