@@ -49,8 +49,7 @@ void main()
     vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
     float ndotl = max(dot(normalize(v_Normal), lightDir), 0.0);
     float irradiance = ndotl * GetUserValue(lightStrength);
-    // vec4 color = texture(GetMaterialTextureSampler(color), v_TexCoord);
-    vec4 color = texture(sampler2D(testImage, GetMaterialSampler(outerTexSamp)), v_TexCoord);
+    vec4 color = texture(GetMaterialTextureSampler(color), v_TexCoord);
     float ambient = 0.1;
 
     vec3 lighting = vec3(ambient + irradiance) * color.rgb;

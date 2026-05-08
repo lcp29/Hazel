@@ -11,6 +11,7 @@
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/Project/Project.h"
 #include "Hazel/RHI/RHI.h"
+#include "Hazel/RenderPipeline/CustomRenderPipeline.h"
 #include "Hazel/Renderer/GPUAsset/CachedMaterial.h"
 #include "Hazel/Renderer/GPUAsset/GPUComputeShaderAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
@@ -34,7 +35,7 @@ namespace Hazel
         , m_Device(graphicsContext->GetDevice())
         , m_Window(window)
     {
-		// surface and swapchain init
+        // surface and swapchain init
 #ifdef RHI_USE_VULKAN
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
@@ -50,7 +51,7 @@ namespace Hazel
 
         m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
 
-		// assets
+        // assets
         m_GPUAssetRegistry = std::make_unique<GPUAssetRegistry>();
 
         m_ResourceBindingRegistry = std::make_unique<ResourceBindingRegistry>(this);
@@ -61,9 +62,12 @@ namespace Hazel
         RecreateDefaultRenderTexture();
         CreateDefaultResources();
 
-		// render scene
+        // render scene
         m_RenderScene = std::make_unique<RenderScene>(this);
         m_GeometryDataRegistry = std::make_unique<GeometryDataRegistry>(this);
+
+        // render pipeline
+        m_RenderPipeline = std::make_unique<CustomRenderPipeline>(this);
     }
 
     uint32_t Renderer::RegisterBindlessTexture(GPUAssetHandle texture)
@@ -457,54 +461,22 @@ namespace Hazel
 
     void Renderer::Render()
     {
-        auto& frameData = GetCurrentFrameData();
-        auto* cmd = frameData.commandBuffer;
+        for (auto& camera : m_Cameras)
+        {
+            GPUAssetHandle renderTextureHandle = nullptr;
+            GPURenderTextureAsset* renderTexture = nullptr;
 
-        GetResourceBindingRegistry()->SetValue<float>("lightStrength", 100.0);
+            if (camera.renderTextureUUID == UUID(-1)) { renderTexture = m_DefaultRenderTexture.get(); }
+            else
+            {
+                renderTextureHandle = ResolveGPUAsset(camera.renderTextureUUID, AssetType::RenderTexture);
+                if (!renderTextureHandle.asset) { return; }
+                renderTexture = static_cast<GPURenderTextureAsset*>(renderTextureHandle.asset);
+            }
 
-        RHIRenderingAttachmentDesc colorAttachmentDesc{};
-        colorAttachmentDesc.imageView = m_DefaultRenderTexture->GetDefaultImageView();
-        colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
-        colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
-        colorAttachmentDesc.clearColorValue.float32 = {0.0f, 0.0f, 0.0f, 1.0f};
-        colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
-
-        RHIRenderingAttachmentDesc depthStencilAttachmentDesc{};
-        depthStencilAttachmentDesc.imageView = m_DefaultDepthRenderTexture->GetDefaultImageView();
-        depthStencilAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
-        depthStencilAttachmentDesc.storeOp = RHIRenderingStoreOp::DontCare;
-        depthStencilAttachmentDesc.clearDepthStencilValue.depth = 1.0f;
-        depthStencilAttachmentDesc.clearDepthStencilValue.stencil = 0;
-        depthStencilAttachmentDesc.state = RHIImageResourceState::DepthStencilAttachment;
-
-        m_DefaultRenderTexture->GetImage()->Transition(
-            cmd, m_DefaultRenderTexture->GetImage()->GetCurrentState(), RHIImageResourceState::ColorAttachment);
-        m_DefaultDepthRenderTexture->GetImage()->Transition(cmd,
-                                                            m_DefaultDepthRenderTexture->GetImage()->GetCurrentState(),
-                                                            RHIImageResourceState::DepthStencilAttachment);
-
-        RHIRect2D viewportArea = {{0, 0}, {m_ViewportWidth, m_ViewportHeight}};
-
-        auto testImage = ResolveGPUAsset(10859876451405640399ull, AssetType::Texture);
-
-        GetResourceBindingRegistry()->SetImage("testImage", &testImage);
-
-        RunGraphicsPass(cmd,
-                        &m_Cameras[0],
-                        {colorAttachmentDesc},
-                        {RHIColorBlendAttachmentDesc{
-                            .blendEnable = true,
-                            .srcColorBlendFactor = RHIBlendFactor::SrcAlpha,
-                            .dstColorBlendFactor = RHIBlendFactor::OneMinusSrcAlpha,
-                            .colorBlendOp = RHIBlendOp::Add,
-                            .srcAlphaBlendFactor = RHIBlendFactor::One,
-                            .dstAlphaBlendFactor = RHIBlendFactor::Zero,
-                            .alphaBlendOp = RHIBlendOp::Add,
-                        }},
-                        &depthStencilAttachmentDesc,
-                        viewportArea,
-                        viewportArea,
-                        viewportArea);
+            RenderContext context(this, renderTexture, {.width = m_ViewportWidth, .height = m_ViewportHeight});
+            m_RenderPipeline->Render(context, camera);
+        }
     }
 
     void Renderer::BeginSwapchainTargetRendering()
@@ -566,12 +538,6 @@ namespace Hazel
             m_DefaultRenderTexture.reset();
         }
 
-        if (m_DefaultDepthRenderTexture && m_DefaultDepthRenderTexture->IsValid())
-        {
-            m_DefaultDepthRenderTexture->ReleaseImmediate();
-            m_DefaultDepthRenderTexture.reset();
-        }
-
         RenderTextureDesc renderTextureDesc{};
         renderTextureDesc.width = m_ViewportWidth;
         renderTextureDesc.height = m_ViewportHeight;
@@ -581,10 +547,6 @@ namespace Hazel
 
         m_DefaultRenderTexture =
             CreateGPURenderTextureAsset(this, m_DefaultRenderTextureUUID, 0, renderTextureDesc, m_CurrentFrame);
-
-        renderTextureDesc.format = RHIFormat::D32SFloatS8Uint;
-
-        m_DefaultDepthRenderTexture = CreateGPURenderTextureAsset(this, UUID(), 0, renderTextureDesc, m_CurrentFrame);
     }
 
     void Renderer::BeginFrame()
@@ -650,16 +612,16 @@ namespace Hazel
 
     // TODO: TEMP URGENT INTERVIEW: a vanilla forward pass
     void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
-                                   SceneCameraView* camera,
+                                   const SceneCameraView& camera,
                                    const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                                    const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                   const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                                   const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
                                    RHIRect2D renderArea,
                                    RHIRect2D viewportArea,
                                    RHIRect2D scissorArea)
     {
-        const glm::mat4 view = camera->transform.GetView();
-        const glm::mat4 projection = camera->camera->GetProjection();
+        const glm::mat4 view = camera.transform.GetView();
+        const glm::mat4 projection = camera.camera->GetProjection();
         const glm::mat4 viewProjection = projection * view;
         GetResourceBindingRegistry()->SetViewProjectionMatrix(view, projection);
 
@@ -695,11 +657,11 @@ namespace Hazel
             colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
         }
 
-        if (depthStencilAttachmentDescription)
+        if (depthStencilAttachmentDescription.imageView)
         {
-            renderingInfo.depthAttachment = *depthStencilAttachmentDescription;
-            renderingInfo.stencilAttachment = *depthStencilAttachmentDescription;
-            depthStencilFormat = depthStencilAttachmentDescription->imageView->GetFormat();
+            renderingInfo.depthAttachment = depthStencilAttachmentDescription;
+            renderingInfo.stencilAttachment = depthStencilAttachmentDescription;
+            depthStencilFormat = depthStencilAttachmentDescription.imageView->GetFormat();
         }
 
         bool firstBind = true;
@@ -821,16 +783,16 @@ namespace Hazel
 
     void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
                                    UUID overrideMaterial,
-                                   SceneCameraView* camera,
+                                   const SceneCameraView& camera,
                                    const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                                    const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                   const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                                   const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
                                    RHIRect2D renderArea,
                                    RHIRect2D viewportArea,
                                    RHIRect2D scissorArea)
     {
-        const glm::mat4 view = camera->transform.GetView();
-        const glm::mat4 projection = camera->camera->GetProjection();
+        const glm::mat4 view = camera.transform.GetView();
+        const glm::mat4 projection = camera.camera->GetProjection();
         const glm::mat4 viewProjection = projection * view;
         GetResourceBindingRegistry()->SetViewProjectionMatrix(view, projection);
 
@@ -874,11 +836,11 @@ namespace Hazel
             colorAttachmentFormats.push_back(colorDescription.imageView->GetFormat());
         }
 
-        if (depthStencilAttachmentDescription)
+        if (depthStencilAttachmentDescription.imageView)
         {
-            renderingInfo.depthAttachment = *depthStencilAttachmentDescription;
-            renderingInfo.stencilAttachment = *depthStencilAttachmentDescription;
-            depthStencilFormat = depthStencilAttachmentDescription->imageView->GetFormat();
+            renderingInfo.depthAttachment = depthStencilAttachmentDescription;
+            renderingInfo.stencilAttachment = depthStencilAttachmentDescription;
+            depthStencilFormat = depthStencilAttachmentDescription.imageView->GetFormat();
         }
 
         if (!shaderResult.asset) { return; }
@@ -967,6 +929,7 @@ namespace Hazel
     {
         m_Device->WaitIdle();
 
+        m_RenderPipeline.reset();
         m_ResourceBindingRegistry->ClearAllResources();
         m_GPUAssetRegistry.reset();
         m_ResourceBindingRegistry.reset();

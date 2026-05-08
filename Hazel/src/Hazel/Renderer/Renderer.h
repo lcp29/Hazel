@@ -2,6 +2,7 @@
 
 #include "GPUAsset/GPUAssetHandle.h"
 #include "GeometryDataRegistry.h"
+#include "RenderPipeline.h"
 #include "Hazel/Asset/MaterialAsset.h"
 #include "Hazel/Renderer/Camera.h"
 #include "Hazel/Renderer/GPUAsset/GPUAssetRegistry.h"
@@ -143,20 +144,20 @@ namespace Hazel
         void ClearRenderScene() const { m_RenderScene->Clear(); }
 
         void RunGraphicsPass(RHICommandBuffer* cmd,
-                             SceneCameraView* camera,
+                             const SceneCameraView& camera,
                              const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                              const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                             const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                             const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
                              RHIRect2D renderArea,
                              RHIRect2D viewportArea,
                              RHIRect2D scissorArea);
 
         void RunGraphicsPass(RHICommandBuffer* cmd,
                              UUID overrideMaterial,
-                             SceneCameraView* camera,
+                             const SceneCameraView& camera,
                              const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
                              const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                             const RHIRenderingAttachmentDesc* depthStencilAttachmentDescription,
+                             const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
                              RHIRect2D renderArea,
                              RHIRect2D viewportArea,
                              RHIRect2D scissorArea);
@@ -199,7 +200,6 @@ namespace Hazel
         std::vector<FrameData> m_Frames;
         UUID m_DefaultRenderTextureUUID = UUID();
         std::unique_ptr<GPURenderTextureAsset> m_DefaultRenderTexture;
-        std::unique_ptr<GPURenderTextureAsset> m_DefaultDepthRenderTexture;
 
         // TODO: refactored gpu asset management below
         std::unique_ptr<GPUAssetRegistry> m_GPUAssetRegistry = nullptr;
@@ -207,6 +207,7 @@ namespace Hazel
         std::unique_ptr<ResourceBindingRegistry> m_ResourceBindingRegistry = nullptr;
         std::unique_ptr<GeometryDataRegistry> m_GeometryDataRegistry = nullptr;
         std::unique_ptr<RenderScene> m_RenderScene = nullptr;
+        std::unique_ptr<RenderPipeline> m_RenderPipeline = nullptr;
 
         // default resources
         UUID m_ErrorTextureUUID = UUID();

@@ -434,10 +434,10 @@ namespace Hazel
 
         m_Renderer->RunGraphicsPass(commandBuffer,
                                     objectIDMaterialID,
-                                    &viewportCamera,
+                                    viewportCamera,
                                     {colorAttachmentDesc},
                                     {RHIColorBlendAttachmentDesc{}},
-                                    &depthStencilDesc,
+                                    depthStencilDesc,
                                     scissorArea,
                                     viewportArea,
                                     scissorArea);
