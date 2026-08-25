@@ -15,19 +15,20 @@
 #include "Hazel/UI/UI.h"
 #include "PropertyPanelHelpers.h"
 
+#include <imgui.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
 #include <imgui_internal.h>
 #include <unordered_set>
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
         template <typename T, typename UIFunction>
-        void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
+        void DrawComponent(const std::string& name, Hazel::Entity entity, UIFunction uiFunction)
         {
             constexpr ImGuiTreeNodeFlags treeNodeFlags =
                 ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth
@@ -64,14 +65,14 @@ namespace Hazel
         }
     } // namespace
 
-    void PropertyPanel::SetContext(const Ref<Scene>& scene)
+    void PropertyPanel::SetContext(const Hazel::Ref<Hazel::Scene>& scene)
     {
         m_Context = scene;
         m_SelectedEntity = {};
         if (m_SelectionType == SelectionType::Entity) m_SelectionType = SelectionType::None;
     }
 
-    void PropertyPanel::SetSelectedEntity(Entity entity)
+    void PropertyPanel::SetSelectedEntity(Hazel::Entity entity)
     {
         m_SelectedEntity = entity;
         m_SelectionType = entity ? SelectionType::Entity : SelectionType::None;
@@ -85,7 +86,10 @@ namespace Hazel
         {
             m_SelectionType = SelectionType::Meta;
         }
-        else { m_SelectionType = SelectionType::None; }
+        else
+        {
+            m_SelectionType = SelectionType::None;
+        }
     }
 
     void PropertyPanel::OnImGuiRender()
@@ -100,11 +104,11 @@ namespace Hazel
         ImGui::End();
     }
 
-    void PropertyPanel::DrawEntityProperties(Entity entity)
+    void PropertyPanel::DrawEntityProperties(Hazel::Entity entity)
     {
-        if (entity.HasComponent<TagComponent>())
+        if (entity.HasComponent<Hazel::TagComponent>())
         {
-            auto& tag = entity.GetComponent<TagComponent>().tag;
+            auto& tag = entity.GetComponent<Hazel::TagComponent>().tag;
 
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
@@ -118,14 +122,14 @@ namespace Hazel
 
         if (ImGui::BeginPopup("AddComponent"))
         {
-            DisplayAddComponentEntry<CameraComponent>("Camera");
-            DisplayAddComponentEntry<MeshRendererComponent>("Mesh Renderer");
-            DisplayAddComponentEntry<ScriptComponent>("Script");
+            DisplayAddComponentEntry<Hazel::CameraComponent>("Camera");
+            DisplayAddComponentEntry<Hazel::MeshRendererComponent>("Mesh Renderer");
+            DisplayAddComponentEntry<Hazel::ScriptComponent>("Script");
             ImGui::EndPopup();
         }
         ImGui::PopItemWidth();
 
-        DrawComponent<TransformComponent>("Transform", entity, [entity](auto& component) mutable {
+        DrawComponent<Hazel::TransformComponent>("Transform", entity, [entity](auto& component) mutable {
             glm::vec3 translation = component.translation;
             PropertyPanelHelpers::DrawVec3Control("Translation", translation);
             if (glm::any(glm::notEqual(translation, component.translation))) { entity.SetTranslation(translation); }
@@ -140,9 +144,9 @@ namespace Hazel
             if (glm::any(glm::notEqual(scale, component.scale))) { entity.SetScale(scale); }
         });
 
-        DrawComponent<CameraComponent>("Camera", entity, [](auto& component) {
+        DrawComponent<Hazel::CameraComponent>("Camera", entity, [](auto& component) {
             auto& camera = component.camera;
-            auto* assetManager = Project::GetActive()->GetAssetManager();
+            auto* assetManager = Hazel::Project::GetActive()->GetAssetManager();
             auto renderTextures = assetManager->GetAssetsByType(AssetType::RenderTexture);
             ImGui::Checkbox("Primary", &component.isPrimary);
 
@@ -157,7 +161,7 @@ namespace Hazel
                     if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
                     {
                         currentProjectionTypeString = projectionTypeStrings[i];
-                        camera.SetProjectionType(static_cast<Camera::ProjectionType>(i));
+                        camera.SetProjectionType(static_cast<Hazel::Camera::ProjectionType>(i));
                     }
 
                     if (isSelected) ImGui::SetItemDefaultFocus();
@@ -165,7 +169,7 @@ namespace Hazel
                 ImGui::EndCombo();
             }
 
-            if (camera.GetProjectionType() == Camera::ProjectionType::Perspective)
+            if (camera.GetProjectionType() == Hazel::Camera::ProjectionType::Perspective)
             {
                 float perspectiveVerticalFov = glm::degrees(camera.GetFovX());
                 if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
@@ -178,7 +182,7 @@ namespace Hazel
                 if (ImGui::DragFloat("Far", &perspectiveFar)) camera.SetFarClip(perspectiveFar);
             }
 
-            if (camera.GetProjectionType() == Camera::ProjectionType::Orthographic)
+            if (camera.GetProjectionType() == Hazel::Camera::ProjectionType::Orthographic)
             {
                 float orthoWidth = camera.GetOrthoWidth();
                 if (ImGui::DragFloat("Width", &orthoWidth)) camera.SetOrthoWidth(orthoWidth);
@@ -193,13 +197,13 @@ namespace Hazel
             PropertyPanelHelpers::DrawAssetRegistryCombo("Render Texture", renderTextures, component.renderTextureUUID);
         });
 
-        DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable {
-            bool scriptClassExists = ScriptEngine::EntityClassExists(component.className);
+        DrawComponent<Hazel::ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable {
+            bool scriptClassExists = Hazel::ScriptEngine::EntityClassExists(component.className);
 
             static char buffer[64];
             strcpy_s(buffer, sizeof(buffer), component.className.c_str());
 
-            UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
+            Hazel::UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
 
             if (ImGui::InputText("Class", buffer, sizeof(buffer)))
             {
@@ -209,13 +213,14 @@ namespace Hazel
 
             if (scene->IsRunning())
             {
-                Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
+                Hazel::Ref<Hazel::ScriptInstance> scriptInstance =
+                    Hazel::ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
                 if (scriptInstance)
                 {
                     const auto& fields = scriptInstance->GetScriptClass()->GetFields();
                     for (const auto& [name, field] : fields)
                     {
-                        if (field.Type == ScriptFieldType::Float)
+                        if (field.Type == Hazel::ScriptFieldType::Float)
                         {
                             float data = scriptInstance->GetFieldValue<float>(name);
                             if (ImGui::DragFloat(name.c_str(), &data)) scriptInstance->SetFieldValue(name, data);
@@ -225,27 +230,27 @@ namespace Hazel
             }
             else if (scriptClassExists)
             {
-                Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.className);
+                Hazel::Ref<Hazel::ScriptClass> entityClass = Hazel::ScriptEngine::GetEntityClass(component.className);
                 const auto& fields = entityClass->GetFields();
 
-                auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
+                auto& entityFields = Hazel::ScriptEngine::GetScriptFieldMap(entity);
                 for (const auto& [name, field] : fields)
                 {
                     if (entityFields.contains(name))
                     {
-                        ScriptFieldInstance& scriptField = entityFields.at(name);
-                        if (field.Type == ScriptFieldType::Float)
+                        Hazel::ScriptFieldInstance& scriptField = entityFields.at(name);
+                        if (field.Type == Hazel::ScriptFieldType::Float)
                         {
                             float data = scriptField.GetValue<float>();
                             if (ImGui::DragFloat(name.c_str(), &data)) scriptField.SetValue(data);
                         }
                     }
-                    else if (field.Type == ScriptFieldType::Float)
+                    else if (field.Type == Hazel::ScriptFieldType::Float)
                     {
                         float data = 0.0f;
                         if (ImGui::DragFloat(name.c_str(), &data))
                         {
-                            ScriptFieldInstance& fieldInstance = entityFields[name];
+                            Hazel::ScriptFieldInstance& fieldInstance = entityFields[name];
                             fieldInstance.Field = field;
                             fieldInstance.SetValue(data);
                         }
@@ -254,15 +259,15 @@ namespace Hazel
             }
         });
 
-        DrawComponent<MeshRendererComponent>("Mesh Renderer", entity, [entity](auto& component) mutable {
-            auto* assetManager = Project::GetActive()->GetAssetManager();
+        DrawComponent<Hazel::MeshRendererComponent>("Mesh Renderer", entity, [entity](auto& component) mutable {
+            auto* assetManager = Hazel::Project::GetActive()->GetAssetManager();
             auto meshes = assetManager->GetAssetsByType(AssetType::Mesh);
             auto materials = assetManager->GetAssetsByType(AssetType::Material);
 
-            UUID meshUUID = component.meshUUID;
+            Hazel::UUID meshUUID = component.meshUUID;
             if (PropertyPanelHelpers::DrawAssetRegistryCombo("Mesh", meshes, meshUUID)) { entity.SetMesh(meshUUID); }
 
-            UUID materialUUID = component.materialUUID;
+            Hazel::UUID materialUUID = component.materialUUID;
             if (PropertyPanelHelpers::DrawAssetRegistryCombo("Material", materials, materialUUID))
             {
                 entity.SetMaterial(materialUUID);
@@ -279,8 +284,8 @@ namespace Hazel
         YAML::Node metaNode = YAML::LoadFile(m_SelectedMetaPath.string());
         if (!metaNode["UUID"]) return;
 
-        auto uuid = UUID(metaNode["UUID"].as<uint64_t>());
-        auto* assetManager = Project::GetActive()->GetAssetManager();
+        auto uuid = Hazel::UUID(metaNode["UUID"].as<uint64_t>());
+        auto* assetManager = Hazel::Project::GetActive()->GetAssetManager();
         auto assetType = assetManager->GetAssetType(uuid);
 
         if (assetType == AssetType::Texture)
@@ -523,7 +528,7 @@ namespace Hazel
             ImGui::TextWrapped("Source: %s", asset->GetFilePath().string().c_str());
 
             bool changed = false;
-            UUID shaderUUID = meta.GetShader();
+            Hazel::UUID shaderUUID = meta.GetShader();
             if (PropertyPanelHelpers::DrawAssetRegistryCombo("Shader", shaders, shaderUUID))
             {
                 meta.SetShader(shaderUUID);
@@ -562,7 +567,8 @@ namespace Hazel
                 {
                     case MaterialAssetPropertyType::Int:
                         {
-                            int value = *reinterpret_cast<const int*>(property.data);
+                            int value;
+                            std::memcpy(&value, property.data, sizeof(value));
                             if (ImGui::DragInt(property.name.c_str(), &value))
                             {
                                 meta.SetPropertyData(propertyIndex, &value, sizeof(value));
@@ -572,7 +578,8 @@ namespace Hazel
                         }
                     case MaterialAssetPropertyType::UInt:
                         {
-                            uint32_t value = *reinterpret_cast<const uint32_t*>(property.data);
+                            uint32_t value;
+                            std::memcpy(&value, property.data, sizeof(value));
                             if (ImGui::DragScalar(property.name.c_str(), ImGuiDataType_U32, &value))
                             {
                                 meta.SetPropertyData(propertyIndex, &value, sizeof(value));
@@ -582,7 +589,8 @@ namespace Hazel
                         }
                     case MaterialAssetPropertyType::Float:
                         {
-                            float value = *reinterpret_cast<const float*>(property.data);
+                            float value;
+                            std::memcpy(&value, property.data, sizeof(value));
                             if (ImGui::DragFloat(property.name.c_str(), &value))
                             {
                                 meta.SetPropertyData(propertyIndex, &value, sizeof(value));
@@ -646,7 +654,7 @@ namespace Hazel
                         }
                     case MaterialAssetPropertyType::Sampler:
                         {
-                            UUID samplerUUID = property.sampler;
+                            Hazel::UUID samplerUUID = property.sampler;
                             if (PropertyPanelHelpers::DrawAssetRegistryCombo(
                                     property.name.c_str(), samplers, samplerUUID))
                             {
@@ -657,7 +665,7 @@ namespace Hazel
                         }
                     case MaterialAssetPropertyType::Texture:
                         {
-                            UUID textureUUID = property.texture;
+                            Hazel::UUID textureUUID = property.texture;
                             if (PropertyPanelHelpers::DrawAssetRegistryCombo(
                                     property.name.c_str(), textures, textureUUID))
                             {
@@ -670,8 +678,8 @@ namespace Hazel
                         {
                             const auto samplerName = property.name + " Sampler";
                             const auto textureName = property.name + " Texture";
-                            UUID samplerUUID = property.sampler;
-                            UUID textureUUID = property.texture;
+                            Hazel::UUID samplerUUID = property.sampler;
+                            Hazel::UUID textureUUID = property.texture;
 
                             if (PropertyPanelHelpers::DrawAssetRegistryCombo(
                                     samplerName.c_str(), samplers, samplerUUID))
@@ -706,4 +714,4 @@ namespace Hazel
             }
         }
     }
-} // namespace Hazel
+} // namespace Aster

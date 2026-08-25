@@ -3,15 +3,21 @@
 #include "Hazel/Core/Log.h"
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Scripting/ScriptEngine.h"
+// ======== Aster Modify Begin ========
 #include "Hazel/Utils/PlatformUtils.h"
 #include "hzpch.h"
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {
     Application* Application::s_Instance = nullptr;
 
+    // ======== Aster Modify Begin ========
     constexpr int DefaultWindowWidth = 1920;
     constexpr int DefaultWindowHeight = 1080;
+
+    // ======== Aster Modify End ========
 
     Application::Application(const ApplicationSpecification& specification)
         : m_Specification(specification)
@@ -24,6 +30,7 @@ namespace Hazel
         // Set working directory here
         if (!m_Specification.WorkingDirectory.empty()) std::filesystem::current_path(m_Specification.WorkingDirectory);
 
+        // ======== Aster Modify Begin ========
         m_Window = Window::Create(WindowProps(m_Specification.Name, DefaultWindowWidth, DefaultWindowHeight));
         m_Window->SetEventCallback(HZ_BIND_EVENT_FN(Application::OnEvent));
 
@@ -35,12 +42,14 @@ namespace Hazel
         m_Renderer = CreateScope<Renderer>(m_GraphicsContext.get(), m_Window.get());
 
         m_ImGuiLayer = new ImGuiLayer(m_Renderer.get());
+        // ======== Aster Modify End ========
         PushOverlay(m_ImGuiLayer);
     }
 
     Application::~Application()
     {
         HZ_PROFILE_FUNCTION();
+        // ======== Aster Modify Begin ========
         m_GraphicsContext->GetDevice()->WaitIdle();
 
         m_LayerStack.Clear();
@@ -50,6 +59,7 @@ namespace Hazel
 
         m_GraphicsContext->GetInstance()->Release();
         m_GraphicsContext->GetInstance()->FlushDeletionQueue();
+        // ======== Aster Modify End ========
     }
 
     void Application::PushLayer(Layer* layer)
@@ -108,7 +118,9 @@ namespace Hazel
 
             if (!m_Minimized)
             {
+                // ======== Aster Modify Begin ========
                 m_Renderer->BeginFrame();
+                // ======== Aster Modify End ========
                 {
                     HZ_PROFILE_SCOPE("LayerStack OnUpdate");
 
@@ -116,7 +128,9 @@ namespace Hazel
                         layer->OnUpdate(timestep);
                 }
 
+                // ======== Aster Modify Begin ========
                 m_Renderer->BeginSwapchainTargetRendering();
+                // ======== Aster Modify End ========
                 m_ImGuiLayer->Begin();
                 {
                     HZ_PROFILE_SCOPE("LayerStack OnImGuiRender");
@@ -124,10 +138,12 @@ namespace Hazel
                     for (Layer* layer : m_LayerStack)
                         layer->OnImGuiRender();
                 }
+                // ======== Aster Modify Begin ========
                 m_ImGuiLayer->End(m_Renderer->GetCurrentFrameData().commandBuffer);
                 m_Renderer->EndSwapchainTargetRendering();
 
                 m_Renderer->EndFrame();
+                // ======== Aster Modify End ========
             }
 
             m_Window->OnUpdate();
@@ -151,7 +167,9 @@ namespace Hazel
         }
 
         m_Minimized = false;
+        // ======== Aster Modify Begin ========
         m_Renderer->OnResize();
+        // ======== Aster Modify End ========
 
         return false;
     }

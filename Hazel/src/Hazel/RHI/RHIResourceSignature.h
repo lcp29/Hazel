@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the RHI resource signature interface.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -9,11 +8,11 @@
 
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     struct RHIResourceSignatureDesc
     {
         std::vector<RHIResourceLayout*> resourceLayouts;
         std::vector<RHIPushConstantRangeDesc> pushConstantRanges;
     };
-} // namespace Hazel
+} // namespace Aster

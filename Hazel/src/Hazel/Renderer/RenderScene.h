@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/29.
-//
+// Declares render scene.
+// Created: 2026-03-29.
 
 #pragma once
 #include "Hazel/Core/UUID.h"
@@ -13,14 +12,18 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct RenderObject
     {
         glm::mat4x4 transform{1.0f};
-        UUID material = UUID(-1);
-        UUID shader = UUID(-1);
-        UUID mesh = UUID(-1);
-        UUID entity = UUID(-1);
+        Hazel::UUID material = Hazel::UUID(-1);
+        Hazel::UUID shader = Hazel::UUID(-1);
+        Hazel::UUID mesh = Hazel::UUID(-1);
+        Hazel::UUID entity = Hazel::UUID(-1);
         uint32_t enttEntity = static_cast<uint32_t>(-1);
     };
 
@@ -35,7 +38,7 @@ namespace Hazel
             Remove
         };
 
-        UUID entity = UUID(-1);
+        Hazel::UUID entity = Hazel::UUID(-1);
         Type type = Type::Add;
 
         union
@@ -47,13 +50,13 @@ namespace Hazel
 
             struct
             {
-                UUID material;
+                Hazel::UUID material;
             } changeMaterial;
 
             struct
             {
-                UUID mesh;
-                uint32_t meshInstanceID;
+                Hazel::UUID mesh;
+                uint32_t meshInstanceID = 0;
             } changeMesh;
 
             struct
@@ -66,24 +69,23 @@ namespace Hazel
     class RenderScene
     {
       public:
-        RenderScene(Renderer* renderer);
+        RenderScene(Hazel::Renderer* renderer);
         void Update(const std::vector<RenderSceneUpdatePayload>& payload);
         void Clear();
         void SortRenderObjectShader();
 
-        const std::multimap<UUID, RenderObject*>& GetRenderObjectsSortedByShader() const
-        {
-            return m_RenderObjectsSortedByShader;
-        }
+        const std::multimap<Hazel::UUID, RenderObject*>& GetRenderObjectsSortedByShader() const
+        { return m_RenderObjectsSortedByShader; }
 
       private:
-        Renderer* m_Renderer = nullptr;
+        Hazel::Renderer* m_Renderer = nullptr;
 
         std::mutex m_RenderObjectsMutex;
-        std::unordered_map<UUID, std::unique_ptr<RenderObject>> m_RenderObjects;
+        std::unordered_map<Hazel::UUID, std::unique_ptr<RenderObject>> m_RenderObjects;
 
-        std::unordered_map<RenderObject*, std::multimap<UUID, RenderObject*>::iterator> m_RenderObjectLocationInMap;
-        std::multimap<UUID, RenderObject*> m_RenderObjectsSortedByShader;
+        std::unordered_map<RenderObject*, std::multimap<Hazel::UUID, RenderObject*>::iterator>
+            m_RenderObjectLocationInMap;
+        std::multimap<Hazel::UUID, RenderObject*> m_RenderObjectsSortedByShader;
         std::unordered_set<RenderObject*> m_RenderObjectsUnsorted;
     };
-} // namespace Hazel
+} // namespace Aster

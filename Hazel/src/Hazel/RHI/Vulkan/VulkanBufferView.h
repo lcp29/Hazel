@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan buffer view backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_FORWARD_DECL_CLASS(RHIBuffer)
 
@@ -49,4 +48,4 @@ namespace Hazel
         vk::BufferView m_BufferView = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

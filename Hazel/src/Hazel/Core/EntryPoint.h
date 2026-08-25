@@ -1,6 +1,9 @@
 #pragma once
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Application.h"
-#include "Hazel/Core/Base.h"
+#include "Hazel/Core/Log.h"
+#include "Hazel/Debug/Instrumentor.h"
+// ======== Aster Modify End ========
 
 #ifdef HZ_PLATFORM_WINDOWS
 

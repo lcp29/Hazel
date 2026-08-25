@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan common backend.
+// Created: 2026-03-14.
 
 #pragma once
 #include "../RHIHeaders.h"
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     inline RHIAdapterType VulkanConvertAdapterType(vk::PhysicalDeviceType type)
     {
@@ -236,4 +235,4 @@ namespace Hazel
         DebugMessageCallback callback;
         void* userData;
     };
-} // namespace Hazel
+} // namespace Aster

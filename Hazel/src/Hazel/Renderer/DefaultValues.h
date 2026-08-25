@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/4/6.
-//
+// Declares default renderer resource layouts and push constants.
+// Created: 2026-04-06.
 
 #pragma once
 #include "BindlessRegistry.h"
 #include "Hazel/RHI/RHI.h"
 
-namespace Hazel
+namespace Aster
 {
     inline const RHIResourceLayoutDesc kDefaultResourceLayoutSet0 = RHIResourceLayoutDesc{
         .bindings = {
@@ -29,4 +28,4 @@ namespace Hazel
 
     inline const RHIPushConstantRangeDesc kDefaultPushConstantRange = RHIPushConstantRangeDesc{
         .offset = 0, .size = 128, .stages = RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment};
-} // namespace Hazel
+} // namespace Aster

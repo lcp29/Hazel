@@ -7,9 +7,9 @@
 
 #include <cstring>
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPUTextureAsset> ImportGPUTextureAsset(Renderer* renderer, const TextureAsset* asset)
+    std::unique_ptr<GPUTextureAsset> ImportGPUTextureAsset(Hazel::Renderer* renderer, const TextureAsset* asset)
     {
         const auto& meta = asset->GetMeta();
         const auto& textureData = asset->GetTextureData();
@@ -72,7 +72,10 @@ namespace Hazel
                                {0, 0, 1, RHIImagePlaneFlagBits::Color});
 
         if (textureDesc.useMipmap) { ImageUtilGenerateMipmap(cmd, image); }
-        else { image->Transition(cmd, RHIImageResourceState::TransferDestination, RHIImageResourceState::ShaderRead); }
+        else
+        {
+            image->Transition(cmd, RHIImageResourceState::TransferDestination, RHIImageResourceState::ShaderRead);
+        }
 
         cmd->End();
 
@@ -96,4 +99,4 @@ namespace Hazel
                                                  imageView,
                                                  renderer->GetCurrentFrameIndex());
     }
-} // namespace Hazel
+} // namespace Aster

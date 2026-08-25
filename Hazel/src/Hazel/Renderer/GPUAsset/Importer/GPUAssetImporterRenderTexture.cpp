@@ -3,9 +3,9 @@
 #include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPURenderTextureAsset> ImportGPURenderTextureAsset(Renderer* renderer,
+    std::unique_ptr<GPURenderTextureAsset> ImportGPURenderTextureAsset(Hazel::Renderer* renderer,
                                                                        const RenderTextureAsset* asset)
     {
         return CreateGPURenderTextureAsset(renderer,
@@ -14,4 +14,4 @@ namespace Hazel
                                            asset->GetMeta().GetDesc(),
                                            renderer->GetCurrentFrameIndex());
     }
-} // namespace Hazel
+} // namespace Aster

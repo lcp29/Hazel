@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/3.
-//
+// Declares GPU asset resources.
+// Created: 2026-04-03.
 
 #pragma once
 #include "Hazel/Asset/Asset.h"
@@ -10,12 +9,19 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     class GPUAsset
     {
       public:
-        explicit GPUAsset(
-            UUID uuid, AssetType assetType, Renderer* renderer, uint64_t sourceVersion, uint64_t lastReferencedFrame)
+        explicit GPUAsset(Hazel::UUID uuid,
+                          AssetType assetType,
+                          Hazel::Renderer* renderer,
+                          uint64_t sourceVersion,
+                          uint64_t lastReferencedFrame)
             : m_UUID(uuid)
             , m_Renderer(renderer)
             , m_SourceVersion(sourceVersion)
@@ -45,7 +51,7 @@ namespace Hazel
 
         AssetType GetType() const { return m_Type; }
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         int32_t GetUseCount() const { return m_UseCount.load(); }
 
@@ -55,18 +61,18 @@ namespace Hazel
 
         void Return() { m_UseCount.fetch_sub(1); }
 
-        Renderer* GetRenderer() const { return m_Renderer; }
+        Hazel::Renderer* GetRenderer() const { return m_Renderer; }
 
         virtual void Release() = 0;
         virtual void ReleaseImmediate() = 0;
 
       protected:
-        UUID m_UUID = 0;
-        Renderer* m_Renderer = nullptr;
+        Hazel::UUID m_UUID = 0;
+        Hazel::Renderer* m_Renderer = nullptr;
         uint64_t m_SourceVersion = 0;
         RHISyncPoint m_LastReferencedSyncPoint = {};
         uint64_t m_LastReferencedFrame = 0;
         AssetType m_Type = AssetType::Unknown;
         std::atomic<int32_t> m_UseCount = 0;
     };
-} // namespace Hazel
+} // namespace Aster

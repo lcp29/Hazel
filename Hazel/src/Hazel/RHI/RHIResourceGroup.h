@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI resource-group include boundary.
+// Created: 2026-03-15.
 
 #pragma once
 
 #include "RHIBase.h"
 
-namespace Hazel
-{} // namespace Hazel
+namespace Aster
+{} // namespace Aster

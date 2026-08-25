@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/20.
-//
+// Implements components.
+// Created: 2026-03-20.
 
 #include "Components.h"
 

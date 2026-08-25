@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Declares GPU render buffer asset resources.
+// Created: 2026-04-01.
 
 #pragma once
 #include "Hazel/RHI/RHI.h"
@@ -12,6 +11,10 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct RenderBufferDesc
     {
@@ -30,9 +33,9 @@ namespace Hazel
       public:
         GPURenderBufferAsset() = delete;
 
-        GPURenderBufferAsset(UUID uuid,
+        GPURenderBufferAsset(Hazel::UUID uuid,
                              uint64_t sourceVersion,
-                             Renderer* renderer,
+                             Hazel::Renderer* renderer,
                              const RenderBufferDesc& desc,
                              std::vector<RHIBuffer*> buffers,
                              uint64_t lastReferencedFrame = 0);
@@ -58,9 +61,9 @@ namespace Hazel
         std::vector<RHIBuffer*> m_Buffers;
     };
 
-    std::unique_ptr<GPURenderBufferAsset> CreateGPURenderBufferAsset(Renderer* renderer,
-                                                                     UUID uuid,
+    std::unique_ptr<GPURenderBufferAsset> CreateGPURenderBufferAsset(Hazel::Renderer* renderer,
+                                                                     Hazel::UUID uuid,
                                                                      uint64_t sourceVersion,
                                                                      const RenderBufferDesc& desc,
                                                                      uint64_t lastReferencedFrame = 0);
-} // namespace Hazel
+} // namespace Aster

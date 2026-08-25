@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/14.
-//
+// Implements the custom render pipeline.
+// Created: 2026-04-14.
 
 #include "CustomRenderPipeline.h"
 
@@ -9,9 +8,9 @@
 #include "../Renderer/GPUAsset/GPURenderTextureAsset.h"
 #include "../Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    CustomRenderPipeline::CustomRenderPipeline(Renderer* renderer)
+    CustomRenderPipeline::CustomRenderPipeline(Hazel::Renderer* renderer)
     {
         RenderTextureDesc depthStencilDesc{};
         depthStencilDesc.height = renderer->GetDefaultRenderTexture()->GetDesc().height;
@@ -25,7 +24,7 @@ namespace Hazel
         m_DepthStencilTexture = renderer->ResolveGPURenderTexture(depthStencilDesc);
     }
 
-    void CustomRenderPipeline::Render(RenderContext& context, const SceneCameraView& camera)
+    void CustomRenderPipeline::Render(RenderContext& context, const Hazel::SceneCameraView& camera)
     {
         auto* renderTexture = context.GetCameraRenderTexture();
 
@@ -70,4 +69,4 @@ namespace Hazel
     }
 
     CustomRenderPipeline::~CustomRenderPipeline() { m_DepthStencilTexture.Destroy(); }
-} // namespace Hazel
+} // namespace Aster

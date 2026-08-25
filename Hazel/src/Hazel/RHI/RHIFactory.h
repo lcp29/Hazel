@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Declares the RHI factory interface.
+// Created: 2026-03-13.
 
 #pragma once
 
@@ -12,7 +11,7 @@
 #include <filesystem>
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     struct RHIShaderMacroDefinition
     {
@@ -31,4 +30,4 @@ namespace Hazel
 
     std::optional<std::unique_ptr<RHIInstance>> CreateInstance(const RHIInstanceDesc& desc);
     RHIShader* CreateShaderFromGLSLFile(RHIDevice* device, const RHIShaderFileDesc& desc);
-} // namespace Hazel
+} // namespace Aster

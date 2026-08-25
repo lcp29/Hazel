@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI buffer interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -10,7 +9,7 @@
 
 #include <cstdint>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHIBufferCpuAccess : uint8_t
     {
@@ -61,4 +60,4 @@ namespace Hazel
         bool hostCoherent = false;
         bool deviceMemory = false;
     };
-} // namespace Hazel
+} // namespace Aster

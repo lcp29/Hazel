@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the RHI pipeline interface.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -14,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHIPrimitiveTopology : uint8_t
     {
@@ -223,29 +222,29 @@ namespace Hazel
 
     struct RHIImageMemoryBarrier
     {
-        RHIImage* image;
+        RHIImage* image = nullptr;
         RHIPipelineStages srcStages;
         RHIPipelineStages dstStages;
         RHIPipelineAccessFlags srcAccess;
         RHIPipelineAccessFlags dstAccess;
-        RHIImageResourceState oldState;
-        RHIImageResourceState newState;
-        RHIQueue* srcQueue;
-        RHIQueue* dstQueue;
+        RHIImageResourceState oldState = RHIImageResourceState::Undefined;
+        RHIImageResourceState newState = RHIImageResourceState::Undefined;
+        RHIQueue* srcQueue = nullptr;
+        RHIQueue* dstQueue = nullptr;
         RHIImageSubresourceRange subresourceRange;
     };
 
     struct RHIBufferMemoryBarrier
     {
-        RHIBuffer* buffer;
+        RHIBuffer* buffer = nullptr;
         RHIPipelineStages srcStages;
         RHIPipelineStages dstStages;
         RHIPipelineAccessFlags srcAccess;
         RHIPipelineAccessFlags dstAccess;
-        uint64_t offset;
-        uint64_t size;
-        RHIQueue* srcQueue;
-        RHIQueue* dstQueue;
+        uint64_t offset = 0;
+        uint64_t size = 0;
+        RHIQueue* srcQueue = nullptr;
+        RHIQueue* dstQueue = nullptr;
     };
 
     struct RHIPipelineBarrierDesc
@@ -254,4 +253,4 @@ namespace Hazel
         std::vector<RHIImageMemoryBarrier> imageBarriers{};
         std::vector<RHIBufferMemoryBarrier> bufferBarriers{};
     };
-} // namespace Hazel
+} // namespace Aster

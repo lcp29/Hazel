@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Declares shader asset support.
+// Created: 2026-03-31.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     struct ShaderAssetMeta
     {
@@ -17,14 +16,14 @@ namespace Hazel
         static ShaderAssetMeta Deserialize(const YAML::Node& node);
         static ShaderAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
         void VersionUp() { m_Version++; }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         uint64_t m_Version = 0;
     };
 
@@ -66,4 +65,4 @@ namespace Hazel
         ShaderAssetMeta m_Meta{};
         ShaderAssetData m_Data{};
     };
-} // namespace Hazel
+} // namespace Aster

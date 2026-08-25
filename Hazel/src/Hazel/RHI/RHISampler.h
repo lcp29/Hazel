@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the RHI sampler interface.
+// Created: 2026-03-16.
 
 #pragma once
 
 #include "RHIBase.h"
 #include "RHICommon.h"
 
-namespace Hazel
+namespace Aster
 {
     enum class RHISamplerFilter : uint8_t
     {
@@ -39,4 +38,4 @@ namespace Hazel
         bool compareEnable = false;
         RHICompareOp compareOp = RHICompareOp::LessOrEqual;
     };
-} // namespace Hazel
+} // namespace Aster

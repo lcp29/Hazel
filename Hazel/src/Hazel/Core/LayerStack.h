@@ -13,9 +13,11 @@ namespace Hazel
         LayerStack() = default;
         ~LayerStack();
 
+        // ======== Aster Modify Begin ========
         void Clear();
 
         void PushLayer(Layer* layer);
+        // ======== Aster Modify End ========
         void PushOverlay(Layer* overlay);
         void PopLayer(Layer* layer);
         void PopOverlay(Layer* overlay);

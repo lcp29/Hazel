@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/4/9.
-//
+// Declares scene transform math.
+// Created: 2026-04-09.
 
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-namespace Hazel
+namespace Aster
 {
     struct Transform
     {
@@ -42,4 +41,4 @@ namespace Hazel
             rotation = glm::eulerAngles(orientation);
         }
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/5.
-//
+// Implements GPU asset import for graphics pipeline.
+// Created: 2026-04-05.
 
 #include "GPUAssetImporter.h"
 #include "Hazel/Asset/MeshAsset.h"
@@ -10,13 +9,13 @@
 #include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    RHIGraphicsPipeline* CreateGraphicsPipeline(UUID material,
+    RHIGraphicsPipeline* CreateGraphicsPipeline(Hazel::UUID material,
                                                 const std::vector<RHIFormat>& colorAttachmentFormats,
                                                 const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                                 RHIFormat depthStencilFormat,
-                                                Renderer* renderer)
+                                                Hazel::Renderer* renderer)
     {
         auto materialResult = renderer->ResolveGPUAssetBlocked(material, AssetType::Material);
         if (!materialResult.asset) { return nullptr; }
@@ -71,4 +70,4 @@ namespace Hazel
 
         return pipeline;
     }
-} // namespace Hazel
+} // namespace Aster

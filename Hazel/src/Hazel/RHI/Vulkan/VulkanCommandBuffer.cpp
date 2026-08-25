@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan command buffer backend.
+// Created: 2026-03-15.
 
 #define VULKAN_HPP_NO_EXCEPTIONS
 
@@ -21,7 +20,7 @@
 #include <array>
 #include <concepts>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -110,9 +109,7 @@ namespace Hazel
         }
 
         vk::ClearDepthStencilValue VulkanConvertClearDepthStencilValue(const RHIClearDepthStencilValue& value)
-        {
-            return vk::ClearDepthStencilValue(value.depth, value.stencil);
-        }
+        { return vk::ClearDepthStencilValue(value.depth, value.stencil); }
     } // namespace
 
     RHI_VK_FUNC_IMPL(RHICommandBuffer, RHICommandBufferImpl)(RHICommandPool* commandPoolOwner,
@@ -816,4 +813,4 @@ namespace Hazel
         m_CommandPool = VK_NULL_HANDLE;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

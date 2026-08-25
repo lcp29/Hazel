@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/2.
-//
+// Declares common asset types and interfaces.
+// Created: 2026-04-02.
 
 #pragma once
 #include "Hazel/Core/UUID.h"
@@ -9,7 +8,7 @@
 #include <filesystem>
 #include <mutex>
 
-namespace Hazel
+namespace Aster
 {
     class GPUAsset;
 
@@ -37,8 +36,8 @@ namespace Hazel
 
     struct AssetRegistryTerm
     {
-        UUID uuid;
-        AssetType type;
+        Hazel::UUID uuid;
+        AssetType type = AssetType::Unknown;
         AssetState state = AssetState::Unloaded;
         std::mutex mutex;
         std::condition_variable loadingCondition;
@@ -46,7 +45,7 @@ namespace Hazel
 
         AssetRegistryTerm() = default;
 
-        AssetRegistryTerm(UUID uuid, AssetType type, std::filesystem::path filePath)
+        AssetRegistryTerm(Hazel::UUID uuid, AssetType type, std::filesystem::path filePath)
             : uuid(uuid)
             , type(type)
             , filePath(std::move(filePath))
@@ -79,7 +78,7 @@ namespace Hazel
 
         virtual ~Asset() = default;
 
-        UUID GetUUID() const { return m_RegistryTerm->uuid; }
+        Hazel::UUID GetUUID() const { return m_RegistryTerm->uuid; }
 
         const std::filesystem::path& GetFilePath() const { return m_RegistryTerm->filePath; }
 
@@ -91,12 +90,10 @@ namespace Hazel
         GPUAssetState& GetGPUAssetState() { return m_GPUAssetState; }
 
         std::filesystem::path GetAbsoluteFilePath() const
-        {
-            return std::filesystem::absolute(m_RegistryTerm->filePath);
-        }
+        { return std::filesystem::absolute(m_RegistryTerm->filePath); }
 
       protected:
         AssetRegistryTerm* m_RegistryTerm = nullptr;
         GPUAssetState m_GPUAssetState{};
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI resource heap interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -8,7 +7,7 @@
 #include "RHIResourceGroup.h"
 #include "RHIResourceLayout.h"
 
-namespace Hazel
+namespace Aster
 {
     struct RHIResourceHeapDesc
     {
@@ -23,4 +22,4 @@ namespace Hazel
         uint32_t storageTexelBufferCount = 0;
         bool updateAfterBind = false;
     };
-} // namespace Hazel
+} // namespace Aster

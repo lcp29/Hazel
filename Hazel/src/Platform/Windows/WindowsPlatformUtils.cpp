@@ -1,14 +1,17 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Application.h"
 #include "Hazel/Utils/PlatformUtils.h"
 #include "hzpch.h"
 
 #include <GLFW/glfw3.h>
 #include <commdlg.h>
+// ======== Aster Modify End ========
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     float SystemSettings::GetSystemDPIScale()
     {
         // Get the DPI scale factor for the primary monitor
@@ -18,10 +21,9 @@ namespace Hazel
         return dpiX / 96.0f; // 96 DPI is the default scale (100%)
     }
 
-    float Time::GetTime()
-    {
-        return glfwGetTime();
-    }
+    float Time::GetTime() { return glfwGetTime(); }
+
+    // ======== Aster Modify End ========
 
     std::string FileDialogs::OpenFile(const char* filter)
     {
@@ -33,14 +35,12 @@ namespace Hazel
         ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
-        if (GetCurrentDirectoryA(256, currentDir))
-            ofn.lpstrInitialDir = currentDir;
+        if (GetCurrentDirectoryA(256, currentDir)) ofn.lpstrInitialDir = currentDir;
         ofn.lpstrFilter = filter;
         ofn.nFilterIndex = 1;
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-        if (GetOpenFileNameA(&ofn) == TRUE)
-            return ofn.lpstrFile;
+        if (GetOpenFileNameA(&ofn) == TRUE) return ofn.lpstrFile;
 
         return std::string();
     }
@@ -55,8 +55,7 @@ namespace Hazel
         ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
-        if (GetCurrentDirectoryA(256, currentDir))
-            ofn.lpstrInitialDir = currentDir;
+        if (GetCurrentDirectoryA(256, currentDir)) ofn.lpstrInitialDir = currentDir;
         ofn.lpstrFilter = filter;
         ofn.nFilterIndex = 1;
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
@@ -64,8 +63,7 @@ namespace Hazel
         // Sets the default extension by extracting it from the filter
         ofn.lpstrDefExt = strchr(filter, '\0') + 1;
 
-        if (GetSaveFileNameA(&ofn) == TRUE)
-            return ofn.lpstrFile;
+        if (GetSaveFileNameA(&ofn) == TRUE) return ofn.lpstrFile;
 
         return std::string();
     }

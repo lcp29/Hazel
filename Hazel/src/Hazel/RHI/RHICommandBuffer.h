@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI command buffer interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -12,7 +11,7 @@
 #include <optional>
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHICommandBufferLevel : uint8_t
     {
@@ -181,4 +180,4 @@ namespace Hazel
         uint32_t layerCount = 1;
         uint32_t viewMask = 0;
     };
-} // namespace Hazel
+} // namespace Aster

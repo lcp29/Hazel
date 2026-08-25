@@ -4,18 +4,23 @@
 
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     struct MeshRendererComponent;
     class Scene;
 
     class Entity
+    // ======== Aster Modify End ========
     {
       public:
         Entity() = default;
 
         Entity(entt::entity handle, Scene* scene)
+            // ======== Aster Modify Begin ========
             : m_EntityHandle(handle)
             , m_Scene(scene)
         {}
+
+        // ======== Aster Modify End ========
 
         Entity(const Entity& other) = default;
 
@@ -24,7 +29,9 @@ namespace Hazel
             HZ_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
             T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
             m_Scene->OnComponentAdded<T>(*this, component);
+            // ======== Aster Modify Begin ========
             if constexpr (std::is_same_v<T, MeshRendererComponent>) { AddMeshRendererPayload(component); }
+            // ======== Aster Modify End ========
             return component;
         }
 
@@ -41,18 +48,25 @@ namespace Hazel
             return m_Scene->m_Registry.get<T>(m_EntityHandle);
         }
 
+        // ======== Aster Modify Begin ========
         template <typename T> bool HasComponent() { return m_Scene->m_Registry.any_of<T>(m_EntityHandle); }
+
+        // ======== Aster Modify End ========
 
         template <typename T> void RemoveComponent()
         {
             HZ_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
+            // ======== Aster Modify Begin ========
             if constexpr (std::is_same_v<T, MeshRendererComponent>) { RemoveMeshRendererPayload(); }
+            // ======== Aster Modify End ========
             m_Scene->m_Registry.remove<T>(m_EntityHandle);
         }
 
+        // ======== Aster Modify Begin ========
         void AddChild(Entity* child);
         void RemoveChild(Entity* child);
         void Detach();
+        // ======== Aster Modify End ========
 
         operator bool() const;
         operator entt::entity() const;
@@ -62,6 +76,7 @@ namespace Hazel
         const std::string& GetName();
 
         bool operator==(const Entity& other) const;
+        // ======== Aster Modify Begin ========
         bool operator!=(const Entity& other) const;
 
         YAML::Node Serialize();
@@ -82,6 +97,7 @@ namespace Hazel
         glm::mat4 GetGlobalTransform() const;
         void AddMeshRendererPayload(const MeshRendererComponent& component);
         void RemoveMeshRendererPayload();
+        // ======== Aster Modify End ========
 
         entt::entity m_EntityHandle{entt::null};
         Scene* m_Scene = nullptr;

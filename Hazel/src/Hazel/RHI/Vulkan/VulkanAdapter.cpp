@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan adapter backend.
+// Created: 2026-03-14.
 
 #include "VulkanAdapter.h"
 
@@ -10,7 +9,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     bool RHI_VK_FUNC_IMPL(RHIAdapter, CanCreateDevice)(const RHIDeviceCapabilities& caps) const
     {
@@ -139,4 +138,4 @@ namespace Hazel
         m_RequiredVulkanFeatures.supportShaderSampledImageArrayNonUniformIndexing =
             supportsVulkan12 && vulkan12Features.shaderSampledImageArrayNonUniformIndexing;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,18 +1,17 @@
-//
-// Created by helmholtz on 2026/4/14.
-//
+// Declares render pipeline.
+// Created: 2026-04-14.
 
 #pragma once
-#include "RenderContext.h"
 #include "../Scene/Scene.h"
+#include "RenderContext.h"
 
-namespace Hazel
+namespace Aster
 {
     class RenderPipeline
     {
       public:
         RenderPipeline() = default;
-        virtual void Render(RenderContext& context, const SceneCameraView& camera) = 0;
+        virtual void Render(RenderContext& context, const Hazel::SceneCameraView& camera) = 0;
         virtual ~RenderPipeline() = default;
     };
-} // namespace Hazel
+} // namespace Aster

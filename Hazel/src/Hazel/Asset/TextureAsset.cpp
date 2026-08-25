@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/24.
-//
+// Implements texture asset support.
+// Created: 2026-03-24.
 
 #include "TextureAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
     YAML::Node TextureAssetMeta::Serialize() const
     {
@@ -25,7 +24,7 @@ namespace Hazel
     {
         TextureAssetMeta meta;
 
-        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? Hazel::UUID(node["UUID"].as<uint64_t>()) : Hazel::UUID();
         meta.m_IsSRGB = node["IsSRGB"] ? node["IsSRGB"].as<bool>() : true;
         meta.m_UseMipmap = node["UseMipmap"] ? node["UseMipmap"].as<bool>() : false;
         meta.m_AllowStorageLoad = node["AllowStorageLoad"] ? node["AllowStorageLoad"].as<bool>() : false;
@@ -37,11 +36,11 @@ namespace Hazel
     TextureAssetMeta TextureAssetMeta::CreateDefault()
     {
         TextureAssetMeta meta;
-        meta.m_UUID = UUID();
+        meta.m_UUID = Hazel::UUID();
         meta.m_IsSRGB = true;
         meta.m_UseMipmap = true;
         meta.m_AllowStorageLoad = false;
         meta.m_Version = 0;
         return meta;
     }
-} // namespace Hazel
+} // namespace Aster

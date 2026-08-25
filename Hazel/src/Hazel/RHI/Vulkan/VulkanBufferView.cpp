@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan buffer view backend.
+// Created: 2026-03-15.
 
 #include "VulkanBufferView.h"
 
@@ -8,7 +7,7 @@
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIBufferView, RHIBufferViewImpl)(RHIDevice* device,
                                                        RHIBuffer* buffer,
@@ -93,4 +92,4 @@ namespace Hazel
         m_IsValid = false;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

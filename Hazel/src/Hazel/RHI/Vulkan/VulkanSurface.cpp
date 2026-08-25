@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan surface backend.
+// Created: 2026-03-14.
 
 #include "VulkanSurface.h"
 
 #include "VulkanInstance.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHISurface,
                      RHISurfaceImpl)(RHIInstance* instanceOwner, vk::Instance instance, const RHISurfaceDesc& desc)
@@ -50,4 +49,4 @@ namespace Hazel
         m_IsValid = false;
         m_InstanceOwner = nullptr;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,7 +1,10 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #include <cstring>
 #include <stdint.h>
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {
@@ -39,9 +42,12 @@ namespace Hazel
             Size = 0;
         }
 
+        // ======== Aster Modify Begin ========
         template <typename T> T* As() { return reinterpret_cast<T*>(Data); }
 
         operator bool() const { return static_cast<bool>(Data); }
+
+        // ======== Aster Modify End ========
     };
 
     struct ScopedBuffer

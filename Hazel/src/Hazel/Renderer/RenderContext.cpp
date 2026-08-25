@@ -1,14 +1,13 @@
-//
-// Created by helmholtz on 2026/4/14.
-//
+// Implements render context.
+// Created: 2026-04-14.
 
 #include "RenderContext.h"
 
 #include "Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    void RenderContext::DrawAllObjects(const SceneCameraView& camera, const DrawSetting& drawSetting)
+    void RenderContext::DrawAllObjects(const Hazel::SceneCameraView& camera, const DrawSetting& drawSetting)
     {
         m_Renderer->RunGraphicsPass(m_Renderer->GetCurrentFrameData().commandBuffer,
                                     camera,
@@ -20,9 +19,9 @@ namespace Hazel
                                     drawSetting.scissorArea);
     }
 
-    void RenderContext::DrawAllObjectsMaterialOverride(const SceneCameraView& camera,
+    void RenderContext::DrawAllObjectsMaterialOverride(const Hazel::SceneCameraView& camera,
                                                        const DrawSetting& drawSetting,
-                                                       UUID material)
+                                                       Hazel::UUID material)
     {
         m_Renderer->RunGraphicsPass(m_Renderer->GetCurrentFrameData().commandBuffer,
                                     material,
@@ -36,17 +35,11 @@ namespace Hazel
     }
 
     void RenderContext::SetBuffer(const std::string& name, const GPUAssetHandle* handle)
-    {
-        GetRenderer()->GetResourceBindingRegistry()->SetBuffer(name, handle);
-    }
+    { GetRenderer()->GetResourceBindingRegistry()->SetBuffer(name, handle); }
 
     void RenderContext::SetImage(const std::string& name, const GPUAssetHandle* handle)
-    {
-        GetRenderer()->GetResourceBindingRegistry()->SetImage(name, handle);
-    }
+    { GetRenderer()->GetResourceBindingRegistry()->SetImage(name, handle); }
 
     void RenderContext::SetSampler(const std::string& name, const GPUAssetHandle* handle)
-    {
-        GetRenderer()->GetResourceBindingRegistry()->SetSampler(name, handle);
-    }
-} // namespace Hazel
+    { GetRenderer()->GetResourceBindingRegistry()->SetSampler(name, handle); }
+} // namespace Aster

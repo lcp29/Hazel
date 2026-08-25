@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Declares cached material resources.
+// Created: 2026-04-01.
 
 #pragma once
 #include "Hazel/Asset/MaterialAsset.h"
@@ -13,22 +12,26 @@
 
 namespace Hazel
 {
+    class Renderer;
+}
+
+namespace Aster
+{
     class GPUSamplerAsset;
     class GPUShaderAsset;
     class GPUTextureAsset;
     class MaterialAsset;
-    class Renderer;
 
     class CachedMaterial : public GPUAsset
     {
       public:
         CachedMaterial() = delete;
 
-        CachedMaterial(const UUID uuid,
+        CachedMaterial(const Hazel::UUID uuid,
                        uint64_t sourceVersion,
                        uint64_t materialID,
-                       Renderer* renderer,
-                       UUID shader,
+                       Hazel::Renderer* renderer,
+                       Hazel::UUID shader,
                        uint64_t shaderSourceVersion,
                        const MaterialPipelineState& pipelineState,
                        const std::unordered_map<std::string, MaterialAssetProperty>& properties,
@@ -50,7 +53,7 @@ namespace Hazel
 
         const MaterialPipelineState& GetPipelineState() const { return m_PipelineState; }
 
-        UUID GetShader() const { return m_Shader; }
+        Hazel::UUID GetShader() const { return m_Shader; }
 
         uint64_t GetShaderSourceVersion() const { return m_ShaderSourceVersion; }
 
@@ -70,9 +73,9 @@ namespace Hazel
         bool m_IsValid = false;
         bool m_IsDirty = true;
         uint32_t m_MaterialID = 0;
-        UUID m_Shader = UUID(-1);
+        Hazel::UUID m_Shader = Hazel::UUID(-1);
         uint64_t m_ShaderSourceVersion = 0;
         MaterialPipelineState m_PipelineState{};
         std::unordered_map<std::string, MaterialAssetProperty> m_Properties;
     };
-} // namespace Hazel
+} // namespace Aster

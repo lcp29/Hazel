@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the RHI sync point interface.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -8,7 +7,7 @@
 
 #include <cstdint>
 
-namespace Hazel
+namespace Aster
 {
     struct RHISyncPoint
     {
@@ -16,4 +15,4 @@ namespace Hazel
         RHIQueue* queue = nullptr;
         bool valid = false;
     };
-} // namespace Hazel
+} // namespace Aster

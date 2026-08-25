@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Implements image loading and format utilities.
+// Created: 2026-03-31.
 
 #include "ImageUtils.h"
 
-namespace Hazel
+namespace Aster
 {
     uint32_t DeduceMipLevelCount(uint32_t width, uint32_t height)
     {
@@ -99,4 +98,4 @@ namespace Hazel
             image->Transition(commandBuffer, oldState, RHIImageResourceState::ShaderRead, shaderReadRange);
         }
     }
-} // namespace Hazel
+} // namespace Aster

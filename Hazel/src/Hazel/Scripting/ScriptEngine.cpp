@@ -1,3 +1,4 @@
+// ======== Aster Modify Begin ========
 #include "ScriptEngine.h"
 
 #include "Hazel/Core/Application.h"
@@ -16,6 +17,8 @@
 #include "mono/metadata/threads.h"
 
 #include <FileWatch.hpp>
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {
@@ -52,7 +55,9 @@ namespace Hazel
             if (status != MONO_IMAGE_OK)
             {
                 const char* errorMessage = mono_image_strerror(status);
-                // Log some error message using the errorMessage data
+                // ======== Aster Modify Begin ========
+                HZ_CORE_ERROR("Failed to open script assembly '{}': {}", assemblyPath.string(), errorMessage);
+                // ======== Aster Modify End ========
                 return nullptr;
             }
 
@@ -65,7 +70,9 @@ namespace Hazel
                 {
                     ScopedBuffer pdbFileData = FileSystem::ReadFileBinary(pdbPath);
                     mono_debug_open_image_from_memory(image, pdbFileData.As<const mono_byte>(), pdbFileData.Size());
-                    HZ_CORE_INFO("Loaded PDB {}", (const char*)pdbPath.c_str());
+                    // ======== Aster Modify Begin ========
+                    HZ_CORE_INFO("Loaded PDB {}", pdbPath.string());
+                    // ======== Aster Modify End ========
                 }
             }
 
@@ -198,8 +205,10 @@ namespace Hazel
 
         if (s_Data->EnableDebugging)
         {
+            // ======== Aster Modify Begin ========
             const char* argv[2] = {"--debugger-agent=transport=dt_socket,address=127.0.0.1:2550,server=y,suspend=n,"
                                    "loglevel=3,logfile=MonoDebugger.log",
+                                   // ======== Aster Modify End ========
                                    "--soft-breakpoints"};
 
             mono_jit_parse_options(2, (char**)argv);
@@ -231,7 +240,9 @@ namespace Hazel
     bool ScriptEngine::LoadAssembly(const std::filesystem::path& filepath)
     {
         // Create an App Domain
+        // ======== Aster Modify Begin ========
         s_Data->AppDomain = mono_domain_create_appdomain(const_cast<char*>("HazelScriptRuntime"), nullptr);
+        // ======== Aster Modify End ========
         mono_domain_set(s_Data->AppDomain, true);
 
         s_Data->CoreAssemblyFilepath = filepath;
@@ -275,22 +286,29 @@ namespace Hazel
     void ScriptEngine::OnRuntimeStart(Scene* scene) { s_Data->SceneContext = scene; }
 
     bool ScriptEngine::EntityClassExists(const std::string& fullClassName)
-    {
-        return s_Data->EntityClasses.contains(fullClassName);
-    }
+    // ======== Aster Modify Begin ========
+    { return s_Data->EntityClasses.contains(fullClassName); }
+
+    // ======== Aster Modify End ========
 
     void ScriptEngine::OnCreateEntity(Entity entity)
     {
         const auto& sc = entity.GetComponent<ScriptComponent>();
+        // ======== Aster Modify Begin ========
         if (EntityClassExists(sc.className))
+        // ======== Aster Modify End ========
         {
             UUID entityID = entity.GetUUID();
 
+            // ======== Aster Modify Begin ========
             Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_Data->EntityClasses[sc.className], entity);
+            // ======== Aster Modify End ========
             s_Data->EntityInstances[entityID] = instance;
 
             // Copy field values
+            // ======== Aster Modify Begin ========
             if (s_Data->EntityScriptFields.contains(entityID))
+            // ======== Aster Modify End ========
             {
                 const ScriptFieldMap& fieldMap = s_Data->EntityScriptFields.at(entityID);
                 for (const auto& [name, fieldInstance] : fieldMap)
@@ -304,12 +322,19 @@ namespace Hazel
     void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
     {
         UUID entityUUID = entity.GetUUID();
+        // ======== Aster Modify Begin ========
         if (s_Data->EntityInstances.contains(entityUUID))
+        // ======== Aster Modify End ========
         {
             Ref<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
             instance->InvokeOnUpdate(ts);
         }
-        else { HZ_CORE_ERROR("Could not find ScriptInstance for entity {}", static_cast<uint64_t>(entityUUID)); }
+        else
+        {
+            // ======== Aster Modify Begin ========
+            HZ_CORE_ERROR("Could not find ScriptInstance for entity {}", static_cast<uint64_t>(entityUUID));
+            // ======== Aster Modify End ========
+        }
     }
 
     Scene* ScriptEngine::GetSceneContext() { return s_Data->SceneContext; }
@@ -324,7 +349,9 @@ namespace Hazel
 
     Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
     {
+        // ======== Aster Modify Begin ========
         if (!s_Data->EntityClasses.contains(name)) return nullptr;
+        // ======== Aster Modify End ========
 
         return s_Data->EntityClasses.at(name);
     }
@@ -389,7 +416,9 @@ namespace Hazel
             {
                 const char* fieldName = mono_field_get_name(field);
                 uint32_t flags = mono_field_get_flags(field);
+                // ======== Aster Modify Begin ========
                 if (flags & MONO_FIELD_ATTR_PUBLIC)
+                // ======== Aster Modify End ========
                 {
                     MonoType* type = mono_field_get_type(field);
                     ScriptFieldType fieldType = Utils::MonoTypeToScriptFieldType(type);
@@ -399,17 +428,15 @@ namespace Hazel
                 }
             }
         }
-
-        auto& entityClasses = s_Data->EntityClasses;
-
-        //mono_field_get_value()
     }
 
     MonoImage* ScriptEngine::GetCoreAssemblyImage() { return s_Data->CoreAssemblyImage; }
 
     MonoObject* ScriptEngine::GetManagedInstance(UUID uuid)
     {
+        // ======== Aster Modify Begin ========
         HZ_CORE_ASSERT(s_Data->EntityInstances.contains(uuid));
+        // ======== Aster Modify End ========
         return s_Data->EntityInstances.at(uuid)->GetManagedObject();
     }
 
@@ -433,9 +460,7 @@ namespace Hazel
     MonoObject* ScriptClass::Instantiate() { return ScriptEngine::InstantiateClass(m_MonoClass); }
 
     MonoMethod* ScriptClass::GetMethod(const std::string& name, int parameterCount)
-    {
-        return mono_class_get_method_from_name(m_MonoClass, name.c_str(), parameterCount);
-    }
+    { return mono_class_get_method_from_name(m_MonoClass, name.c_str(), parameterCount); }
 
     MonoObject* ScriptClass::InvokeMethod(MonoObject* instance, MonoMethod* method, void** params)
     {

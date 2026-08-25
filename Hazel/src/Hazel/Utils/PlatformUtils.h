@@ -18,9 +18,12 @@ namespace Hazel
         static float GetTime();
     };
 
+    // ======== Aster Modify Begin ========
     class SystemSettings
     {
       public:
         static float GetSystemDPIScale();
     };
 } // namespace Hazel
+
+// ======== Aster Modify End ========

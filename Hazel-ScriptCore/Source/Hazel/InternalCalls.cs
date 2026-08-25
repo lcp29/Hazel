@@ -21,6 +21,7 @@ namespace Hazel
 		internal extern static void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
 		#endregion
 
+		// ======== Aster Modify Begin ========
 		#region SystemInternal
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
 		internal extern static bool Input_IsKeyDown(KeyCode keycode);
@@ -31,5 +32,6 @@ namespace Hazel
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static float NativeLog_VectorDot(ref Vector3 parameter);
 		#endregion
+		// ======== Aster Modify End ========
 	}
 }

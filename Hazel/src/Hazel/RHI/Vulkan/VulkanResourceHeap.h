@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan resource heap backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIResourceHeap)
     {
@@ -49,4 +48,4 @@ namespace Hazel
         DeletionQueue m_DeletionQueue;
         RHIOwnerSet<RHIResourceGroup> m_Groups;
     };
-} // namespace Hazel
+} // namespace Aster

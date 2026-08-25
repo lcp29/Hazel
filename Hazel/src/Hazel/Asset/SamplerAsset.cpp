@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/25.
-//
+// Implements sampler asset support.
+// Created: 2026-03-25.
 
 #include "SamplerAsset.h"
 
@@ -9,7 +8,7 @@
 
 #include <unordered_map>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -92,7 +91,7 @@ namespace Hazel
     SamplerAssetMeta SamplerAssetMeta::Deserialize(const YAML::Node& node)
     {
         SamplerAssetMeta meta;
-        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? Hazel::UUID(node["UUID"].as<uint64_t>()) : Hazel::UUID();
         meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
 
         auto& desc = meta.m_Desc;
@@ -124,7 +123,7 @@ namespace Hazel
     SamplerAssetMeta SamplerAssetMeta::CreateDefault()
     {
         SamplerAssetMeta meta;
-        meta.m_UUID = UUID();
+        meta.m_UUID = Hazel::UUID();
         meta.m_Version = 0;
         meta.m_Desc.minFilter = RHISamplerFilter::Linear;
         meta.m_Desc.magFilter = RHISamplerFilter::Linear;
@@ -141,4 +140,4 @@ namespace Hazel
         meta.m_Desc.compareOp = RHICompareOp::Never;
         return meta;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/7.
-//
+// Implements shader resource and bindless binding management.
+// Created: 2026-04-07.
 
 #include "ResourceBindingRegistry.h"
 
@@ -9,11 +8,11 @@
 #include "Renderer.h"
 #include "ShaderCommon.h"
 
-namespace Hazel
+namespace Aster
 {
-    ShaderMaterialSlot::ShaderMaterialSlot(UUID shader,
+    ShaderMaterialSlot::ShaderMaterialSlot(Hazel::UUID shader,
                                            uint64_t sourceVersion,
-                                           Renderer* renderer,
+                                           Hazel::Renderer* renderer,
                                            const RHIShaderReflection& reflection)
         : m_Shader(shader)
         , m_SourceVersion(sourceVersion)
@@ -42,7 +41,7 @@ namespace Hazel
                     m_UserUploadValueBufferSize = (slot.buffer.size + 255) / 256 * 256;
                     for (const auto& member : slot.buffer.members)
                     {
-                        for (int i = 0; i < maxFramesInFlight; ++i)
+                        for (uint32_t i = 0; i < maxFramesInFlight; ++i)
                         {
                             m_UserUploadValueBufferMemberMap[i][member.name] = UserUploadValueMeta{
                                 .name = member.name,
@@ -53,7 +52,7 @@ namespace Hazel
                         }
                     }
                     RHIBufferDesc bufferDesc{};
-                    bufferDesc.size = m_UserUploadValueBufferSize * maxFramesInFlight;
+                    bufferDesc.size = static_cast<uint64_t>(m_UserUploadValueBufferSize) * maxFramesInFlight;
                     bufferDesc.usages = RHIBufferUsageFlagBits::UniformBuffer;
                     bufferDesc.hostCoherent = true;
                     bufferDesc.allowGpuAddress = false;
@@ -126,9 +125,9 @@ namespace Hazel
 
     void ShaderMaterialSlot::SetResized(bool resized) { m_Resized = resized; }
 
-    uint32_t ShaderMaterialSlot::RegisterMaterial(UUID material)
+    uint32_t ShaderMaterialSlot::RegisterMaterial(Hazel::UUID material)
     {
-        if (material == UUID(-1)) { return -1; }
+        if (material == Hazel::UUID(-1)) { return -1; }
         if (!m_FreeList.empty())
         {
             uint32_t slot = m_FreeList.back();
@@ -155,21 +154,21 @@ namespace Hazel
         if (slot == -1) { return; }
         if (slot < m_Materials.size())
         {
-            if (m_Materials[slot] != UUID(-1))
+            if (m_Materials[slot] != Hazel::UUID(-1))
             {
-                m_Materials[slot] = UUID(-1);
+                m_Materials[slot] = Hazel::UUID(-1);
                 m_FreeList.push_back(slot);
                 m_MaterialCount--;
             }
         }
     }
 
-    std::vector<UUID> ShaderMaterialSlot::GetMaterials() const
+    std::vector<Hazel::UUID> ShaderMaterialSlot::GetMaterials() const
     {
-        std::vector<UUID> materials;
+        std::vector<Hazel::UUID> materials;
         for (const auto& material : m_Materials)
         {
-            if (material != UUID(-1)) { materials.push_back(material); }
+            if (material != Hazel::UUID(-1)) { materials.push_back(material); }
         }
         return materials;
     }
@@ -287,6 +286,7 @@ namespace Hazel
             .stages = RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
         });
 
+        if (setData.size() <= kMaterialResourceSet) { setData.resize(kMaterialResourceSet + 1); }
         setData[kMaterialResourceSet] = materialPropertiesLayoutDesc;
 
         m_ShaderResourceLayouts.reserve(setData.size());
@@ -329,9 +329,7 @@ namespace Hazel
     }
 
     std::vector<GPUAssetHandle> ShaderMaterialSlot::BuildResources()
-    {
-        return BuildResourcesForFrame(m_Renderer->GetCurrentFrameInFlightIndex());
-    }
+    { return BuildResourcesForFrame(m_Renderer->GetCurrentFrameInFlightIndex()); }
 
     std::vector<GPUAssetHandle> ShaderMaterialSlot::BuildResourcesForFrame(uint32_t frameInFlightIndex)
     {
@@ -405,7 +403,7 @@ namespace Hazel
         for (uint32_t materialID = 0; materialID < m_Materials.size(); ++materialID)
         {
             const auto materialUUID = m_Materials[materialID];
-            if (materialUUID == UUID(-1)) { continue; }
+            if (materialUUID == Hazel::UUID(-1)) { continue; }
 
             auto materialResult = m_Renderer->ResolveGPUAsset(materialUUID, AssetType::Material);
             auto* material = static_cast<CachedMaterial*>(materialResult.asset);
@@ -447,49 +445,35 @@ namespace Hazel
     }
 
     RHIBuffer* ShaderMaterialSlot::GetMaterialBuffer() const
-    {
-        return GetMaterialBuffer(m_Renderer->GetCurrentFrameInFlightIndex());
-    }
+    { return GetMaterialBuffer(m_Renderer->GetCurrentFrameInFlightIndex()); }
 
     RHIBuffer* ShaderMaterialSlot::GetMaterialBuffer(uint32_t frameInFlightIndex) const
-    {
-        return m_MaterialBuffers[frameInFlightIndex];
-    }
+    { return m_MaterialBuffers[frameInFlightIndex]; }
 
     RHIResourceGroup* ShaderMaterialSlot::GetUserUploadResourceGroup() const
-    {
-        return GetUserUploadResourceGroup(m_Renderer->GetCurrentFrameInFlightIndex());
-    }
+    { return GetUserUploadResourceGroup(m_Renderer->GetCurrentFrameInFlightIndex()); }
 
     RHIResourceGroup* ShaderMaterialSlot::GetUserUploadResourceGroup(uint32_t frameInFlightIndex) const
-    {
-        return m_UserUploadResourceGroup[frameInFlightIndex];
-    }
+    { return m_UserUploadResourceGroup[frameInFlightIndex]; }
 
     RHIResourceLayout* ShaderMaterialSlot::GetUserUploadResourceLayout() const { return m_UserUploadResourceLayout; }
 
     RHIResourceGroup* ShaderMaterialSlot::GetMaterialResourceGroup() const
-    {
-        return GetMaterialResourceGroup(m_Renderer->GetCurrentFrameInFlightIndex());
-    }
+    { return GetMaterialResourceGroup(m_Renderer->GetCurrentFrameInFlightIndex()); }
 
     RHIResourceGroup* ShaderMaterialSlot::GetMaterialResourceGroup(uint32_t frameInFlightIndex) const
-    {
-        return m_ResourceGroup[frameInFlightIndex];
-    }
+    { return m_ResourceGroup[frameInFlightIndex]; }
 
     RHIResourceLayout* ShaderMaterialSlot::GetMaterialResourceLayout() const { return m_MaterialResourceLayout; }
 
     const std::vector<RHIResourceLayout*>& ShaderMaterialSlot::GetShaderResourceLayouts() const
-    {
-        return m_ShaderResourceLayouts;
-    }
+    { return m_ShaderResourceLayouts; }
 
     RHIResourceSignature* ShaderMaterialSlot::GetShaderResourceSignature() const { return m_ShaderResourceSignature; }
 
     uint32_t ShaderMaterialSlot::GetUserUploadValueBufferSize() const { return m_UserUploadValueBufferSize; }
 
-    ResourceBindingRegistry::ResourceBindingRegistry(Renderer* renderer)
+    ResourceBindingRegistry::ResourceBindingRegistry(Hazel::Renderer* renderer)
         : m_Renderer(renderer)
     {
         m_TextureFreeMap.resize(kBindlessRegistrySize, true);
@@ -511,8 +495,9 @@ namespace Hazel
         std::memcpy(map, &viewProjection, sizeof(glm::mat4));
     }
 
-    void
-    ResourceBindingRegistry::RegisterShader(UUID shader, uint64_t sourceVersion, const RHIShaderReflection& reflection)
+    void ResourceBindingRegistry::RegisterShader(Hazel::UUID shader,
+                                                 uint64_t sourceVersion,
+                                                 const RHIShaderReflection& reflection)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         ShaderRegistryKey key{shader, sourceVersion};
@@ -523,13 +508,13 @@ namespace Hazel
         }
     }
 
-    void ResourceBindingRegistry::UnregisterShader(UUID shader, uint64_t sourceVersion)
+    void ResourceBindingRegistry::UnregisterShader(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock shaderMaterialLock(m_ShaderMaterialMutex);
         m_ShaderMaterials.erase({shader, sourceVersion});
     }
 
-    uint32_t ResourceBindingRegistry::RegisterMaterial(UUID shader, uint64_t sourceVersion, UUID material)
+    uint32_t ResourceBindingRegistry::RegisterMaterial(Hazel::UUID shader, uint64_t sourceVersion, Hazel::UUID material)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         ShaderRegistryKey key{shader, sourceVersion};
@@ -537,14 +522,14 @@ namespace Hazel
         return -1;
     }
 
-    void ResourceBindingRegistry::UnregisterMaterial(UUID shader, uint64_t sourceVersion, uint32_t slot)
+    void ResourceBindingRegistry::UnregisterMaterial(Hazel::UUID shader, uint64_t sourceVersion, uint32_t slot)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         ShaderRegistryKey key{shader, sourceVersion};
         if (m_ShaderMaterials.contains(key)) { m_ShaderMaterials[key]->UnregisterMaterial(slot); }
     }
 
-    std::vector<UUID> ResourceBindingRegistry::GetMaterialsForShader(UUID shader, uint64_t sourceVersion)
+    std::vector<Hazel::UUID> ResourceBindingRegistry::GetMaterialsForShader(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         ShaderRegistryKey key{shader, sourceVersion};
@@ -552,7 +537,7 @@ namespace Hazel
         return {};
     }
 
-    RHIBuffer* ResourceBindingRegistry::GetMaterialBuffer(UUID shader, uint64_t sourceVersion)
+    RHIBuffer* ResourceBindingRegistry::GetMaterialBuffer(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -561,7 +546,7 @@ namespace Hazel
     }
 
     RHIBuffer*
-    ResourceBindingRegistry::GetMaterialBuffer(UUID shader, uint64_t sourceVersion, uint32_t frameInFlightIndex)
+    ResourceBindingRegistry::GetMaterialBuffer(Hazel::UUID shader, uint64_t sourceVersion, uint32_t frameInFlightIndex)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -569,7 +554,8 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceGroup* ResourceBindingRegistry::GetMaterialPropertyResourceGroup(UUID shader, uint64_t sourceVersion)
+    RHIResourceGroup* ResourceBindingRegistry::GetMaterialPropertyResourceGroup(Hazel::UUID shader,
+                                                                                uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -577,7 +563,7 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceGroup* ResourceBindingRegistry::GetMaterialPropertyResourceGroup(UUID shader,
+    RHIResourceGroup* ResourceBindingRegistry::GetMaterialPropertyResourceGroup(Hazel::UUID shader,
                                                                                 uint64_t sourceVersion,
                                                                                 uint32_t frameInFlightIndex)
     {
@@ -587,7 +573,7 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceGroup* ResourceBindingRegistry::GetUserUploadResourceGroup(UUID shader, uint64_t sourceVersion)
+    RHIResourceGroup* ResourceBindingRegistry::GetUserUploadResourceGroup(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -595,7 +581,7 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceGroup* ResourceBindingRegistry::GetUserUploadResourceGroup(UUID shader,
+    RHIResourceGroup* ResourceBindingRegistry::GetUserUploadResourceGroup(Hazel::UUID shader,
                                                                           uint64_t sourceVersion,
                                                                           uint32_t frameInFlightIndex)
     {
@@ -605,7 +591,7 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceLayout* ResourceBindingRegistry::GetUserUploadResourceLayout(UUID shader, uint64_t sourceVersion)
+    RHIResourceLayout* ResourceBindingRegistry::GetUserUploadResourceLayout(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -613,7 +599,8 @@ namespace Hazel
         return {};
     }
 
-    RHIResourceLayout* ResourceBindingRegistry::GetMaterialPropertyResourceLayout(UUID shader, uint64_t sourceVersion)
+    RHIResourceLayout* ResourceBindingRegistry::GetMaterialPropertyResourceLayout(Hazel::UUID shader,
+                                                                                  uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -621,7 +608,7 @@ namespace Hazel
         return {};
     }
 
-    const std::vector<RHIResourceLayout*>* ResourceBindingRegistry::GetShaderResourceLayouts(UUID shader,
+    const std::vector<RHIResourceLayout*>* ResourceBindingRegistry::GetShaderResourceLayouts(Hazel::UUID shader,
                                                                                              uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
@@ -630,7 +617,8 @@ namespace Hazel
         return nullptr;
     }
 
-    RHIResourceSignature* ResourceBindingRegistry::GetShaderResourceSignature(UUID shader, uint64_t sourceVersion)
+    RHIResourceSignature* ResourceBindingRegistry::GetShaderResourceSignature(Hazel::UUID shader,
+                                                                              uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -638,8 +626,9 @@ namespace Hazel
         return {};
     }
 
-    void
-    ResourceBindingRegistry::BindMaterialPropertyResources(RHICommandBuffer* cmd, UUID shader, uint64_t sourceVersion)
+    void ResourceBindingRegistry::BindMaterialPropertyResources(RHICommandBuffer* cmd,
+                                                                Hazel::UUID shader,
+                                                                uint64_t sourceVersion)
     {
         if (auto* resourceGroup = GetMaterialPropertyResourceGroup(shader, sourceVersion))
         {
@@ -648,7 +637,8 @@ namespace Hazel
         }
     }
 
-    void ResourceBindingRegistry::BindUserUploadResources(RHICommandBuffer* cmd, UUID shader, uint64_t sourceVersion)
+    void
+    ResourceBindingRegistry::BindUserUploadResources(RHICommandBuffer* cmd, Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::vector<uint32_t> offsets;
         RHIResourceGroup* resourceGroup = nullptr;
@@ -740,14 +730,14 @@ namespace Hazel
         }
     }
 
-    void ResourceBindingRegistry::CreateOrUpdatePerShaderResourcesForShader(UUID shader, uint64_t version)
+    void ResourceBindingRegistry::CreateOrUpdatePerShaderResourcesForShader(Hazel::UUID shader, uint64_t version)
     {
         std::scoped_lock lock(m_ShaderMaterialMutex);
         if (!m_ShaderMaterials.contains({shader, version})) { return; }
         m_ShaderMaterials[{shader, version}]->BuildResources();
     }
 
-    void ResourceBindingRegistry::UpdateUserUploadDataForShader(UUID shader, uint64_t sourceVersion)
+    void ResourceBindingRegistry::UpdateUserUploadDataForShader(Hazel::UUID shader, uint64_t sourceVersion)
     {
         std::unique_lock lock(m_ShaderMaterialMutex);
         auto it = m_ShaderMaterials.find({shader, sourceVersion});
@@ -827,7 +817,8 @@ namespace Hazel
         if (m_PerViewUniformBuffer) { m_PerViewUniformBuffer->ReleaseImmediate(); }
     }
 
-    void ResourceBindingRegistry::BindPerViewResources(RHICommandBuffer* cmd, UUID shader, UUID shaderVersion)
+    void
+    ResourceBindingRegistry::BindPerViewResources(RHICommandBuffer* cmd, Hazel::UUID shader, Hazel::UUID shaderVersion)
     {
         std::vector offsets = {
             static_cast<uint32_t>(m_Renderer->GetCurrentFrameInFlightIndex() * sizeof(PerViewUniformBuffer))};
@@ -959,4 +950,4 @@ namespace Hazel
         m_CombinedImageSamplerFreeMap[index] = true;
         m_CombinedImageSamplerFreeList.push_back(index);
     }
-} // namespace Hazel
+} // namespace Aster

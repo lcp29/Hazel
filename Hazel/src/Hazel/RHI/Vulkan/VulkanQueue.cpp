@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Implements the Vulkan queue backend.
+// Created: 2026-03-16.
 
 #include "VulkanQueue.h"
 
 #include "VulkanDevice.h"
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -89,7 +88,7 @@ namespace Hazel
     {
         HZ_RHI_DEBUG_RETURN_VALUE_IF(!m_IsValid || !semaphore, {});
 
-		std::scoped_lock lock(m_QueueSubmitMutex);
+        std::scoped_lock lock(m_QueueSubmitMutex);
 
         m_TimelineValue++;
 
@@ -154,4 +153,4 @@ namespace Hazel
         m_Queue = VK_NULL_HANDLE;
         m_DeviceOwner = nullptr;
     }
-} // namespace Hazel
+} // namespace Aster

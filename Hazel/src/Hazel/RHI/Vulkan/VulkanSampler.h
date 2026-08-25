@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the Vulkan sampler backend.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHISampler)
     {
@@ -42,4 +41,4 @@ namespace Hazel
         vk::Sampler m_Sampler = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

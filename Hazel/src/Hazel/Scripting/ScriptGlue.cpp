@@ -1,3 +1,4 @@
+// ======== Aster Modify Begin ========
 #include "ScriptGlue.h"
 
 #include "Hazel/Core/Input.h"
@@ -8,6 +9,7 @@
 #include "Hazel/Scene/Scene.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "hzpch.h"
+// ======== Aster Modify End ========
 #include "mono/metadata/object.h"
 #include "mono/metadata/reflection.h"
 
@@ -36,13 +38,17 @@ namespace Hazel
 
     static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
     {
+        // ======== Aster Modify Begin ========
         HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
+        // ======== Aster Modify End ========
         *outResult = glm::normalize(*parameter);
     }
 
     static float NativeLog_VectorDot(glm::vec3* parameter)
     {
+        // ======== Aster Modify Begin ========
         HZ_CORE_WARN("Value: {0}", glm::to_string(*parameter));
+        // ======== Aster Modify End ========
         return glm::dot(*parameter, *parameter);
     }
 
@@ -56,7 +62,9 @@ namespace Hazel
         HZ_CORE_ASSERT(entity);
 
         MonoType* managedType = mono_reflection_type_get_type(componentType);
+        // ======== Aster Modify Begin ========
         HZ_CORE_ASSERT(s_EntityHasComponentFuncs.contains(managedType));
+        // ======== Aster Modify End ========
         return s_EntityHasComponentFuncs.at(managedType)(entity);
     }
 
@@ -81,7 +89,9 @@ namespace Hazel
         Entity entity = scene->GetEntityByUUID(entityID);
         HZ_CORE_ASSERT(entity);
 
+        // ======== Aster Modify Begin ========
         *outTranslation = entity.GetComponent<TransformComponent>().translation;
+        // ======== Aster Modify End ========
     }
 
     static void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
@@ -91,7 +101,9 @@ namespace Hazel
         Entity entity = scene->GetEntityByUUID(entityID);
         HZ_CORE_ASSERT(entity);
 
+        // ======== Aster Modify Begin ========
         entity.GetComponent<TransformComponent>().translation = *translation;
+        // ======== Aster Modify End ========
     }
 
     static bool Input_IsKeyDown(KeyCode keycode) { return Input::IsKeyPressed(keycode); }
@@ -118,9 +130,7 @@ namespace Hazel
     }
 
     template <typename... Component> static void RegisterComponent(ComponentGroup<Component...>)
-    {
-        RegisterComponent<Component...>();
-    }
+    { RegisterComponent<Component...>(); }
 
     void ScriptGlue::RegisterComponents()
     {

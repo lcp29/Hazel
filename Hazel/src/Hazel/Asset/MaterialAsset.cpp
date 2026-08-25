@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Implements material asset support.
+// Created: 2026-04-01.
 
 #include "MaterialAsset.h"
 
@@ -8,7 +7,7 @@
 #include "Hazel/Renderer/Renderer.h"
 #include "ShaderAsset.h"
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -26,9 +25,7 @@ namespace Hazel
             {MaterialAssetPropertyType::SamplerWithTexture, "Combined"}};
 
         std::string MaterialAssetPropertyTypeToString(MaterialAssetPropertyType type)
-        {
-            return s_MaterialAssetPropertyTypeToStringMap.at(type);
-        }
+        { return s_MaterialAssetPropertyTypeToStringMap.at(type); }
 
         MaterialAssetPropertyType StringToMaterialAssetPropertyType(const std::string& str)
         {
@@ -107,17 +104,17 @@ namespace Hazel
     {
         MaterialAssetMeta meta;
 
-        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? Hazel::UUID(node["UUID"].as<uint64_t>()) : Hazel::UUID();
         meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
         meta.m_PipelineState = DeserializePipelineState(node["PipelineState"]);
 
         if (!node["Shader"])
         {
-            meta.m_Shader = UUID(-1);
+            meta.m_Shader = Hazel::UUID(-1);
             return meta;
         }
 
-        meta.m_Shader = UUID(node["Shader"].as<uint64_t>());
+        meta.m_Shader = Hazel::UUID(node["Shader"].as<uint64_t>());
 
         if (node["Properties"])
         {
@@ -135,8 +132,10 @@ namespace Hazel
                     auto dataSize = data.size();
                     std::copy_n(data.data(), std::min(dataSize, static_cast<size_t>(64)), prop.data);
                 }
-                prop.sampler = propertyNode["Sampler"] ? UUID(propertyNode["Sampler"].as<uint64_t>()) : UUID(-1);
-                prop.texture = propertyNode["Texture"] ? UUID(propertyNode["Texture"].as<uint64_t>()) : UUID(-1);
+                prop.sampler =
+                    propertyNode["Sampler"] ? Hazel::UUID(propertyNode["Sampler"].as<uint64_t>()) : Hazel::UUID(-1);
+                prop.texture =
+                    propertyNode["Texture"] ? Hazel::UUID(propertyNode["Texture"].as<uint64_t>()) : Hazel::UUID(-1);
 
                 meta.m_Properties.push_back(prop);
             }
@@ -147,8 +146,8 @@ namespace Hazel
     MaterialAssetMeta MaterialAssetMeta::CreateDefault()
     {
         MaterialAssetMeta meta;
-        meta.m_UUID = UUID();
-        meta.m_Shader = UUID(-1);
+        meta.m_UUID = Hazel::UUID();
+        meta.m_Shader = Hazel::UUID(-1);
         meta.m_PipelineState = {};
         meta.m_Properties = {};
         meta.m_Version = 0;
@@ -157,7 +156,7 @@ namespace Hazel
 
     void MaterialAssetMeta::RefreshShader(AssetManager* assetManager)
     {
-        if (m_Shader == UUID(-1))
+        if (m_Shader == Hazel::UUID(-1))
         {
             ClearProperties();
             VersionUp();
@@ -201,8 +200,8 @@ namespace Hazel
                         MaterialAssetProperty prop;
                         prop.name = member.name;
                         std::ranges::fill(prop.data, 0);
-                        prop.sampler = UUID(-1);
-                        prop.texture = UUID(-1);
+                        prop.sampler = Hazel::UUID(-1);
+                        prop.texture = Hazel::UUID(-1);
                         prop.slot = slot.slot;
                         prop.member = member;
 
@@ -276,4 +275,4 @@ namespace Hazel
         }
         VersionUp();
     }
-} // namespace Hazel
+} // namespace Aster

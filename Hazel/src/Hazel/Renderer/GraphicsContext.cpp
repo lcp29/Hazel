@@ -4,10 +4,9 @@
 
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     Scope<GraphicsContext> GraphicsContext::Create(std::string appName, Window* window)
-    {
-        return CreateScope<GraphicsContext>(appName, window);
-    }
+    { return CreateScope<GraphicsContext>(appName, window); }
 
     GraphicsContext::~GraphicsContext() { ReleaseDefaultCommandBuffers(); }
 
@@ -16,9 +15,9 @@ namespace Hazel
         if (m_Initialized) { return; }
 
         // create Vulkan instance
-        RHIInstanceDesc instanceDesc;
+        Aster::RHIInstanceDesc instanceDesc;
 #ifdef RHI_USE_VULKAN
-        instanceDesc.backend = RHIBackend::Vulkan;
+        instanceDesc.backend = Aster::RHIBackend::Vulkan;
 #endif
         instanceDesc.appName = m_AppName;
         instanceDesc.appVersion = {1, 0, 0};
@@ -27,31 +26,33 @@ namespace Hazel
         instanceDesc.useCustomDebugMessenger = false;
 #if defined(HZ_DEBUG)
         instanceDesc.useValidation = true;
-        instanceDesc.debugMessageSeverity = DebugMessageSeverityFlagBits::Error | DebugMessageSeverityFlagBits::Warning
-                                            | DebugMessageSeverityFlagBits::Info;
-        instanceDesc.debugMessageType = DebugMessageTypeFlagBits::General | DebugMessageTypeFlagBits::Validation
-                                        | DebugMessageTypeFlagBits::Performance;
+        instanceDesc.debugMessageSeverity = Aster::DebugMessageSeverityFlagBits::Error
+                                            | Aster::DebugMessageSeverityFlagBits::Warning
+                                            | Aster::DebugMessageSeverityFlagBits::Info;
+        instanceDesc.debugMessageType = Aster::DebugMessageTypeFlagBits::General
+                                        | Aster::DebugMessageTypeFlagBits::Validation
+                                        | Aster::DebugMessageTypeFlagBits::Performance;
 #else
         instanceDesc.useValidation = false;
         instanceDesc.debugMessageSeverity = {};
         instanceDesc.debugMessageType = {};
 #endif
 
-        m_Instance = std::make_unique<RHIInstance>(instanceDesc);
+        m_Instance = std::make_unique<Aster::RHIInstance>(instanceDesc);
 
 #if defined(RHI_USE_VULKAN)
         VkSurfaceKHR surface;
         glfwCreateWindowSurface(
             m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
-        RHISurfaceDesc surfaceDesc{surface};
+        Aster::RHISurfaceDesc surfaceDesc{surface};
 #endif
 
         m_Surface = m_Instance->CreateSurface(surfaceDesc);
 
         // enumerate physical devices and create device
-        RHIDeviceCapabilities deviceCaps;
-        deviceCaps.queueTypes = RHIQueueTypeFlagBits::Graphics | RHIQueueTypeFlagBits::Compute
-                                | RHIQueueTypeFlagBits::Transfer | RHIQueueTypeFlagBits::Present;
+        Aster::RHIDeviceCapabilities deviceCaps;
+        deviceCaps.queueTypes = Aster::RHIQueueTypeFlagBits::Graphics | Aster::RHIQueueTypeFlagBits::Compute
+                                | Aster::RHIQueueTypeFlagBits::Transfer | Aster::RHIQueueTypeFlagBits::Present;
         deviceCaps.supportSubgroup = true;
         auto adapters = m_Instance->GetAdapters();
         for (auto& adapter : adapters)
@@ -68,7 +69,7 @@ namespace Hazel
         m_Initialized = true;
     }
 
-    RHICommandBuffer* GraphicsContext::AcquireDefaultCommandBuffer()
+    Aster::RHICommandBuffer* GraphicsContext::AcquireDefaultCommandBuffer()
     {
         std::lock_guard lock(m_DefaultCommandBufferPoolMutex);
         for (auto& pooledCommandBuffer : m_DefaultCommandBuffers)
@@ -81,13 +82,13 @@ namespace Hazel
             }
         }
 
-        RHICommandPoolDesc cmdPoolDesc{};
+        Aster::RHICommandPoolDesc cmdPoolDesc{};
         cmdPoolDesc.allowCommandBufferReset = true;
         cmdPoolDesc.transient = false;
         auto* commandPool = m_Device->CreateCommandPoolUniformQueue(cmdPoolDesc);
 
-        RHICommandBufferDesc cmdDesc{};
-        cmdDesc.level = RHICommandBufferLevel::Primary;
+        Aster::RHICommandBufferDesc cmdDesc{};
+        cmdDesc.level = Aster::RHICommandBufferLevel::Primary;
         auto* commandBuffer = commandPool->CreateCommandBuffer(cmdDesc);
 
         auto& pooledCommandBuffer = m_DefaultCommandBuffers.emplace_back();
@@ -98,7 +99,7 @@ namespace Hazel
         return pooledCommandBuffer.commandBuffer;
     }
 
-    void GraphicsContext::ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer)
+    void GraphicsContext::ReleaseDefaultCommandBuffer(Aster::RHICommandBuffer* commandBuffer)
     {
         if (!commandBuffer) { return; }
 
@@ -127,7 +128,7 @@ namespace Hazel
     GraphicsContext::GraphicsContext(const std::string& appName, Window* window)
         : m_AppName(appName)
         , m_Window(window)
-    {
-        Init(window);
-    }
+    { Init(window); }
 } // namespace Hazel
+
+// ======== Aster Modify End ========

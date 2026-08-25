@@ -1,9 +1,12 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Log.h"
 
 #include "hzpch.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {

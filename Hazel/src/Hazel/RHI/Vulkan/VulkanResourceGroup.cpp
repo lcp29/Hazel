@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan resource group backend.
+// Created: 2026-03-15.
 
 #include "VulkanResourceGroup.h"
 
 #include "VulkanCommon.h"
 #include "VulkanResourceHeap.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIResourceGroup, RHIResourceGroupImpl)(RHIResourceHeap* heapOwner,
                                                              vk::Device device,
@@ -223,4 +222,4 @@ namespace Hazel
 
         return nullptr;
     }
-} // namespace Hazel
+} // namespace Aster

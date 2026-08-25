@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Implements the Vulkan compute pipeline backend.
+// Created: 2026-03-16.
 
 #define VULKAN_HPP_NO_EXCEPTIONS
 
@@ -10,7 +9,7 @@
 #include "VulkanResourceSignature.h"
 #include "VulkanShader.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIComputePipeline, RHIComputePipelineImpl)(RHIDevice* deviceOwner,
                                                                  vk::Device device,
@@ -96,4 +95,4 @@ namespace Hazel
         m_IsValid = false;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

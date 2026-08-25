@@ -4,9 +4,9 @@
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Renderer/ShaderCommon.h"
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPUShaderAsset> ImportGPUShaderAsset(Renderer* renderer, const ShaderAsset* asset)
+    std::unique_ptr<GPUShaderAsset> ImportGPUShaderAsset(Hazel::Renderer* renderer, const ShaderAsset* asset)
     {
         const auto& shaderData = asset->GetData();
 
@@ -38,4 +38,4 @@ namespace Hazel
 
         return shaderAsset;
     }
-} // namespace Hazel
+} // namespace Aster

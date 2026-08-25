@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Declares editor viewport camera controls.
+// Created: 2026-03-22.
 
 #pragma once
 #include "Hazel/Core/Timestep.h"
@@ -8,7 +7,7 @@
 #include "Transform.h"
 #include "glm/vec2.hpp"
 
-namespace Hazel
+namespace Aster
 {
     class ViewportCameraController
     {
@@ -20,16 +19,16 @@ namespace Hazel
 
         ViewportCameraController();
 
-        ViewportCameraController(Camera* camera);
+        ViewportCameraController(Hazel::Camera* camera);
 
-        void OnUpdate(Timestep ts);
+        void OnUpdate(Hazel::Timestep ts);
         void StopControlling();
 
         bool IsControlling() const { return m_WasRightMousePressed; }
 
-        const Camera* GetCamera() const { return m_ViewportCamera; }
+        const Hazel::Camera* GetCamera() const { return m_ViewportCamera; }
 
-        void SetCamera(Camera* camera) { m_ViewportCamera = camera; }
+        void SetCamera(Hazel::Camera* camera) { m_ViewportCamera = camera; }
 
         const Transform& GetCameraTransform() const { return m_Transform; }
 
@@ -37,10 +36,10 @@ namespace Hazel
 
       private:
         Transform m_Transform{};
-        Camera* m_ViewportCamera = nullptr;
+        Hazel::Camera* m_ViewportCamera = nullptr;
         glm::vec2 m_LastMousePosition = {0.0f, 0.0f};
         bool m_WasRightMousePressed = false;
         float m_MoveSpeed = DefaultMoveSpeed;
         float m_RotationSpeed = DefaultRotationSpeed;
     };
-} // namespace Hazel
+} // namespace Aster

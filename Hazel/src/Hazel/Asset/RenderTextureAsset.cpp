@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/24.
-//
+// Implements render texture asset support.
+// Created: 2026-03-24.
 
 #include "RenderTextureAsset.h"
 
@@ -8,7 +7,7 @@
 
 #include <unordered_map>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -123,7 +122,7 @@ namespace Hazel
     {
         RenderTextureAssetMeta meta;
 
-        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? Hazel::UUID(node["UUID"].as<uint64_t>()) : Hazel::UUID();
         meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
         if (node["Desc"])
         {
@@ -145,7 +144,7 @@ namespace Hazel
     RenderTextureAssetMeta RenderTextureAssetMeta::CreateDefault()
     {
         RenderTextureAssetMeta meta;
-        meta.m_UUID = UUID();
+        meta.m_UUID = Hazel::UUID();
         meta.m_Version = 0;
         meta.m_Desc.width = 1;
         meta.m_Desc.height = 1;
@@ -158,4 +157,4 @@ namespace Hazel
         meta.m_Desc.usages = {};
         return meta;
     }
-} // namespace Hazel
+} // namespace Aster

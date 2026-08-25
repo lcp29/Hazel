@@ -1,6 +1,8 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Application.h"
 #include "Hazel/Core/Input.h"
 #include "hzpch.h"
+// ======== Aster Modify End ========
 
 #include <GLFW/glfw3.h>
 
@@ -29,13 +31,7 @@ namespace Hazel
         return {(float)xpos, (float)ypos};
     }
 
-    float Input::GetMouseX()
-    {
-        return GetMousePosition().x;
-    }
+    float Input::GetMouseX() { return GetMousePosition().x; }
 
-    float Input::GetMouseY()
-    {
-        return GetMousePosition().y;
-    }
+    float Input::GetMouseY() { return GetMousePosition().y; }
 } // namespace Hazel

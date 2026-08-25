@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan resource heap backend.
+// Created: 2026-03-15.
 
 #include "VulkanResourceHeap.h"
 
@@ -9,7 +8,7 @@
 #include "VulkanResourceGroup.h"
 #include "VulkanResourceLayout.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIResourceHeap,
                      RHIResourceHeapImpl)(RHIDevice* deviceOwner, vk::Device device, const RHIResourceHeapDesc& desc)
@@ -83,7 +82,7 @@ namespace Hazel
         if (!isDetached)
             RegisterGroup(std::move(group));
         else
-            group.release();
+            groupPtr = group.release();
         return groupPtr;
     }
 
@@ -161,9 +160,7 @@ namespace Hazel
     }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, RegisterGroup)(std::unique_ptr<RHIResourceGroup> group)
-    {
-        m_Groups.Register(std::move(group));
-    }
+    { m_Groups.Register(std::move(group)); }
 
     void RHI_VK_FUNC_IMPL(RHIResourceHeap, UnregisterGroup)(RHIResourceGroup* group) { m_Groups.Unregister(group); }
-} // namespace Hazel
+} // namespace Aster

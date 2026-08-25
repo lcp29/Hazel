@@ -1,16 +1,15 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Implements GPU shader asset resources.
+// Created: 2026-03-31.
 
 #include "Hazel/Renderer/GPUAsset/GPUShaderAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    GPUShaderAsset::GPUShaderAsset(UUID uuid,
+    GPUShaderAsset::GPUShaderAsset(Hazel::UUID uuid,
                                    uint64_t sourceVersion,
-                                   Renderer* renderer,
+                                   Hazel::Renderer* renderer,
                                    RHIShader* vertexShader,
                                    RHIShader* fragmentShader,
                                    RHIShaderReflection reflection,
@@ -51,4 +50,4 @@ namespace Hazel
         m_VertexShader = nullptr;
         m_FragmentShader = nullptr;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares shared RHI ownership and backend-dispatch types.
+// Created: 2026-03-16.
 
 #pragma once
 
 #include <algorithm>
 #include <memory>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHIBackend
     {
@@ -43,15 +42,15 @@ namespace Hazel
 
         T* Register(std::unique_ptr<T> object)
         {
-            T* ptr = object.get();
             if (!m_FreeSlots.empty())
             {
-                uint32_t slotIndex = m_FreeSlots.back();
+                const uint32_t slotIndex = m_FreeSlots.back();
                 m_FreeSlots.pop_back();
                 m_Objects[slotIndex] = std::move(object);
+                return m_Objects[slotIndex].get();
             }
-            else { m_Objects.push_back(std::move(object)); }
-            return ptr;
+            m_Objects.push_back(std::move(object));
+            return m_Objects.back().get();
         }
 
         uint32_t RegisterHandle(std::unique_ptr<T> object)
@@ -113,42 +112,20 @@ namespace Hazel
         std::vector<uint32_t> m_FreeSlots;
     };
 
-    template <typename T> T* RegisterOwnedObject(RHIOwnerSet<T>& set, std::unique_ptr<T> object)
-    {
-        T* ptr = object.get();
-        set.insert(std::move(object));
-        return ptr;
-    }
-
-    template <typename T> auto FindOwnedObject(RHIOwnerSet<T>& set, T* object)
-    {
-        return std::find_if(set.begin(), set.end(), [object](const std::unique_ptr<T>& ownedObject) {
-            return ownedObject.get() == object;
-        });
-    }
-
-    template <typename T> bool UnregisterOwnedObject(RHIOwnerSet<T>& set, T* object)
-    {
-        const auto it = FindOwnedObject(set, object);
-        if (it == set.end()) { return false; }
-
-        set.erase(it);
-        return true;
-    }
-} // namespace Hazel
+} // namespace Aster
 
 #ifdef RHI_USE_VULKAN
 #define RHI_BACKEND_API Vulkan
 #endif
 
 #define RHI_REGISTER_BASE_CLASS(className)                                                                             \
-    template <Hazel::RHIBackend> class className##Impl                                                                 \
+    template <Aster::RHIBackend> class className##Impl                                                                 \
     {};                                                                                                                \
-    using className = className##Impl<Hazel::RHIBackend::RHI_BACKEND_API>;
+    using className = className##Impl<Aster::RHIBackend::RHI_BACKEND_API>;
 
-#define RHI_FORWARD_DECL_CLASS(className) template <> class className##Impl<Hazel::RHIBackend::RHI_BACKEND_API>;
+#define RHI_FORWARD_DECL_CLASS(className) template <> class className##Impl<Aster::RHIBackend::RHI_BACKEND_API>;
 
-namespace Hazel
+namespace Aster
 {
     RHI_REGISTER_BASE_CLASS(RHIInstance)
     RHI_REGISTER_BASE_CLASS(RHIAdapter)
@@ -176,4 +153,4 @@ namespace Hazel
 
     RHI_REGISTER_BASE_CLASS(RHIBuffer)
     RHI_REGISTER_BASE_CLASS(RHIBufferView)
-} // namespace Hazel
+} // namespace Aster

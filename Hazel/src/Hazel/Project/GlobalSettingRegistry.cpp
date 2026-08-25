@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Implements global setting registry.
+// Created: 2026-03-22.
 
 #include "GlobalSettingRegistry.h"
 
-namespace Hazel
+namespace Aster
 {
     GlobalSettingRegistry GlobalSettings;
 
@@ -32,4 +31,4 @@ namespace Hazel
             m_Registries[entry.first.as<std::string>()] = entry.second.as<std::string>();
         }
     }
-} // namespace Hazel
+} // namespace Aster

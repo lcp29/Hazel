@@ -9,6 +9,7 @@
 #endif
 #endif
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Base.h"
 #include "Hazel/Core/Log.h"
 #include "Hazel/Debug/Instrumentor.h"
@@ -24,6 +25,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+// ======== Aster Modify End ========
 
 #ifdef HZ_PLATFORM_WINDOWS
 #include <Windows.h>

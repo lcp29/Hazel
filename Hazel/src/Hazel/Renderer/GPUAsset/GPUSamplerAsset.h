@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/25.
-//
+// Declares GPU sampler asset resources.
+// Created: 2026-03-25.
 
 #pragma once
 
@@ -11,15 +10,19 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     class GPUSamplerAsset : public GPUAsset
     {
       public:
         GPUSamplerAsset() = delete;
 
-        GPUSamplerAsset(UUID uuid,
+        GPUSamplerAsset(Hazel::UUID uuid,
                         uint64_t sourceVersion,
-                        Renderer* renderer,
+                        Hazel::Renderer* renderer,
                         const RHISamplerDesc& desc,
                         RHISampler* sampler,
                         uint64_t lastReferencedFrame = 0)
@@ -45,4 +48,4 @@ namespace Hazel
         RHISamplerDesc m_Desc{};
         RHISampler* m_Sampler = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/2.
-//
+// Implements CPU asset importers.
+// Created: 2026-04-02.
 
 #include "AssetImporter.h"
 
@@ -19,7 +18,7 @@
 #include <ranges>
 #include <stb_image.h>
 
-namespace Hazel
+namespace Aster
 {
     std::unique_ptr<ComputeShaderAsset> AssetImporter::ImportComputeShader(AssetRegistryTerm* registryTerm)
     {
@@ -56,7 +55,7 @@ namespace Hazel
     {
         auto meta = ReadMetaFromFile<MaterialAssetMeta>(GetMetaPathFromAssetPath(registryTerm->filePath));
 
-        if (meta.GetShader() == UUID(-1))
+        if (meta.GetShader() == Hazel::UUID(-1))
         {
             meta.ClearProperties();
             return std::make_unique<MaterialAsset>(registryTerm, meta);
@@ -79,23 +78,23 @@ namespace Hazel
                 case MaterialAssetPropertyType::Sampler:
                     if (!assetManager->RequestAssetBlocked(metaProperty.sampler))
                     {
-                        meta.SetPropertySampler(i, UUID(-1));
+                        meta.SetPropertySampler(i, Hazel::UUID(-1));
                     }
                     break;
                 case MaterialAssetPropertyType::Texture:
                     if (!assetManager->RequestAssetBlocked(metaProperty.texture))
                     {
-                        meta.SetPropertyTexture(i, UUID(-1));
+                        meta.SetPropertyTexture(i, Hazel::UUID(-1));
                     }
                     break;
                 case MaterialAssetPropertyType::SamplerWithTexture:
                     if (!assetManager->RequestAssetBlocked(metaProperty.sampler))
                     {
-                        meta.SetPropertySampler(i, UUID(-1));
+                        meta.SetPropertySampler(i, Hazel::UUID(-1));
                     }
                     if (!assetManager->RequestAssetBlocked(metaProperty.texture))
                     {
-                        meta.SetPropertyTexture(i, UUID(-1));
+                        meta.SetPropertyTexture(i, Hazel::UUID(-1));
                     }
                     break;
                 default:
@@ -210,4 +209,4 @@ namespace Hazel
         auto meta = ReadMetaFromFile<SamplerAssetMeta>(GetMetaPathFromAssetPath(registryTerm->filePath));
         return std::make_unique<SamplerAsset>(registryTerm, meta);
     }
-} // namespace Hazel
+} // namespace Aster

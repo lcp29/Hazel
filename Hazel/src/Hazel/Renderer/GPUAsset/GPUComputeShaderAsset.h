@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/29.
-//
+// Declares GPU compute shader asset resources.
+// Created: 2026-03-29.
 
 #pragma once
 
@@ -9,16 +8,16 @@
 
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     class GPUComputeShaderAsset : public GPUAsset
     {
       public:
         GPUComputeShaderAsset() = delete;
 
-        GPUComputeShaderAsset(UUID uuid,
+        GPUComputeShaderAsset(Hazel::UUID uuid,
                               uint64_t sourceVersion,
-                              Renderer* renderer,
+                              Hazel::Renderer* renderer,
                               RHIShader* computeShader,
                               std::vector<RHIResourceLayout*> resourceLayouts,
                               RHIResourceSignature* resourceSignature,
@@ -52,4 +51,4 @@ namespace Hazel
         RHIResourceSignature* m_ResourceSignature = nullptr;
         RHIComputePipeline* m_CachedPipeline = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

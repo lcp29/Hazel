@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan image backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -12,7 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     class VulkanMemoryAllocator;
 
@@ -90,4 +89,4 @@ namespace Hazel
         bool m_IsSwapchainImage = false;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/25.
-//
+// Declares sampler asset support.
+// Created: 2026-03-25.
 
 #pragma once
 
@@ -16,6 +15,10 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct SamplerAssetMeta
     {
@@ -23,7 +26,7 @@ namespace Hazel
         static SamplerAssetMeta Deserialize(const YAML::Node& node);
         static SamplerAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
@@ -123,7 +126,7 @@ namespace Hazel
         }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         uint64_t m_Version = 0;
         RHISamplerDesc m_Desc{};
     };
@@ -147,4 +150,4 @@ namespace Hazel
       private:
         SamplerAssetMeta m_Meta{};
     };
-} // namespace Hazel
+} // namespace Aster

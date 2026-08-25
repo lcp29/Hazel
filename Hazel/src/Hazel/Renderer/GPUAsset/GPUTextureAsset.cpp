@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/24.
-//
+// Implements GPU texture asset resources.
+// Created: 2026-03-24.
 
 #include "Hazel/Renderer/GPUAsset/GPUTextureAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
     GPUTextureAsset::~GPUTextureAsset() { GPUTextureAsset::ReleaseImmediate(); }
 
@@ -31,4 +30,4 @@ namespace Hazel
         m_DefaultImageView = nullptr;
         m_IsValid = false;
     }
-} // namespace Hazel
+} // namespace Aster

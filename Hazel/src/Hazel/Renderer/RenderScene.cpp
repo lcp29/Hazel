@@ -1,14 +1,13 @@
-//
-// Created by helmholtz on 2026/3/29.
-//
+// Implements render scene.
+// Created: 2026-03-29.
 
 #include "RenderScene.h"
 
 #include "Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    RenderScene::RenderScene(Renderer* renderer)
+    RenderScene::RenderScene(Hazel::Renderer* renderer)
         : m_Renderer(renderer)
     {}
 
@@ -80,7 +79,10 @@ namespace Hazel
                 m_RenderObjectLocationInMap[*it] = itInMultimap;
                 it = m_RenderObjectsUnsorted.erase(it);
             }
-            else { ++it; }
+            else
+            {
+                ++it;
+            }
         }
     }
-} // namespace Hazel
+} // namespace Aster

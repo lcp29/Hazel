@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan command pool backend.
+// Created: 2026-03-14.
 
 #include "VulkanCommandPool.h"
 
@@ -10,7 +9,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHICommandPool, RHICommandPoolImpl)(RHIDevice* deviceOwner,
                                                          vk::Device device,
@@ -45,7 +44,7 @@ namespace Hazel
         if (!isDetached)
             RegisterCommandBuffer(std::move(commandBuffer));
         else
-            commandBuffer.release();
+            commandBufferPtr = commandBuffer.release();
         return commandBufferPtr;
     }
 
@@ -129,17 +128,11 @@ namespace Hazel
     }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, EnqueueDeletion)(DeletionQueue::Operation operation)
-    {
-        m_DeletionQueue.Enqueue(std::move(operation));
-    }
+    { m_DeletionQueue.Enqueue(std::move(operation)); }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, RegisterCommandBuffer)(std::unique_ptr<RHICommandBuffer> commandBuffer)
-    {
-        m_CommandBuffers.Register(std::move(commandBuffer));
-    }
+    { m_CommandBuffers.Register(std::move(commandBuffer)); }
 
     void RHI_VK_FUNC_IMPL(RHICommandPool, UnregisterCommandBuffer)(RHICommandBuffer* commandBuffer)
-    {
-        m_CommandBuffers.Unregister(commandBuffer);
-    }
-} // namespace Hazel
+    { m_CommandBuffers.Unregister(commandBuffer); }
+} // namespace Aster

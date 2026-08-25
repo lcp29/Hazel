@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan resource layout backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIResourceLayout)
     {
@@ -43,4 +42,4 @@ namespace Hazel
         vk::DescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

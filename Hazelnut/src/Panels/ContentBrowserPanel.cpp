@@ -1,3 +1,4 @@
+// ======== Aster Modify Begin ========
 #include "ContentBrowserPanel.h"
 
 #include "Hazel/Asset/AssetManager.h"
@@ -6,9 +7,10 @@
 #include "Hazel/Project/Project.h"
 #include "hzpch.h"
 
+#include <imgui.h>
+
 #include <cstring>
 #include <fstream>
-#include <imgui.h>
 
 namespace Hazel
 {
@@ -103,16 +105,16 @@ namespace Hazel
         {
             if (ImGui::BeginMenu("Create"))
             {
-                if (ImGui::MenuItem("Material")) { OpenCreateAssetPopup(AssetType::Material, "New Material"); }
+                if (ImGui::MenuItem("Material")) { OpenCreateAssetPopup(Aster::AssetType::Material, "New Material"); }
                 if (ImGui::MenuItem("Render Texture"))
                 {
-                    OpenCreateAssetPopup(AssetType::RenderTexture, "New Render Texture");
+                    OpenCreateAssetPopup(Aster::AssetType::RenderTexture, "New Render Texture");
                 }
-                if (ImGui::MenuItem("Sampler")) { OpenCreateAssetPopup(AssetType::Sampler, "New Sampler"); }
-                if (ImGui::MenuItem("Shader")) { OpenCreateAssetPopup(AssetType::Shader, "New Shader"); }
+                if (ImGui::MenuItem("Sampler")) { OpenCreateAssetPopup(Aster::AssetType::Sampler, "New Sampler"); }
+                if (ImGui::MenuItem("Shader")) { OpenCreateAssetPopup(Aster::AssetType::Shader, "New Shader"); }
                 if (ImGui::MenuItem("Compute Shader"))
                 {
-                    OpenCreateAssetPopup(AssetType::ComputeShader, "New Compute Shader");
+                    OpenCreateAssetPopup(Aster::AssetType::ComputeShader, "New Compute Shader");
                 }
                 ImGui::EndMenu();
             }
@@ -128,7 +130,7 @@ namespace Hazel
     {
         if (m_SelectedPath.empty()) { return {}; }
 
-        return GetMetaPathFromAssetPath(m_SelectedPath);
+        return Aster::GetMetaPathFromAssetPath(m_SelectedPath);
     }
 
     std::filesystem::path ContentBrowserPanel::GetUniquePath(const std::string& baseName,
@@ -152,7 +154,7 @@ namespace Hazel
         m_SelectionVersion++;
     }
 
-    void ContentBrowserPanel::OpenCreateAssetPopup(AssetType assetType, const char* defaultName)
+    void ContentBrowserPanel::OpenCreateAssetPopup(Aster::AssetType assetType, const char* defaultName)
     {
         m_PendingAssetType = assetType;
         std::memset(m_CreateAssetNameBuffer, 0, sizeof(m_CreateAssetNameBuffer));
@@ -173,19 +175,19 @@ namespace Hazel
             auto assetTypeName = "";
             switch (m_PendingAssetType)
             {
-                case AssetType::Material:
+                case Aster::AssetType::Material:
                     assetTypeName = "Material";
                     break;
-                case AssetType::RenderTexture:
+                case Aster::AssetType::RenderTexture:
                     assetTypeName = "Render Texture";
                     break;
-                case AssetType::Sampler:
+                case Aster::AssetType::Sampler:
                     assetTypeName = "Sampler";
                     break;
-                case AssetType::Shader:
+                case Aster::AssetType::Shader:
                     assetTypeName = "Shader";
                     break;
-                case AssetType::ComputeShader:
+                case Aster::AssetType::ComputeShader:
                     assetTypeName = "Compute Shader";
                     break;
                 default:
@@ -203,39 +205,39 @@ namespace Hazel
                 const std::string name = m_CreateAssetNameBuffer;
                 switch (m_PendingAssetType)
                 {
-                    case AssetType::Material:
+                    case Aster::AssetType::Material:
                         CreateMaterialAsset(name);
                         break;
-                    case AssetType::RenderTexture:
+                    case Aster::AssetType::RenderTexture:
                         CreateRenderTextureAsset(name);
                         break;
-                    case AssetType::Sampler:
+                    case Aster::AssetType::Sampler:
                         CreateSamplerAsset(name);
                         break;
-                    case AssetType::Shader:
+                    case Aster::AssetType::Shader:
                         CreateShaderAsset(name);
                         break;
-                    case AssetType::ComputeShader:
+                    case Aster::AssetType::ComputeShader:
                         CreateComputeShaderAsset(name);
                         break;
                     default:
                         break;
                 }
 
-                m_PendingAssetType = AssetType::Unknown;
+                m_PendingAssetType = Aster::AssetType::Unknown;
                 ImGui::CloseCurrentPopup();
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Cancel"))
             {
-                m_PendingAssetType = AssetType::Unknown;
+                m_PendingAssetType = Aster::AssetType::Unknown;
                 ImGui::CloseCurrentPopup();
             }
 
             if (ImGui::IsKeyPressed(ImGuiKey_Escape))
             {
-                m_PendingAssetType = AssetType::Unknown;
+                m_PendingAssetType = Aster::AssetType::Unknown;
                 ImGui::CloseCurrentPopup();
             }
 
@@ -246,10 +248,11 @@ namespace Hazel
     void ContentBrowserPanel::CreateMaterialAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".mat.meta");
-        auto meta = MaterialAssetMeta::CreateDefault();
+        auto meta = Aster::MaterialAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
-        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Material, metaPath);
+        auto assetRegistryTerm =
+            std::make_unique<Aster::AssetRegistryTerm>(meta.GetUUID(), Aster::AssetType::Material, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
@@ -259,13 +262,13 @@ namespace Hazel
     void ContentBrowserPanel::CreateRenderTextureAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".rt.meta");
-        auto meta = RenderTextureAssetMeta::CreateDefault();
+        auto meta = Aster::RenderTextureAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
         auto assetRegistryTerm =
-            std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::RenderTexture, metaPath);
+            std::make_unique<Aster::AssetRegistryTerm>(meta.GetUUID(), Aster::AssetType::RenderTexture, metaPath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
@@ -274,12 +277,13 @@ namespace Hazel
     void ContentBrowserPanel::CreateSamplerAsset(const std::string& name)
     {
         auto metaPath = GetUniquePath(name, ".sampler.meta");
-        auto meta = SamplerAssetMeta::CreateDefault();
+        auto meta = Aster::SamplerAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
-        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Sampler, metaPath);
+        auto assetRegistryTerm =
+            std::make_unique<Aster::AssetRegistryTerm>(meta.GetUUID(), Aster::AssetType::Sampler, metaPath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(metaPath);
@@ -313,12 +317,13 @@ namespace Hazel
                         "#endif\n";
         sourceOutput.close();
 
-        auto meta = ShaderAssetMeta::CreateDefault();
+        auto meta = Aster::ShaderAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
-        auto assetRegistryTerm = std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::Shader, sourcePath);
+        auto assetRegistryTerm =
+            std::make_unique<Aster::AssetRegistryTerm>(meta.GetUUID(), Aster::AssetType::Shader, sourcePath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(sourcePath);
@@ -337,15 +342,17 @@ namespace Hazel
                         "{\n"
                         "}\n";
 
-        auto meta = ComputeShaderAssetMeta::CreateDefault();
+        auto meta = Aster::ComputeShaderAssetMeta::CreateDefault();
         WriteMetaToFile(meta, metaPath);
 
         auto* assetManager = Project::GetActive()->GetAssetManager();
 
         auto assetRegistryTerm =
-            std::make_unique<AssetRegistryTerm>(meta.GetUUID(), AssetType::ComputeShader, sourcePath);
+            std::make_unique<Aster::AssetRegistryTerm>(meta.GetUUID(), Aster::AssetType::ComputeShader, sourcePath);
 
         assetManager->RegisterAsset(std::move(assetRegistryTerm));
         SelectPath(sourcePath);
     }
 } // namespace Hazel
+
+// ======== Aster Modify End ========

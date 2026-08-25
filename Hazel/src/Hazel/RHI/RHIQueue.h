@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI queue interface.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     struct RHIQueueSubmitDesc
     {
@@ -33,4 +32,4 @@ namespace Hazel
     {};
 
     using RHIQueueTypes = Flags<RHIQueueTypeFlagBits>;
-} // namespace Hazel
+} // namespace Aster

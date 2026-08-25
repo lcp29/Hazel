@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/4.
-//
+// Implements GPU asset import for material.
+// Created: 2026-04-04.
 
 #include "../CachedMaterial.h"
 #include "../GPUShaderAsset.h"
@@ -9,9 +8,9 @@
 
 #include <Hazel/Renderer/Renderer.h>
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<CachedMaterial> ImportCachedMaterial(Renderer* renderer, const MaterialAsset* asset)
+    std::unique_ptr<CachedMaterial> ImportCachedMaterial(Hazel::Renderer* renderer, const MaterialAsset* asset)
     {
         auto shaderResult = renderer->ResolveGPUAssetBlocked(asset->GetMeta().GetShader(), AssetType::Shader);
         if (!shaderResult.asset) { return nullptr; }
@@ -25,7 +24,7 @@ namespace Hazel
             {
                 case MaterialAssetPropertyType::Sampler:
                     {
-                        UUID samplerUUID = bindlessProperty.sampler;
+                        Hazel::UUID samplerUUID = bindlessProperty.sampler;
                         auto samplerResult = renderer->ResolveGPUAssetBlocked(samplerUUID, AssetType::Sampler);
                         uint32_t slot = samplerResult.asset
                                             ? renderer->RegisterBindlessSampler(std::move(samplerResult))
@@ -37,7 +36,7 @@ namespace Hazel
                     }
                 case MaterialAssetPropertyType::Texture:
                     {
-                        UUID textureUUID = bindlessProperty.texture;
+                        Hazel::UUID textureUUID = bindlessProperty.texture;
                         auto textureResult = renderer->ResolveGPUAssetBlocked(textureUUID, AssetType::Texture);
                         uint32_t slot = textureResult.asset
                                             ? renderer->RegisterBindlessTexture(std::move(textureResult))
@@ -49,8 +48,8 @@ namespace Hazel
                     }
                 case MaterialAssetPropertyType::SamplerWithTexture:
                     {
-                        UUID samplerUUID = bindlessProperty.sampler;
-                        UUID imageUUID = bindlessProperty.texture;
+                        Hazel::UUID samplerUUID = bindlessProperty.sampler;
+                        Hazel::UUID imageUUID = bindlessProperty.texture;
                         auto samplerResult = renderer->ResolveGPUAssetBlocked(samplerUUID, AssetType::Sampler);
                         auto imageResult = renderer->ResolveGPUAssetBlocked(imageUUID, AssetType::Texture);
                         uint32_t slot = (samplerResult.asset && imageResult.asset)
@@ -81,4 +80,4 @@ namespace Hazel
                                                          renderer->GetCurrentFrameIndex());
         return material;
     }
-} // namespace Hazel
+} // namespace Aster

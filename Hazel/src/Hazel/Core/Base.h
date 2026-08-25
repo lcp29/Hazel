@@ -23,25 +23,26 @@
 
 #define BIT(x) (1 << x)
 
+// ======== Aster Modify Begin ========
 #define HZ_BIND_EVENT_FN(fn)                                                                                           \
     [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {
     template <typename T> using Scope = std::unique_ptr<T>;
 
     template <typename T, typename... Args> constexpr Scope<T> CreateScope(Args&&... args)
-    {
-        return std::make_unique<T>(std::forward<Args>(args)...);
-    }
+    { return std::make_unique<T>(std::forward<Args>(args)...); }
 
     template <typename T> using Ref = std::shared_ptr<T>;
 
     template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args&&... args)
-    {
-        return std::make_shared<T>(std::forward<Args>(args)...);
-    }
+    { return std::make_shared<T>(std::forward<Args>(args)...); }
 } // namespace Hazel
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Assert.h"
 #include "Hazel/Core/Log.h"
+// ======== Aster Modify End ========

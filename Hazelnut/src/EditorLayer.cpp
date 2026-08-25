@@ -1,5 +1,6 @@
 #include "EditorLayer.h"
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Math/Math.h"
 #include "Hazel/Project/GlobalSettingRegistry.h"
 #include "Hazel/RHI/RHI.h"
@@ -8,10 +9,12 @@
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "Hazel/Utils/PlatformUtils.h"
 
+#include <imgui.h>
+
+#include <ImGuizmo.h>
+
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
-#include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel
@@ -22,24 +25,24 @@ namespace Hazel
         constexpr auto s_SceneFileFilter = "Hazel Scene (*.hazel)\0*.hazel\0";
 
         EditorLayer::EditorUITexture CreateEditorUITexture(Renderer* renderer,
-                                                           RHICommandBuffer* commandBuffer,
-                                                           RHISampler* sampler,
+                                                           Aster::RHICommandBuffer* commandBuffer,
+                                                           Aster::RHISampler* sampler,
                                                            const std::filesystem::path& path)
         {
             EditorLayer::EditorUITexture texture;
             if (!renderer || !commandBuffer || !sampler) return texture;
 
-            texture.Image = RHIImage::Factory::CreateFromFile(
+            texture.Image = Aster::RHIImage::Factory::CreateFromFile(
                 renderer->GetDevice(), commandBuffer, path, true, renderer->GetDevice()->GetUniformQueue());
 
             if (!texture.Image) return texture;
 
-            RHIImageViewDesc viewDesc{};
+            Aster::RHIImageViewDesc viewDesc{};
             viewDesc.format = texture.Image->GetDesc().format;
-            viewDesc.viewType = Image2D;
+            viewDesc.viewType = Aster::Image2D;
             viewDesc.subresourceRange.levelCount = 1;
             viewDesc.subresourceRange.layerCount = 1;
-            viewDesc.subresourceRange.planes = RHIImagePlaneFlagBits::Color;
+            viewDesc.subresourceRange.planes = Aster::RHIImagePlaneFlagBits::Color;
 
             texture.View = texture.Image->CreateView(viewDesc);
             if (!texture.View)
@@ -50,7 +53,7 @@ namespace Hazel
             }
 
             texture.ImGuiTexture = Application::Get().GetImGuiLayer()->AddTexture(
-                sampler, texture.View, RHIImageResourceState::ShaderRead);
+                sampler, texture.View, Aster::RHIImageResourceState::ShaderRead);
             return texture;
         }
 
@@ -123,36 +126,36 @@ namespace Hazel
 
         // Get device and queue from the graphics context
         auto* device = m_Renderer->GetDevice();
-        auto* graphicsQueue = device->GetQueue(RHIQueueType::Graphics);
+        auto* graphicsQueue = device->GetQueue(Aster::RHIQueueType::Graphics);
 
         // Create a temporary command pool and buffer for uploading editor UI textures
-        RHICommandPoolDesc uploadPoolDesc{};
-        uploadPoolDesc.queueType = RHIQueueType::Graphics;
+        Aster::RHICommandPoolDesc uploadPoolDesc{};
+        uploadPoolDesc.queueType = Aster::RHIQueueType::Graphics;
         uploadPoolDesc.transient = true;
         uploadPoolDesc.allowCommandBufferReset = false;
-        RHICommandPool* uploadPool = device->CreateCommandPool(uploadPoolDesc);
+        Aster::RHICommandPool* uploadPool = device->CreateCommandPool(uploadPoolDesc);
 
-        RHICommandBufferDesc uploadBufferDesc{};
-        RHICommandBuffer* uploadCommandBuffer = uploadPool->CreateCommandBuffer(uploadBufferDesc);
+        Aster::RHICommandBufferDesc uploadBufferDesc{};
+        Aster::RHICommandBuffer* uploadCommandBuffer = uploadPool->CreateCommandBuffer(uploadBufferDesc);
 
         uploadCommandBuffer->Begin(true);
 
-        RHISamplerDesc uiSamplerDesc{};
-        uiSamplerDesc.minFilter = RHISamplerFilter::Linear;
-        uiSamplerDesc.magFilter = RHISamplerFilter::Linear;
-        uiSamplerDesc.mipFilter = RHISamplerFilter::Linear;
-        uiSamplerDesc.addressModeU = RHISamplerAddressMode::ClampToEdge;
-        uiSamplerDesc.addressModeV = RHISamplerAddressMode::ClampToEdge;
-        uiSamplerDesc.addressModeW = RHISamplerAddressMode::ClampToEdge;
+        Aster::RHISamplerDesc uiSamplerDesc{};
+        uiSamplerDesc.minFilter = Aster::RHISamplerFilter::Linear;
+        uiSamplerDesc.magFilter = Aster::RHISamplerFilter::Linear;
+        uiSamplerDesc.mipFilter = Aster::RHISamplerFilter::Linear;
+        uiSamplerDesc.addressModeU = Aster::RHISamplerAddressMode::ClampToEdge;
+        uiSamplerDesc.addressModeV = Aster::RHISamplerAddressMode::ClampToEdge;
+        uiSamplerDesc.addressModeW = Aster::RHISamplerAddressMode::ClampToEdge;
         m_UISampler = device->CreateSampler(uiSamplerDesc);
 
-        RHISamplerDesc checkerboardSamplerDesc{};
-        checkerboardSamplerDesc.minFilter = RHISamplerFilter::Nearest;
-        checkerboardSamplerDesc.magFilter = RHISamplerFilter::Nearest;
-        checkerboardSamplerDesc.mipFilter = RHISamplerFilter::Nearest;
-        checkerboardSamplerDesc.addressModeU = RHISamplerAddressMode::Repeat;
-        checkerboardSamplerDesc.addressModeV = RHISamplerAddressMode::Repeat;
-        checkerboardSamplerDesc.addressModeW = RHISamplerAddressMode::Repeat;
+        Aster::RHISamplerDesc checkerboardSamplerDesc{};
+        checkerboardSamplerDesc.minFilter = Aster::RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.magFilter = Aster::RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.mipFilter = Aster::RHISamplerFilter::Nearest;
+        checkerboardSamplerDesc.addressModeU = Aster::RHISamplerAddressMode::Repeat;
+        checkerboardSamplerDesc.addressModeV = Aster::RHISamplerAddressMode::Repeat;
+        checkerboardSamplerDesc.addressModeW = Aster::RHISamplerAddressMode::Repeat;
         m_CheckerboardSampler = device->CreateSampler(checkerboardSamplerDesc);
 
         m_IconPlay =
@@ -172,7 +175,7 @@ namespace Hazel
 
         uploadCommandBuffer->End();
 
-        RHIQueueSubmitDesc submitDesc{};
+        Aster::RHIQueueSubmitDesc submitDesc{};
         submitDesc.commandBuffers.push_back(uploadCommandBuffer);
         graphicsQueue->Submit(submitDesc);
         device->WaitIdle();
@@ -253,9 +256,11 @@ namespace Hazel
             case SceneState::Edit:
                 {
                     if (m_ViewportFocused) { m_ActiveScene->GetViewportCameraController().OnUpdate(ts); }
-                    else { m_ActiveScene->GetViewportCameraController().StopControlling(); }
+                    else
+                    {
+                        m_ActiveScene->GetViewportCameraController().StopControlling();
+                    }
 
-                    m_ActiveScene->OnUpdateEditor(ts);
                     break;
                 }
             case SceneState::Play:
@@ -278,11 +283,11 @@ namespace Hazel
         auto* image = m_DefaultRenderTextureUIData[m_Renderer->GetCurrentFrameInFlightIndex()].Image;
         image->Transition(m_Renderer->GetCurrentFrameData().commandBuffer,
                           image->GetCurrentState(),
-                          RHIImageResourceState::ShaderRead);
+                          Aster::RHIImageResourceState::ShaderRead);
 
         if (m_ObjectIDNeedsPulling[m_Renderer->GetCurrentFrameInFlightIndex()])
         {
-            auto* buffer = static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
+            auto* buffer = static_cast<Aster::GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
             auto idPointer = static_cast<int32_t*>(buffer->Map());
             m_ClickedEntity =
                 *idPointer == -1 ? Entity() : Entity(static_cast<entt::entity>(*idPointer), m_ActiveScene.get());
@@ -316,13 +321,13 @@ namespace Hazel
             if (data.ImGuiTexture) { Application::Get().GetImGuiLayer()->RemoveTexture(data.ImGuiTexture); }
         }
         m_DefaultRenderTextureUIData.clear();
-        GPURenderTextureAsset* defaultRenderTexture = m_Renderer->GetDefaultRenderTexture();
+        Aster::GPURenderTextureAsset* defaultRenderTexture = m_Renderer->GetDefaultRenderTexture();
         auto& images = defaultRenderTexture->GetAllImages();
         auto& imageViews = defaultRenderTexture->GetAllDefaultImageViews();
-        for (int i = 0; i < images.size(); i++)
+        for (size_t i = 0; i < images.size(); i++)
         {
             void* texture = Application::Get().GetImGuiLayer()->AddTexture(
-                m_UISampler, imageViews[i], RHIImageResourceState::ShaderRead);
+                m_UISampler, imageViews[i], Aster::RHIImageResourceState::ShaderRead);
             m_DefaultRenderTextureUIData.push_back({images[i], imageViews[i], texture});
         }
     }
@@ -352,33 +357,33 @@ namespace Hazel
         m_ObjectIDNeedsPulling.clear();
         m_ObjectIDPullPositions.clear();
 
-        RenderTextureDesc objectIDRenderTextureDesc{};
+        Aster::RenderTextureDesc objectIDRenderTextureDesc{};
         objectIDRenderTextureDesc.width = static_cast<uint32_t>(m_ViewportSize.x);
         objectIDRenderTextureDesc.height = static_cast<uint32_t>(m_ViewportSize.y);
-        objectIDRenderTextureDesc.format = RHIFormat::R32SInt;
+        objectIDRenderTextureDesc.format = Aster::RHIFormat::R32SInt;
         objectIDRenderTextureDesc.perFrame = true;
         objectIDRenderTextureDesc.useMipmap = false;
-        objectIDRenderTextureDesc.usages = RHIImageUsageFlagBits::TransferSource;
+        objectIDRenderTextureDesc.usages = Aster::RHIImageUsageFlagBits::TransferSource;
 
         m_ObjectIDRenderTexture =
-            std::make_unique<GPUAssetHandle>(m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
+            std::make_unique<Aster::GPUAssetHandle>(m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
 
-        objectIDRenderTextureDesc.format = RHIFormat::D32SFloatS8Uint;
+        objectIDRenderTextureDesc.format = Aster::RHIFormat::D32SFloatS8Uint;
         m_ObjectIDDepthRenderTexture =
-            std::make_unique<GPUAssetHandle>(m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
+            std::make_unique<Aster::GPUAssetHandle>(m_Renderer->ResolveGPURenderTexture(objectIDRenderTextureDesc));
 
-        RenderBufferDesc objectIDRenderBufferDesc{};
+        Aster::RenderBufferDesc objectIDRenderBufferDesc{};
         objectIDRenderBufferDesc.perFrame = true;
         objectIDRenderBufferDesc.size = 4;
-        objectIDRenderBufferDesc.usages = RHIBufferUsageFlagBits::TransferDestination;
-        objectIDRenderBufferDesc.cpuAccess = RHIBufferCpuAccess::Read;
+        objectIDRenderBufferDesc.usages = Aster::RHIBufferUsageFlagBits::TransferDestination;
+        objectIDRenderBufferDesc.cpuAccess = Aster::RHIBufferCpuAccess::Read;
         objectIDRenderBufferDesc.mapOnCreate = true;
         objectIDRenderBufferDesc.hostCoherent = true;
         objectIDRenderBufferDesc.allowGpuAddress = false;
         objectIDRenderBufferDesc.deviceMemory = true;
 
         m_ObjectIDRenderTextureBuffer =
-            std::make_unique<GPUAssetHandle>(m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc));
+            std::make_unique<Aster::GPUAssetHandle>(m_Renderer->ResolveGPURenderBuffer(objectIDRenderBufferDesc));
 
         m_ObjectIDNeedsPulling.resize(m_Renderer->GetMaxFramesInFlight(), false);
         m_ObjectIDPullPositions.resize(DefaultMouseObjectIDEventQueueSize, {-1, -1});
@@ -389,44 +394,44 @@ namespace Hazel
     void EditorLayer::OnObjectIDMapRender(uint32_t x, uint32_t y)
     {
         auto* commandBuffer = m_Renderer->GetCurrentFrameData().commandBuffer;
-        auto* objectIDImage = static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->GetImage();
+        auto* objectIDImage = static_cast<Aster::GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->GetImage();
         auto* objectIDImageBuffer =
-            static_cast<GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
-        auto* depthImage = static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->GetImage();
+            static_cast<Aster::GPURenderBufferAsset*>(m_ObjectIDRenderTextureBuffer->asset)->GetBuffer();
+        auto* depthImage = static_cast<Aster::GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->GetImage();
 
         objectIDImage->Transition(
-            commandBuffer, objectIDImage->GetCurrentState(), RHIImageResourceState::ColorAttachment);
+            commandBuffer, objectIDImage->GetCurrentState(), Aster::RHIImageResourceState::ColorAttachment);
 
         depthImage->Transition(
-            commandBuffer, depthImage->GetCurrentState(), RHIImageResourceState::DepthStencilAttachment);
+            commandBuffer, depthImage->GetCurrentState(), Aster::RHIImageResourceState::DepthStencilAttachment);
 
         static uint64_t objectIDMaterialID = 15999967383665241091ull;
         auto viewportCamera = m_ActiveScene->GetSceneViewportCamera();
 
-        RHIRenderingAttachmentDesc colorAttachmentDesc{};
+        Aster::RHIRenderingAttachmentDesc colorAttachmentDesc{};
         colorAttachmentDesc.imageView =
-            static_cast<GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->GetDefaultImageView();
-        colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
-        colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
+            static_cast<Aster::GPURenderTextureAsset*>(m_ObjectIDRenderTexture->asset)->GetDefaultImageView();
+        colorAttachmentDesc.loadOp = Aster::RHIRenderingLoadOp::Clear;
+        colorAttachmentDesc.storeOp = Aster::RHIRenderingStoreOp::Store;
         colorAttachmentDesc.clearColorValue.int32 = {-1, 0, 0, 0};
-        colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
+        colorAttachmentDesc.state = Aster::RHIImageResourceState::ColorAttachment;
 
-        RHIRenderingAttachmentDesc depthStencilDesc{};
+        Aster::RHIRenderingAttachmentDesc depthStencilDesc{};
         depthStencilDesc.imageView =
-            static_cast<GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->GetDefaultImageView();
-        depthStencilDesc.loadOp = RHIRenderingLoadOp::Clear;
-        depthStencilDesc.storeOp = RHIRenderingStoreOp::Store;
+            static_cast<Aster::GPURenderTextureAsset*>(m_ObjectIDDepthRenderTexture->asset)->GetDefaultImageView();
+        depthStencilDesc.loadOp = Aster::RHIRenderingLoadOp::Clear;
+        depthStencilDesc.storeOp = Aster::RHIRenderingStoreOp::Store;
         depthStencilDesc.clearDepthStencilValue.depth = 1.0f;
         depthStencilDesc.clearDepthStencilValue.stencil = 0;
-        depthStencilDesc.state = RHIImageResourceState::DepthStencilAttachment;
+        depthStencilDesc.state = Aster::RHIImageResourceState::DepthStencilAttachment;
 
-        RHIRect2D scissorArea;
+        Aster::RHIRect2D scissorArea;
         scissorArea.offset.x = x;
         scissorArea.offset.y = y;
         scissorArea.extent.width = 1;
         scissorArea.extent.height = 1;
 
-        RHIRect2D viewportArea;
+        Aster::RHIRect2D viewportArea;
         viewportArea.offset.x = 0;
         viewportArea.offset.y = 0;
         viewportArea.extent.width = static_cast<int32_t>(m_ViewportSize.x);
@@ -436,14 +441,14 @@ namespace Hazel
                                     objectIDMaterialID,
                                     viewportCamera,
                                     {colorAttachmentDesc},
-                                    {RHIColorBlendAttachmentDesc{}},
+                                    {Aster::RHIColorBlendAttachmentDesc{}},
                                     depthStencilDesc,
                                     scissorArea,
                                     viewportArea,
                                     scissorArea);
 
         objectIDImage->Transition(
-            commandBuffer, objectIDImage->GetCurrentState(), RHIImageResourceState::TransferSource);
+            commandBuffer, objectIDImage->GetCurrentState(), Aster::RHIImageResourceState::TransferSource);
 
         commandBuffer->CopyImageToBuffer(objectIDImage,
                                          objectIDImageBuffer,
@@ -451,7 +456,7 @@ namespace Hazel
                                          {1, 1},
                                          {static_cast<int32_t>(x), static_cast<int32_t>(y), 0},
                                          {1, 1, 1},
-                                         {0, 0, 1, RHIImagePlaneFlagBits::Color});
+                                         {0, 0, 1, Aster::RHIImagePlaneFlagBits::Color});
     }
 
     void EditorLayer::ResetProjectContext()
@@ -514,27 +519,21 @@ namespace Hazel
             return;
         }
 
-        // Note: Switch this to true to enable dockspace
         static bool dockspaceOpen = true;
-        static bool opt_fullscreen_persistant = true;
-        bool opt_fullscreen = opt_fullscreen_persistant;
         static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
         // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
         // because it would be confusing to have two docking targets within each others.
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        if (opt_fullscreen)
-        {
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->Pos);
-            ImGui::SetNextWindowSize(viewport->Size);
-            ImGui::SetNextWindowViewport(viewport->ID);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize
-                            | ImGuiWindowFlags_NoMove;
-            window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        }
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize
+                        | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
         // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
         if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) window_flags |= ImGuiWindowFlags_NoBackground;
@@ -548,7 +547,7 @@ namespace Hazel
         ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
         ImGui::PopStyleVar();
 
-        if (opt_fullscreen) ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar(2);
 
         // DockSpace
         ImGuiIO& io = ImGui::GetIO();
@@ -580,25 +579,6 @@ namespace Hazel
         }
         m_PropertyPanel.OnImGuiRender();
 
-        ImGui::Begin("Stats");
-
-        // auto stats = Renderer2D::GetStats();
-        // ImGui::Text("Renderer2D Stats:");
-        // ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-        // ImGui::Text("Quads: %d", stats.QuadCount);
-        // ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-        // ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-        //
-        // ImGui::End();
-        //
-        // ImGui::Begin("Settings");
-        // ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
-        //
-        // ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
-        //
-        //
-        ImGui::End();
-
         UIDrawViewportAndGizmos();
 
         UIDrawToolbar();
@@ -606,7 +586,7 @@ namespace Hazel
         ImGui::End();
     }
 
-	void EditorLayer::UIDrawMenuBar()
+    void EditorLayer::UIDrawMenuBar()
     {
         if (ImGui::BeginMenuBar())
         {
@@ -800,10 +780,10 @@ namespace Hazel
 
             // Snapping
             bool snap = Input::IsKeyPressed(Key::LeftControl);
-            float snapValue = GlobalSettings.Get(GizmoTranslateSnapString, DefaultGizmoTranslateSnap);
+            float snapValue = Aster::GlobalSettings.Get(GizmoTranslateSnapString, DefaultGizmoTranslateSnap);
             // Snap to 45 degrees for rotation
             if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-                snapValue = GlobalSettings.Get(GizmoRotateSnapDegreesString, DefaultGizmoRotateSnapDegrees);
+                snapValue = Aster::GlobalSettings.Get(GizmoRotateSnapDegreesString, DefaultGizmoRotateSnapDegrees);
 
             float snapValues[3] = {snapValue, snapValue, snapValue};
 
@@ -853,12 +833,6 @@ namespace Hazel
 
     void EditorLayer::OnEvent(Event& e)
     {
-        //m_CameraController.OnEvent(e);
-        if (m_SceneState == SceneState::Edit)
-        {
-            //m_EditorCamera.OnEvent(e);
-        }
-
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<KeyPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
         dispatcher.Dispatch<MouseButtonPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
@@ -1046,7 +1020,10 @@ namespace Hazel
         const auto& startSceneRelativePath = project->GetConfig().StartScene;
         const std::filesystem::path startScenePath = Project::GetAssetFileSystemPath(startSceneRelativePath);
         if (!startSceneRelativePath.empty() && std::filesystem::exists(startScenePath)) { OpenScene(startScenePath); }
-        else { NewScene(); }
+        else
+        {
+            NewScene();
+        }
 
         RecreateObjectIDRenderData();
         RecreateDefaultRenderTextureData();
@@ -1184,6 +1161,7 @@ namespace Hazel
 
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
         m_PropertyPanel.SetContext(m_ActiveScene);
+        // ======== Aster Modify End ========
     }
 
     void EditorLayer::OnScenePause()

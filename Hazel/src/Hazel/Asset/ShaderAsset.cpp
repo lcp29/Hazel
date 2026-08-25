@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Implements shader asset support.
+// Created: 2026-03-31.
 
 #include "ShaderAsset.h"
 
-namespace Hazel
+namespace Aster
 {
     YAML::Node ShaderAssetMeta::Serialize() const
     {
@@ -17,7 +16,7 @@ namespace Hazel
     ShaderAssetMeta ShaderAssetMeta::Deserialize(const YAML::Node& node)
     {
         ShaderAssetMeta meta;
-        meta.m_UUID = node["UUID"] ? UUID(node["UUID"].as<uint64_t>()) : UUID();
+        meta.m_UUID = node["UUID"] ? Hazel::UUID(node["UUID"].as<uint64_t>()) : Hazel::UUID();
         meta.m_Version = node["Version"] ? node["Version"].as<uint64_t>() : 0;
         return meta;
     }
@@ -25,8 +24,8 @@ namespace Hazel
     ShaderAssetMeta ShaderAssetMeta::CreateDefault()
     {
         ShaderAssetMeta meta;
-        meta.m_UUID = UUID();
+        meta.m_UUID = Hazel::UUID();
         meta.m_Version = 0;
         return meta;
     }
-} // namespace Hazel
+} // namespace Aster

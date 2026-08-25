@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI buffer view interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -8,7 +7,7 @@
 
 #include <cstdint>
 
-namespace Hazel
+namespace Aster
 {
     struct RHIBufferViewDesc
     {
@@ -16,4 +15,4 @@ namespace Hazel
         uint64_t offset = 0;
         uint64_t range = 0;
     };
-} // namespace Hazel
+} // namespace Aster

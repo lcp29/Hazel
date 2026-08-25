@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan resource group backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -13,7 +12,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIResourceGroup)
     {
@@ -59,4 +58,4 @@ namespace Hazel
         vk::DescriptorSet m_DescriptorSet = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

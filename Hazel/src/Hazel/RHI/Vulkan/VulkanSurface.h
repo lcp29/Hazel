@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan surface backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHISurface)
     {
@@ -35,4 +34,4 @@ namespace Hazel
         vk::Instance m_Instance;
         vk::SurfaceKHR m_Surface = VK_NULL_HANDLE;
     };
-} // namespace Hazel
+} // namespace Aster

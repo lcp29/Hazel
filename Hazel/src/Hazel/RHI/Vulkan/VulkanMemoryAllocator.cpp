@@ -1,11 +1,10 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan memory allocator backend.
+// Created: 2026-03-14.
 
 #define VMA_IMPLEMENTATION
 #include "VulkanMemoryAllocator.h"
 
-namespace Hazel
+namespace Aster
 {
     VulkanMemoryAllocator::VulkanMemoryAllocator(vk::Instance instance,
                                                  vk::PhysicalDevice physicalDevice,
@@ -100,4 +99,4 @@ namespace Hazel
     {
         if (allocator && image && allocation) { vmaDestroyImage(allocator, image, allocation); }
     }
-} // namespace Hazel
+} // namespace Aster

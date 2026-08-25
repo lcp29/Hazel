@@ -1,16 +1,15 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI surface interface.
+// Created: 2026-03-14.
 
 #pragma once
 
 #include "RHIBase.h"
 #include "RHICommon.h"
 
-namespace Hazel
+namespace Aster
 {
     struct RHISurfaceDesc
     {
         void* backendHandle = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

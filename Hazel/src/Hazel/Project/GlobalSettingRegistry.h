@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Declares global setting registry.
+// Created: 2026-03-22.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 #include <type_traits>
 #include <unordered_map>
 
-namespace Hazel
+namespace Aster
 {
     class GlobalSettingRegistry
     {
@@ -34,9 +33,7 @@ namespace Hazel
     extern GlobalSettingRegistry GlobalSettings;
 
     template <typename T> void GlobalSettingRegistry::Set(const std::string& key, const T& value)
-    {
-        m_Registries[key] = ToStoredString(value);
-    }
+    { m_Registries[key] = ToStoredString(value); }
 
     template <typename T> T GlobalSettingRegistry::Get(const std::string& key, const T& defaultValue) const
     {
@@ -138,4 +135,4 @@ namespace Hazel
             return true;
         }
     }
-} // namespace Hazel
+} // namespace Aster

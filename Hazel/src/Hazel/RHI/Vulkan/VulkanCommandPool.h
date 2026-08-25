@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan command pool backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHICommandPool)
     {
@@ -53,4 +52,4 @@ namespace Hazel
         DeletionQueue m_DeletionQueue;
         RHIOwnerSet<RHICommandBuffer> m_CommandBuffers;
     };
-} // namespace Hazel
+} // namespace Aster

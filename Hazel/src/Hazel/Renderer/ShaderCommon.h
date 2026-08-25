@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Declares shared shader compilation and reflection utilities.
+// Created: 2026-03-31.
 
 #pragma once
 #include "Hazel/RHI/RHIFactory.h"
@@ -11,7 +10,7 @@
 #include <shaderc/shaderc.hpp>
 #include <string>
 
-namespace Hazel
+namespace Aster
 {
     constexpr int kPerViewResourceSet = 0;
     constexpr int kUserResourceSet = 1;
@@ -46,7 +45,10 @@ namespace Hazel
             std::filesystem::path requestedPath(requested_source);
             std::filesystem::path filePath;
             if (requestedPath.is_absolute()) { filePath = requestedPath; }
-            else { filePath = requestingPath.parent_path() / requestedPath; }
+            else
+            {
+                filePath = requestingPath.parent_path() / requestedPath;
+            }
             auto requestedFileContent = ReadTextFile(filePath);
 
             auto* result = new shaderc_include_result;
@@ -105,9 +107,7 @@ namespace Hazel
     }
 
     inline bool ReflectShaderSPIRV(const std::vector<uint32_t>& spirvBinary, RHIShaderReflection& reflection)
-    {
-        return RHIShader::Reflect(spirvBinary, reflection);
-    }
+    { return RHIShader::Reflect(spirvBinary, reflection); }
 
     inline RHIShaderReflection MergeShaderReflections(const RHIShaderReflection& vertexReflection,
                                                       const RHIShaderReflection& fragmentReflection)
@@ -226,4 +226,4 @@ namespace Hazel
         }
         return ranges;
     }
-} // namespace Hazel
+} // namespace Aster

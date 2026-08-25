@@ -2,11 +2,13 @@
 
 #include "Hazel/Core/Base.h"
 #include "Hazel/Core/LayerStack.h"
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Window.h"
 #include "Hazel/Events/ApplicationEvent.h"
 #include "Hazel/Events/Event.h"
 #include "Hazel/ImGui/ImGuiLayer.h"
 #include "Hazel/Renderer/Renderer.h"
+// ======== Aster Modify End ========
 
 int main(int argc, char** argv);
 
@@ -44,13 +46,19 @@ namespace Hazel
 
         Window& GetWindow() { return *m_Window; }
 
+        // ======== Aster Modify Begin ========
         GraphicsContext* GetGraphicsContext() const { return m_GraphicsContext.get(); }
 
         Renderer* GetRenderer() const { return m_Renderer.get(); }
 
+        // ======== Aster Modify End ========
+
         ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
+        // ======== Aster Modify Begin ========
         void Close();
+
+        // ======== Aster Modify End ========
 
         static Application& Get() { return *s_Instance; }
 
@@ -58,7 +66,9 @@ namespace Hazel
 
         void SubmitToMainThread(const std::function<void()>& function);
 
+        // ======== Aster Modify Begin ========
       protected:
+        // ======== Aster Modify End ========
         void Run();
         bool OnWindowClose(WindowCloseEvent& e);
         bool OnWindowResize(WindowResizeEvent& e);
@@ -67,8 +77,10 @@ namespace Hazel
 
         ApplicationSpecification m_Specification;
         Scope<Window> m_Window;
+        // ======== Aster Modify Begin ========
         Scope<GraphicsContext> m_GraphicsContext;
         Scope<Renderer> m_Renderer;
+        // ======== Aster Modify End ========
         ImGuiLayer* m_ImGuiLayer;
         bool m_Running = true;
         bool m_Minimized = false;

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the Vulkan base backend.
+// Created: 2026-03-16.
 
 #pragma once
 

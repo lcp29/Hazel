@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the Vulkan pipeline common backend.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     inline vk::PrimitiveTopology VulkanConvertPrimitiveTopology(RHIPrimitiveTopology topology)
     {
@@ -205,4 +204,4 @@ namespace Hazel
         createInfo.pPushConstantRanges = pushConstantRanges.data();
         return true;
     }
-} // namespace Hazel
+} // namespace Aster

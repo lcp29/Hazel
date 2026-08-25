@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/31.
-//
+// Declares GPU shader asset resources.
+// Created: 2026-03-31.
 
 #pragma once
 
@@ -13,15 +12,19 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     class GPUShaderAsset : public GPUAsset
     {
       public:
         GPUShaderAsset() = delete;
 
-        GPUShaderAsset(UUID uuid,
+        GPUShaderAsset(Hazel::UUID uuid,
                        uint64_t sourceVersion,
-                       Renderer* renderer,
+                       Hazel::Renderer* renderer,
                        RHIShader* vertexShader,
                        RHIShader* fragmentShader,
                        RHIShaderReflection reflection,
@@ -46,4 +49,4 @@ namespace Hazel
         RHIShader* m_FragmentShader = nullptr;
         RHIShaderReflection m_Reflection{};
     };
-} // namespace Hazel
+} // namespace Aster

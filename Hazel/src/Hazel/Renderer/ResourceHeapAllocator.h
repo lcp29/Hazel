@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Declares descriptor resource-heap allocation.
+// Created: 2026-04-01.
 
 #pragma once
 
@@ -12,12 +11,16 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     class ResourceHeapAllocator
     {
       public:
         ResourceHeapAllocator() = delete;
-        ResourceHeapAllocator(Renderer* renderer);
+        ResourceHeapAllocator(Hazel::Renderer* renderer);
         ~ResourceHeapAllocator();
 
         struct HeapRecord
@@ -42,7 +45,7 @@ namespace Hazel
         void Release();
 
       private:
-        Renderer* m_Renderer = nullptr;
+        Hazel::Renderer* m_Renderer = nullptr;
         bool m_IsValid = false;
         std::mutex m_Mutex;
         std::vector<HeapRecord> m_Heaps;
@@ -51,4 +54,4 @@ namespace Hazel
         std::vector<HeapRecord> m_HeapsUpdateAfterBind;
         std::vector<GroupRecord> m_GroupsUpdateAfterBind;
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Implements the Vulkan sampler backend.
+// Created: 2026-03-16.
 
 #include "VulkanSampler.h"
 
 #include "VulkanDevice.h"
 #include "VulkanPipelineCommon.h"
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -140,4 +139,4 @@ namespace Hazel
         m_IsValid = false;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

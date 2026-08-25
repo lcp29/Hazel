@@ -6,10 +6,13 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+// ======== Aster Modify Begin ========
 #include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {
@@ -146,9 +149,7 @@ namespace Hazel
         InstrumentationTimer(const char* name)
             : m_Name(name)
             , m_Stopped(false)
-        {
-            m_StartTimepoint = std::chrono::steady_clock::now();
-        }
+        { m_StartTimepoint = std::chrono::steady_clock::now(); }
 
         ~InstrumentationTimer()
         {
@@ -207,8 +208,10 @@ namespace Hazel
 // Resolve which function signature macro will be used. Note that this only
 // is resolved when the (pre)compiler starts, so the syntax highlighting
 // could mark the wrong one in your editor!
+// ======== Aster Modify Begin ========
 #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600))         \
     || defined(__ghs__)
+// ======== Aster Modify End ========
 #define HZ_FUNC_SIG __PRETTY_FUNCTION__
 #elif defined(__DMC__) && (__DMC__ >= 0x810)
 #define HZ_FUNC_SIG __PRETTY_FUNCTION__
@@ -228,9 +231,11 @@ namespace Hazel
 
 #define HZ_PROFILE_BEGIN_SESSION(name, filepath) ::Hazel::Instrumentor::Get().BeginSession(name, filepath)
 #define HZ_PROFILE_END_SESSION() ::Hazel::Instrumentor::Get().EndSession()
+// ======== Aster Modify Begin ========
 #define HZ_PROFILE_SCOPE_LINE2(name, line)                                                                             \
     constexpr auto fixedName##line = ::Hazel::InstrumentorUtils::CleanupOutputString(name, "__cdecl ");                \
     ::Hazel::InstrumentationTimer timer##line(fixedName##line.Data)
+// ======== Aster Modify End ========
 #define HZ_PROFILE_SCOPE_LINE(name, line) HZ_PROFILE_SCOPE_LINE2(name, line)
 #define HZ_PROFILE_SCOPE(name) HZ_PROFILE_SCOPE_LINE(name, __LINE__)
 #define HZ_PROFILE_FUNCTION() HZ_PROFILE_SCOPE(HZ_FUNC_SIG)

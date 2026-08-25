@@ -1,5 +1,6 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #if defined(RHI_USE_VULKAN) && !defined(VK_VERSION_1_0)
 #define VK_VERSION_1_0
 #define GLFW_INCLUDE_VULKAN
@@ -15,48 +16,53 @@
 #include <mutex>
 #include <vector>
 
+// ======== Aster Modify End ========
+
 namespace Hazel
 {
     class GraphicsContext
     {
       public:
+        // ======== Aster Modify Begin ========
         GraphicsContext(const std::string& appName, Window* window);
         ~GraphicsContext();
 
         void Init(Window* window);
 
-        RHIInstance* GetInstance() const { return m_Instance.get(); }
+        Aster::RHIInstance* GetInstance() const { return m_Instance.get(); }
 
-        RHIAdapter GetAdapter() const { return m_Adapter; }
+        Aster::RHIAdapter GetAdapter() const { return m_Adapter; }
 
-        RHIDevice* GetDevice() const { return m_Device; }
+        Aster::RHIDevice* GetDevice() const { return m_Device; }
 
-        RHISurface* GetSurface() const { return m_Surface; }
+        Aster::RHISurface* GetSurface() const { return m_Surface; }
 
         static Scope<GraphicsContext> Create(std::string appName, Window* window);
 
-        RHICommandBuffer* AcquireDefaultCommandBuffer();
-        void ReleaseDefaultCommandBuffer(RHICommandBuffer* commandBuffer);
+        Aster::RHICommandBuffer* AcquireDefaultCommandBuffer();
+        void ReleaseDefaultCommandBuffer(Aster::RHICommandBuffer* commandBuffer);
         void ReleaseDefaultCommandBuffers();
 
       private:
         struct PooledCommandBuffer
         {
-            RHICommandPool* pool = nullptr;
-            RHICommandBuffer* commandBuffer = nullptr;
+            Aster::RHICommandPool* pool = nullptr;
+            Aster::RHICommandBuffer* commandBuffer = nullptr;
             bool inUse = false;
         };
 
         bool m_Initialized = false;
         std::string m_AppName;
         Window* m_Window = nullptr;
-        RHISurface* m_Surface = nullptr;
+        Aster::RHISurface* m_Surface = nullptr;
 
-        std::unique_ptr<RHIInstance> m_Instance;
-        RHIAdapter m_Adapter;
-        RHIDevice* m_Device = nullptr;
+        std::unique_ptr<Aster::RHIInstance> m_Instance;
+        Aster::RHIAdapter m_Adapter;
+        Aster::RHIDevice* m_Device = nullptr;
 
         mutable std::mutex m_DefaultCommandBufferPoolMutex;
         std::vector<PooledCommandBuffer> m_DefaultCommandBuffers;
     };
 } // namespace Hazel
+
+// ======== Aster Modify End ========

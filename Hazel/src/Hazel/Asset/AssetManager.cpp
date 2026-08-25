@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/23.
-//
+// Implements asset discovery, loading, and dependency management.
+// Created: 2026-03-23.
 
 #include "AssetManager.h"
 
@@ -13,9 +12,9 @@
 #include <ranges>
 #include <thread>
 
-namespace Hazel
+namespace Aster
 {
-    AssetManager::AssetManager(Project* project, Renderer* renderer)
+    AssetManager::AssetManager(Hazel::Project* project, Hazel::Renderer* renderer)
         : m_Project(project)
         , m_Renderer(renderer)
     {}
@@ -103,7 +102,7 @@ namespace Hazel
                 registryTerm->state = AssetState::Unloaded;
 
                 auto uuid = GetUUIDFromMetaFile(metaPath);
-                if (uuid != UUID(-1))
+                if (uuid != Hazel::UUID(-1))
                 {
                     registryTerm->uuid = uuid;
                     std::unique_lock registryLock(m_AssetRegistryMutex);
@@ -183,7 +182,7 @@ namespace Hazel
         }
     }
 
-    AssetType AssetManager::GetAssetType(UUID uuid) const
+    AssetType AssetManager::GetAssetType(Hazel::UUID uuid) const
     {
         std::unique_lock registryLock(m_AssetRegistryMutex);
         if (!m_AssetRegistry.contains(uuid)) { return AssetType::Unknown; }
@@ -191,13 +190,13 @@ namespace Hazel
         return m_AssetRegistry.at(uuid)->type;
     }
 
-    bool AssetManager::HasAsset(UUID uuid) const
+    bool AssetManager::HasAsset(Hazel::UUID uuid) const
     {
         std::unique_lock registryLock(m_AssetRegistryMutex);
         return m_AssetRegistry.contains(uuid);
     }
 
-    std::filesystem::path AssetManager::GetAssetPath(UUID uuid) const
+    std::filesystem::path AssetManager::GetAssetPath(Hazel::UUID uuid) const
     {
         std::unique_lock registryLock(m_AssetRegistryMutex);
         if (!m_AssetRegistry.contains(uuid)) { return {}; }
@@ -247,7 +246,7 @@ namespace Hazel
         }
     }
 
-    Asset* AssetManager::RequestAsset(UUID uuid)
+    Asset* AssetManager::RequestAsset(Hazel::UUID uuid)
     {
         {
             std::unique_lock assetLock(m_AssetMutex);
@@ -284,7 +283,7 @@ namespace Hazel
         return nullptr;
     }
 
-    Asset* AssetManager::RequestAssetBlocked(UUID uuid)
+    Asset* AssetManager::RequestAssetBlocked(Hazel::UUID uuid)
     {
         {
             std::unique_lock assetLock(m_AssetMutex);
@@ -328,7 +327,7 @@ namespace Hazel
         }
     }
 
-    Asset* AssetManager::LoadAssetFromRegistry(UUID uuid, AssetRegistryTerm* registry)
+    Asset* AssetManager::LoadAssetFromRegistry(Hazel::UUID uuid, AssetRegistryTerm* registry)
     {
         std::unique_ptr<Asset> asset = nullptr;
 
@@ -370,7 +369,7 @@ namespace Hazel
                 m_Dependencies[materialUUID].clear();
 
                 auto shaderUUID = materialAsset->GetMeta().GetShader();
-                if (shaderUUID != UUID(-1))
+                if (shaderUUID != Hazel::UUID(-1))
                 {
                     m_Dependencies[materialUUID].insert(shaderUUID);
                     m_Dependents[shaderUUID].insert(materialUUID);
@@ -378,14 +377,14 @@ namespace Hazel
 
                 for (const auto& property : materialAsset->GetMeta().GetProperties())
                 {
-                    if (property.sampler != UUID(-1))
+                    if (property.sampler != Hazel::UUID(-1))
                     {
                         auto samplerUUID = property.sampler;
                         m_Dependencies[materialUUID].insert(samplerUUID);
                         m_Dependents[samplerUUID].insert(materialUUID);
                     }
 
-                    if (property.texture != UUID(-1))
+                    if (property.texture != Hazel::UUID(-1))
                     {
                         auto textureUUID = property.texture;
                         m_Dependencies[materialUUID].insert(textureUUID);
@@ -394,10 +393,11 @@ namespace Hazel
                 }
             }
 
-            auto assetPointer = asset.get();
+            Asset* assetPointer = nullptr;
             {
                 std::unique_lock assetLock(m_AssetMutex);
                 m_Assets[uuid] = std::move(asset);
+                assetPointer = m_Assets[uuid].get();
             }
 
             {
@@ -415,4 +415,4 @@ namespace Hazel
         registry->loadingCondition.notify_all();
         return nullptr;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan image view backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     vk::ImageView CreateImageViewHandle(RHIDevice* device, vk::Image image, const RHIImageViewDesc& desc);
 
@@ -49,4 +48,4 @@ namespace Hazel
         vk::ImageView m_ImageView = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

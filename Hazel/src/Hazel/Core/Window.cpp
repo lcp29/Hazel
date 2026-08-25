@@ -1,6 +1,8 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Window.h"
 
 #include "hzpch.h"
+// ======== Aster Modify End ========
 
 #ifdef HZ_PLATFORM_WINDOWS
 #include "Platform/Windows/WindowsWindow.h"

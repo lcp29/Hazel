@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/25.
-//
+// Implements GPU sampler asset resources.
+// Created: 2026-03-25.
 
 #include "Hazel/Renderer/GPUAsset/GPUSamplerAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
     GPUSamplerAsset::~GPUSamplerAsset() { GPUSamplerAsset::ReleaseImmediate(); }
 
@@ -29,4 +28,4 @@ namespace Hazel
 
         m_IsValid = false;
     }
-} // namespace Hazel
+} // namespace Aster

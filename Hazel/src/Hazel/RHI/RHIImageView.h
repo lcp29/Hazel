@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI image view interface.
+// Created: 2026-03-15.
 
 #pragma once
 
 #include "RHICommon.h"
 #include "RHIImage.h"
 
-namespace Hazel
+namespace Aster
 {
     enum RHIImageViewComponent
     {
@@ -46,4 +45,4 @@ namespace Hazel
         RHIImageViewComponentMapping componentMapping;
         RHIImageSubresourceRange subresourceRange;
     };
-} // namespace Hazel
+} // namespace Aster

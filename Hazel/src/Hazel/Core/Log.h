@@ -3,12 +3,16 @@
 #include "Hazel/Core/Base.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
+// ======== Aster Modify Begin ========
 #include <glm/gtx/string_cast.hpp>
+// ======== Aster Modify End ========
 
 // This ignores all warnings raised inside External headers
 #pragma warning(push, 0)
+// ======== Aster Modify Begin ========
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
+// ======== Aster Modify End ========
 #pragma warning(pop)
 
 namespace Hazel
@@ -30,20 +34,14 @@ namespace Hazel
 
 template <typename OStream, glm::length_t L, typename T, glm::qualifier Q>
 OStream& operator<<(OStream& os, const glm::vec<L, T, Q>& vector)
-{
-    return os << glm::to_string(vector);
-}
+{ return os << glm::to_string(vector); }
 
 template <typename OStream, glm::length_t C, glm::length_t R, typename T, glm::qualifier Q>
 OStream& operator<<(OStream& os, const glm::mat<C, R, T, Q>& matrix)
-{
-    return os << glm::to_string(matrix);
-}
+{ return os << glm::to_string(matrix); }
 
 template <typename OStream, typename T, glm::qualifier Q> OStream& operator<<(OStream& os, glm::qua<T, Q> quaternion)
-{
-    return os << glm::to_string(quaternion);
-}
+{ return os << glm::to_string(quaternion); }
 
 // Core log macros
 #define HZ_CORE_TRACE(...) ::Hazel::Log::GetCoreLogger()->trace(__VA_ARGS__)

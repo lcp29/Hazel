@@ -9,43 +9,34 @@ namespace Hazel
 {
     class WindowsWindow : public Window
     {
-    public:
+      public:
         WindowsWindow(const WindowProps& props);
         virtual ~WindowsWindow();
 
         void OnUpdate() override;
 
-        unsigned int GetWidth() const override
-        {
-            return m_Data.Width;
-        }
+        unsigned int GetWidth() const override { return m_Data.Width; }
 
-        unsigned int GetHeight() const override
-        {
-            return m_Data.Height;
-        }
+        unsigned int GetHeight() const override { return m_Data.Height; }
 
         // Window attributes
-        void SetEventCallback(const EventCallbackFn& callback) override
-        {
-            m_Data.EventCallback = callback;
-        }
+        void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
 
         void SetVSync(bool enabled) override;
         bool IsVSync() const override;
+        // ======== Aster Modify Begin ========
         void SetCursorMode(CursorMode mode) override;
         CursorMode GetCursorMode() const override;
 
-        void* GetNativeWindow() const override
-        {
-            return m_Window;
-        }
+        void* GetNativeWindow() const override { return m_Window; }
 
-    private:
+        // ======== Aster Modify End ========
+
+      private:
         virtual void Init(const WindowProps& props);
         virtual void Shutdown();
 
-    private:
+      private:
         GLFWwindow* m_Window;
 
         struct WindowData

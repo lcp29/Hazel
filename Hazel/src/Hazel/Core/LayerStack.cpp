@@ -1,20 +1,27 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/LayerStack.h"
 
 #include "hzpch.h"
 
+// ======== Aster Modify End ========
+
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     LayerStack::~LayerStack() { Clear(); }
 
     void LayerStack::Clear()
     {
+        // ======== Aster Modify End ========
         for (Layer* layer : m_Layers)
         {
             layer->OnDetach();
             delete layer;
         }
+        // ======== Aster Modify Begin ========
         m_Layers.clear();
         m_LayerInsertIndex = 0;
+        // ======== Aster Modify End ========
     }
 
     void LayerStack::PushLayer(Layer* layer)

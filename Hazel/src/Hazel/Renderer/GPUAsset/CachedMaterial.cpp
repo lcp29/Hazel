@@ -1,19 +1,16 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Implements cached material resources.
+// Created: 2026-04-01.
 
 #include "CachedMaterial.h"
 
 #include <ranges>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
         uint64_t HashCombine(uint64_t seed, uint64_t value)
-        {
-            return seed ^ (value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2));
-        }
+        { return seed ^ (value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2)); }
 
         uint64_t HashColorBlendAttachment(const RHIColorBlendAttachmentDesc& attachment)
         {
@@ -35,7 +32,7 @@ namespace Hazel
                                             const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
                                             RHIFormat depthStencilFormat) const
     {
-        uint64_t seed = std::hash<UUID>{}(m_Shader);
+        uint64_t seed = std::hash<Hazel::UUID>{}(m_Shader);
         seed = HashCombine(seed, std::hash<uint64_t>{}(m_ShaderSourceVersion));
 
         seed = HashCombine(seed, std::hash<uint32_t>{}(static_cast<uint32_t>(m_PipelineState.polygonMode)));
@@ -102,4 +99,4 @@ namespace Hazel
         }
         m_Renderer->UnregisterMaterial(m_Shader, m_ShaderSourceVersion, m_MaterialID);
     }
-} // namespace Hazel
+} // namespace Aster

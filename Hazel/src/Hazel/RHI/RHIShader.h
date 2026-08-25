@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI shader interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -10,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHIShaderStageFlagBits : uint16_t
     {
@@ -103,4 +102,4 @@ namespace Hazel
         std::string debugName;
         std::vector<uint32_t> binary;
     };
-} // namespace Hazel
+} // namespace Aster

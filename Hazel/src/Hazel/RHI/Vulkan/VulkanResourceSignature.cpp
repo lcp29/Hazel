@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Implements the Vulkan resource signature backend.
+// Created: 2026-03-16.
 
 #define VULKAN_HPP_NO_EXCEPTIONS
 
@@ -9,7 +8,7 @@
 #include "VulkanDevice.h"
 #include "VulkanPipelineCommon.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIResourceSignature, RHIResourceSignatureImpl)(RHIDevice* deviceOwner,
                                                                      vk::Device device,
@@ -85,4 +84,4 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

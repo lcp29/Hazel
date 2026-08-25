@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan resource layout backend.
+// Created: 2026-03-15.
 
 #include "VulkanResourceLayout.h"
 
 #include "VulkanCommon.h"
 #include "VulkanDevice.h"
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_FUNC_IMPL(RHIResourceLayout, RHIResourceLayoutImpl)(RHIDevice* deviceOwner,
                                                                vk::Device device,
@@ -111,4 +110,4 @@ namespace Hazel
         m_Device = VK_NULL_HANDLE;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

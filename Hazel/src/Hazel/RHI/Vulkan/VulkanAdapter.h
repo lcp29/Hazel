@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan adapter backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     struct VulkanRequiredFeatures
     {
@@ -55,4 +54,4 @@ namespace Hazel
         vk::PhysicalDeviceProperties m_Properties;
         VulkanRequiredFeatures m_RequiredVulkanFeatures;
     };
-} // namespace Hazel
+} // namespace Aster

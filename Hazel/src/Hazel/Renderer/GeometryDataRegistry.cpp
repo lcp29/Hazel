@@ -1,14 +1,13 @@
-//
-// Created by helmholtz on 2026/4/7.
-//
+// Implements virtualized GPU geometry storage.
+// Created: 2026-04-07.
 
 #include "GeometryDataRegistry.h"
 
 #include "Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    GeometryDataRegistry::GeometryDataRegistry(Renderer* renderer)
+    GeometryDataRegistry::GeometryDataRegistry(Hazel::Renderer* renderer)
         : m_Renderer(renderer)
     {
         RHIBufferDesc pageTableDesc{};
@@ -40,11 +39,11 @@ namespace Hazel
 
     void GeometryDataRegistry::RegisterMesh(GPUMeshAsset* meshAsset)
     {
-        uint32_t vertexSize = meshAsset->GetVertices().size() * kGPUVertexSize;
-        uint32_t indexSize = meshAsset->GetIndices().size() * sizeof(uint32_t);
+        const uint64_t vertexSize = meshAsset->GetVertices().size() * kGPUVertexSize;
+        const uint64_t indexSize = meshAsset->GetIndices().size() * sizeof(uint32_t);
 
-        uint32_t vertexPageCount = (vertexSize + kPageSize - 1) / kPageSize;
-        uint32_t indexPageCount = (indexSize + kPageSize - 1) / kPageSize;
+        const uint32_t vertexPageCount = static_cast<uint32_t>((vertexSize + kPageSize - 1) / kPageSize);
+        const uint32_t indexPageCount = static_cast<uint32_t>((indexSize + kPageSize - 1) / kPageSize);
 
         std::vector<uint32_t> vertexVirtualPages;
         std::vector<uint32_t> indexVirtualPages;
@@ -72,8 +71,8 @@ namespace Hazel
         {
             std::vector<uint32_t> meshletVirtualPages;
 
-            uint32_t meshletSize = meshAsset->GetMeshlets().size() * sizeof(GPUMeshletInfo);
-            uint32_t meshletPageCount = (meshletSize + kPageSize - 1) / kPageSize;
+            const uint64_t meshletSize = meshAsset->GetMeshlets().size() * sizeof(GPUMeshletInfo);
+            const uint32_t meshletPageCount = static_cast<uint32_t>((meshletSize + kPageSize - 1) / kPageSize);
 
             lock.lock();
             for (uint32_t i = 0; i < meshletPageCount; i++)
@@ -123,4 +122,4 @@ namespace Hazel
         m_PageBufferMutexes.push_back(std::make_unique<std::mutex>());
         m_PageBufferFreeRanges.push_back({{0, kMaxPageCountPerBuffer}});
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,22 +1,21 @@
-//
-// Created by helmholtz on 2026/4/14.
-//
+// Declares the custom render pipeline.
+// Created: 2026-04-14.
 
 #pragma once
 #include "../Renderer/RenderPipeline.h"
 
-namespace Hazel
+namespace Aster
 {
     class CustomRenderPipeline : public RenderPipeline
     {
-    public:
-        CustomRenderPipeline(Renderer* renderer);
+      public:
+        CustomRenderPipeline(Hazel::Renderer* renderer);
 
-        void Render(RenderContext& context, const SceneCameraView& camera) override;
+        void Render(RenderContext& context, const Hazel::SceneCameraView& camera) override;
 
-		~CustomRenderPipeline() override;
+        ~CustomRenderPipeline() override;
 
-    private:
+      private:
         GPUAssetHandle m_DepthStencilTexture = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

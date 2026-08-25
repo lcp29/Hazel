@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan buffer backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -12,7 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     class VulkanMemoryAllocator;
 
@@ -84,4 +83,4 @@ namespace Hazel
         bool m_IsDetached = false;
         RHIOwnerSet<RHIBufferView> m_Views;
     };
-} // namespace Hazel
+} // namespace Aster

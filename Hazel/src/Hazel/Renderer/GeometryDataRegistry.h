@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/7.
-//
+// Declares virtualized GPU geometry storage.
+// Created: 2026-04-07.
 
 #pragma once
 #include "GPUAsset/GPUMeshAsset.h"
@@ -10,19 +9,23 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     // 4GB
     constexpr uint64_t kGeometrySpaceSize = static_cast<uint64_t>(1024) * 1024 * 1024 * 4;
     // 16KB
     constexpr uint64_t kPageSize = 16384;
     // 256K pages
-    constexpr uint64_t kMaxPageCount = kGeometrySpaceSize / kPageSize;
+    constexpr uint32_t kMaxPageCount = static_cast<uint32_t>(kGeometrySpaceSize / kPageSize);
 
     constexpr uint64_t kVertexCountPerPage = kPageSize / kGPUVertexSize;
 
     constexpr uint64_t kPhysicalBufferSize = 256 * 1024 * 1024;
 
-    constexpr uint64_t kMaxPageCountPerBuffer = kPhysicalBufferSize / kPageSize;
+    constexpr uint32_t kMaxPageCountPerBuffer = static_cast<uint32_t>(kPhysicalBufferSize / kPageSize);
 
     struct alignas(16) GPUPageTerm
     {
@@ -43,7 +46,7 @@ namespace Hazel
       public:
         GeometryDataRegistry() = delete;
 
-        GeometryDataRegistry(Renderer* renderer);
+        GeometryDataRegistry(Hazel::Renderer* renderer);
         ~GeometryDataRegistry();
 
         void RegisterMesh(GPUMeshAsset* meshAsset);
@@ -52,7 +55,7 @@ namespace Hazel
       private:
         void CreateNewPageBuffer();
 
-        Renderer* m_Renderer = nullptr;
+        Hazel::Renderer* m_Renderer = nullptr;
 
         std::vector<RHIBuffer*> m_PageBuffers;
         std::vector<std::unique_ptr<std::mutex>> m_PageBufferMutexes;
@@ -63,4 +66,4 @@ namespace Hazel
         std::vector<uint32_t> m_FreeVirtualPageIndices;
         std::array<GPUPageTerm, kMaxPageCount> m_VirtualPageTable;
     };
-} // namespace Hazel
+} // namespace Aster

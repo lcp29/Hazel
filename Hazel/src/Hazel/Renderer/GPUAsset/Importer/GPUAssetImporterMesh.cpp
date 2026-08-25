@@ -1,5 +1,3 @@
-// TODO: TEMP URGENT INTERVIEW: mesh GPU importer
-
 #include "Hazel/Asset/MeshAsset.h"
 #include "Hazel/Renderer/GPUAsset/GPUMeshAsset.h"
 #include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
@@ -8,9 +6,9 @@
 
 #include <cstring>
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPUMeshAsset> ImportGPUMeshAsset(Renderer* renderer, const MeshAsset* asset)
+    std::unique_ptr<GPUMeshAsset> ImportGPUMeshAsset(Hazel::Renderer* renderer, const MeshAsset* asset)
     {
         const auto& meshData = asset->GetData();
         auto* device = renderer->GetDevice();
@@ -20,7 +18,7 @@ namespace Hazel
         auto* cmd = graphicsContext->AcquireDefaultCommandBuffer();
         cmd->Begin(true);
 
-        // TODO: TEMP URGENT INTERVIEW: upload mesh vertex/index data directly into buffers
+        // Upload directly until GeometryDataRegistry owns mesh storage.
         RHIBufferDesc vertexStagingDesc{};
         vertexStagingDesc.size = meshData.vertices.size() * sizeof(Vertex);
         vertexStagingDesc.usages = RHIBufferUsageFlagBits::TransferSource;
@@ -106,4 +104,4 @@ namespace Hazel
         meshAsset->SetIndexBuffer(indexBuffer);
         return meshAsset;
     }
-} // namespace Hazel
+} // namespace Aster

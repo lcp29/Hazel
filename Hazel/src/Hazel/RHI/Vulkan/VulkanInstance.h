@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Declares the Vulkan instance backend.
+// Created: 2026-03-13.
 
 #pragma once
 
@@ -10,7 +9,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIInstance)
     {
@@ -56,4 +55,4 @@ namespace Hazel
         RHIOwnerSet<RHISurface> m_Surfaces;
         DeletionQueue m_DeletionQueue;
     };
-} // namespace Hazel
+} // namespace Aster

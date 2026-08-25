@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/24.
-//
+// Declares texture asset support.
+// Created: 2026-03-24.
 
 #pragma once
 
@@ -14,6 +13,10 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct TextureAssetMeta
     {
@@ -21,7 +24,7 @@ namespace Hazel
         static TextureAssetMeta Deserialize(const YAML::Node& node);
         static TextureAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
@@ -55,7 +58,7 @@ namespace Hazel
         }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         uint64_t m_Version = 0;
         bool m_IsSRGB = true;
         bool m_UseMipmap = false;
@@ -97,4 +100,4 @@ namespace Hazel
         TextureAssetMeta m_Meta{};
         TextureAssetData m_TextureData{};
     };
-} // namespace Hazel
+} // namespace Aster

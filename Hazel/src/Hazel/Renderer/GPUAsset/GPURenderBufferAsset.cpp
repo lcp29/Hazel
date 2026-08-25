@@ -1,15 +1,14 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Implements GPU render buffer asset resources.
+// Created: 2026-04-01.
 
 #include "Hazel/Renderer/GPUAsset/GPURenderBufferAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPURenderBufferAsset> CreateGPURenderBufferAsset(Renderer* renderer,
-                                                                     UUID uuid,
+    std::unique_ptr<GPURenderBufferAsset> CreateGPURenderBufferAsset(Hazel::Renderer* renderer,
+                                                                     Hazel::UUID uuid,
                                                                      uint64_t sourceVersion,
                                                                      const RenderBufferDesc& desc,
                                                                      uint64_t lastReferencedFrame)
@@ -28,20 +27,23 @@ namespace Hazel
         if (desc.perFrame)
         {
             buffers.resize(renderer->GetMaxFramesInFlight(), nullptr);
-            for (int i = 0; i < renderer->GetMaxFramesInFlight(); i++)
+            for (uint32_t i = 0; i < renderer->GetMaxFramesInFlight(); i++)
             {
                 buffers[i] = renderer->GetDevice()->CreateBuffer(bufferDesc);
             }
         }
-        else { buffers.push_back(renderer->GetDevice()->CreateBuffer(bufferDesc)); }
+        else
+        {
+            buffers.push_back(renderer->GetDevice()->CreateBuffer(bufferDesc));
+        }
 
         return std::make_unique<GPURenderBufferAsset>(
             uuid, sourceVersion, renderer, desc, std::move(buffers), lastReferencedFrame);
     }
 
-    GPURenderBufferAsset::GPURenderBufferAsset(UUID uuid,
+    GPURenderBufferAsset::GPURenderBufferAsset(Hazel::UUID uuid,
                                                uint64_t sourceVersion,
-                                               Renderer* renderer,
+                                               Hazel::Renderer* renderer,
                                                const RenderBufferDesc& desc,
                                                std::vector<RHIBuffer*> buffers,
                                                uint64_t lastReferencedFrame)
@@ -78,7 +80,5 @@ namespace Hazel
     }
 
     RHIBuffer* GPURenderBufferAsset::GetBuffer() const
-    {
-        return m_PerFrame ? m_Buffers[m_Renderer->GetCurrentFrameInFlightIndex()] : m_Buffers[0];
-    }
-} // namespace Hazel
+    { return m_PerFrame ? m_Buffers[m_Renderer->GetCurrentFrameInFlightIndex()] : m_Buffers[0]; }
+} // namespace Aster

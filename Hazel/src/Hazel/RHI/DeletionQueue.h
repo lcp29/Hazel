@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the deletion queue interface.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace Hazel
+namespace Aster
 {
     class DeletionQueue
     {
@@ -121,4 +120,4 @@ namespace Hazel
         OperationSet m_Operations;
         uint64_t m_CurrentTime = 0;
     };
-} // namespace Hazel
+} // namespace Aster

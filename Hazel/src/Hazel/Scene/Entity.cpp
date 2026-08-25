@@ -1,7 +1,7 @@
-//
-// Created by helmholtz on 2026/3/20.
-//
+// Implements entity.
+// Created: 2026-03-20.
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Scene/Entity.h"
 
 #include "Hazel/Scene/Components.h"
@@ -88,9 +88,7 @@ namespace Hazel
     const std::string& Entity::GetName() { return GetComponent<TagComponent>().tag; }
 
     bool Entity::operator==(const Entity& other) const
-    {
-        return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene;
-    }
+    { return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene; }
 
     bool Entity::operator!=(const Entity& other) const { return !(*this == other); }
 
@@ -183,9 +181,9 @@ namespace Hazel
         auto& component = GetComponent<MeshRendererComponent>();
         component.meshUUID = mesh;
 
-        RenderSceneUpdatePayload payload{};
+        Aster::RenderSceneUpdatePayload payload{};
         payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::ChangeMesh;
+        payload.type = Aster::RenderSceneUpdatePayload::Type::ChangeMesh;
         payload.changeMesh.mesh = mesh;
         payload.changeMesh.meshInstanceID = 0;
         m_Scene->AddToRenderSceneUpdatePayload(payload);
@@ -197,9 +195,9 @@ namespace Hazel
         auto& component = GetComponent<MeshRendererComponent>();
         component.materialUUID = material;
 
-        RenderSceneUpdatePayload payload{};
+        Aster::RenderSceneUpdatePayload payload{};
         payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::ChangeMaterial;
+        payload.type = Aster::RenderSceneUpdatePayload::Type::ChangeMaterial;
         payload.changeMaterial.material = material;
         m_Scene->AddToRenderSceneUpdatePayload(payload);
     }
@@ -208,9 +206,9 @@ namespace Hazel
 
     void Entity::AddMeshRendererPayload(const MeshRendererComponent& component)
     {
-        RenderSceneUpdatePayload payload{};
+        Aster::RenderSceneUpdatePayload payload{};
         payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::Add;
+        payload.type = Aster::RenderSceneUpdatePayload::Type::Add;
         payload.add.renderObject.transform = GetGlobalTransform();
         payload.add.renderObject.material = component.materialUUID;
         payload.add.renderObject.mesh = component.meshUUID;
@@ -221,9 +219,11 @@ namespace Hazel
 
     void Entity::RemoveMeshRendererPayload()
     {
-        RenderSceneUpdatePayload payload{};
+        Aster::RenderSceneUpdatePayload payload{};
         payload.entity = GetUUID();
-        payload.type = RenderSceneUpdatePayload::Type::Remove;
+        payload.type = Aster::RenderSceneUpdatePayload::Type::Remove;
         m_Scene->AddToRenderSceneUpdatePayload(payload);
     }
 } // namespace Hazel
+
+// ======== Aster Modify End ========

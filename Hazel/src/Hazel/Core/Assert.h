@@ -9,6 +9,7 @@
 
 // Alteratively we could use the same "default" message for both "WITH_MSG" and "NO_MSG" and
 // provide support for custom formatting by concatenating the formatting string instead of having the format inside the default message
+// ======== Aster Modify Begin ========
 #define HZ_INTERNAL_ASSERT_IMPL(type, check, msg, ...)                                                                 \
     {                                                                                                                  \
         if (!(check))                                                                                                  \
@@ -31,6 +32,7 @@
 #define HZ_INTERNAL_ASSERT_GET_MACRO(...)                                                                              \
     HZ_EXPAND_MACRO(                                                                                                   \
         HZ_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, HZ_INTERNAL_ASSERT_WITH_MSG, HZ_INTERNAL_ASSERT_NO_MSG))
+// ======== Aster Modify End ========
 
 // Currently accepts at least the condition and one additional parameter (the message) being optional
 #define HZ_ASSERT(...) HZ_EXPAND_MACRO(HZ_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__))

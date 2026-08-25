@@ -1,5 +1,6 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Timestep.h"
 #include "Hazel/Scene/Entity.h"
 #include "Hazel/Scene/Scene.h"
@@ -16,6 +17,7 @@ using MonoAssembly = struct _MonoAssembly;
 using MonoImage = struct _MonoImage;
 using MonoClassField = struct _MonoClassField;
 using MonoString = struct _MonoString;
+// ======== Aster Modify End ========
 }
 
 namespace Hazel
@@ -43,10 +45,14 @@ namespace Hazel
 
     struct ScriptField
     {
-        ScriptFieldType Type;
+        // ======== Aster Modify Begin ========
+        ScriptFieldType Type = ScriptFieldType::None;
+        // ======== Aster Modify End ========
         std::string Name;
 
-        MonoClassField* ClassField;
+        // ======== Aster Modify Begin ========
+        MonoClassField* ClassField = nullptr;
+        // ======== Aster Modify End ========
     };
 
     // ScriptField + data storage
@@ -59,7 +65,9 @@ namespace Hazel
         template <typename T> T GetValue()
         {
             static_assert(sizeof(T) <= 16, "Type too large!");
+            // ======== Aster Modify Begin ========
             return *reinterpret_cast<T*>(m_Buffer);
+            // ======== Aster Modify End ========
         }
 
         template <typename T> void SetValue(T value)
@@ -117,7 +125,9 @@ namespace Hazel
             bool success = GetFieldValueInternal(name, s_FieldValueBuffer);
             if (!success) return T();
 
+            // ======== Aster Modify Begin ========
             return *reinterpret_cast<T*>(s_FieldValueBuffer);
+            // ======== Aster Modify End ========
         }
 
         template <typename T> void SetFieldValue(const std::string& name, T value)

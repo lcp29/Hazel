@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/4/7.
-//
+// Implements GPU asset handle resources.
+// Created: 2026-04-07.
 
 #include "GPUAssetHandle.h"
 
 #include "GPUAsset.h"
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
     void GPUAssetHandle::Destroy()
     {
@@ -27,4 +26,4 @@ namespace Hazel
             asset->Return();
         }
     }
-} // namespace Hazel
+} // namespace Aster

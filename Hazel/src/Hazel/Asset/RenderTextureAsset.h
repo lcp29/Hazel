@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/24.
-//
+// Declares render texture asset support.
+// Created: 2026-03-24.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     struct RenderTextureAssetMeta
     {
@@ -17,7 +16,7 @@ namespace Hazel
         static RenderTextureAssetMeta Deserialize(const YAML::Node& node);
         static RenderTextureAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
@@ -89,7 +88,7 @@ namespace Hazel
         }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         uint64_t m_Version = 0;
         RenderTextureDesc m_Desc{};
     };
@@ -115,4 +114,4 @@ namespace Hazel
       private:
         RenderTextureAssetMeta m_Meta{};
     };
-} // namespace Hazel
+} // namespace Aster

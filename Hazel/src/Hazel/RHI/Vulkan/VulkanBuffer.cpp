@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan buffer backend.
+// Created: 2026-03-15.
 
 #include "VulkanBuffer.h"
 
@@ -10,7 +9,7 @@
 #include "VulkanDevice.h"
 #include "VulkanMemoryAllocator.h"
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -218,7 +217,10 @@ namespace Hazel
                 VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
             });
         }
-        else { VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation); }
+        else
+        {
+            VulkanMemoryAllocator::DestroyBuffer(allocator, buffer, allocation);
+        }
 
         m_Buffer = VK_NULL_HANDLE;
         m_Allocation = VK_NULL_HANDLE;
@@ -264,9 +266,7 @@ namespace Hazel
     }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, RegisterView)(std::unique_ptr<RHIBufferView> view)
-    {
-        m_Views.Register(std::move(view));
-    }
+    { m_Views.Register(std::move(view)); }
 
     void RHI_VK_FUNC_IMPL(RHIBuffer, UnregisterView)(RHIBufferView* view) { m_Views.Unregister(view); }
-} // namespace Hazel
+} // namespace Aster

@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace Hazel::PropertyPanelHelpers
+namespace Aster::PropertyPanelHelpers
 {
     void
     DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f);
@@ -36,9 +36,9 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawImageUsageCheckbox(const char* label, RHIImageUsages& usages, RHIImageUsageFlagBits flag);
 
-    std::string GetAssetLabel(const std::vector<AssetRegistryTerm*>& assets, UUID uuid);
+    std::string GetAssetLabel(const std::vector<AssetRegistryTerm*>& assets, Hazel::UUID uuid);
     bool DrawAssetRegistryCombo(const char* label,
                                 const std::vector<AssetRegistryTerm*>& assets,
-                                UUID& value,
+                                Hazel::UUID& value,
                                 bool allowNone = true);
-} // namespace Hazel::PropertyPanelHelpers
+} // namespace Aster::PropertyPanelHelpers

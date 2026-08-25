@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the Vulkan command buffer backend.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -10,7 +9,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHICommandBuffer)
     {
@@ -120,4 +119,4 @@ namespace Hazel
         vk::CommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

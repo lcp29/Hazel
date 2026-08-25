@@ -1,10 +1,14 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/ImGui/ImGuiLayer.h"
 
 #include "hzpch.h"
+// ======== Aster Modify End ========
 
 #include <imgui.h>
+
 #include <imgui_internal.h>
 
+// ======== Aster Modify Begin ========
 #ifdef RHI_USE_VULKAN
 #include "Hazel/RHI/RHI.h"
 
@@ -18,11 +22,15 @@
 #include <GLFW/glfw3.h>
 #include <backends/imgui_impl_glfw.h>
 
+// ======== Aster Modify End ========
+
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     ImGuiLayer::ImGuiLayer(Renderer* renderer)
         : Layer("ImGuiLayer")
         , m_Renderer(renderer)
+    // ======== Aster Modify End ========
     {}
 
     void ImGuiLayer::OnAttach()
@@ -38,17 +46,12 @@ namespace Hazel
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
         //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
-        //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-        //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
-
-        //float fontSize = 18.0f; // *2.0f;
-        //io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Bold.ttf", fontSize);
-        //io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/opensans/OpenSans-Regular.ttf", fontSize);
+        // ======== Aster Modify Begin ========
         io.FontGlobalScale = SystemSettings::GetSystemDPIScale();
+        // ======== Aster Modify End ========
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
-        //ImGui::StyleColorsClassic();
 
         // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
         ImGuiStyle& style = ImGui::GetStyle();
@@ -61,15 +64,16 @@ namespace Hazel
         SetDarkThemeColors();
 
         Application& app = Application::Get();
+        // ======== Aster Modify Begin ========
         auto window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
 
         // Setup Platform/Renderer bindings
-        RHIInstance* instance = m_Renderer->GetInstance();
-        RHIAdapter adapter = m_Renderer->GetAdapter();
-        RHIDevice* device = m_Renderer->GetDevice();
+        Aster::RHIInstance* instance = m_Renderer->GetInstance();
+        Aster::RHIAdapter adapter = m_Renderer->GetAdapter();
+        Aster::RHIDevice* device = m_Renderer->GetDevice();
 
-        // create imgui resource heap, values hard coded here
-        RHIResourceHeapDesc heapDesc{};
+        // Reserve descriptors used by editor UI textures.
+        Aster::RHIResourceHeapDesc heapDesc{};
         heapDesc.maxGroups = 64;
         heapDesc.samplerWithImageCount = 64;
 
@@ -93,8 +97,8 @@ namespace Hazel
 
         initInfo.UseDynamicRendering = true;
         initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        vk::ImageUsageFlags imageUsage = VulkanConvertImageUsages(RHIImageUsageFlagBits::ColorAttachment
-                                                                  | RHIImageUsageFlagBits::TransferDestination);
+        vk::ImageUsageFlags imageUsage = VulkanConvertImageUsages(Aster::RHIImageUsageFlagBits::ColorAttachment
+                                                                  | Aster::RHIImageUsageFlagBits::TransferDestination);
         initInfo.PipelineInfoMain.SwapChainImageUsage = static_cast<VkImageUsageFlags>(imageUsage);
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {
             VkPipelineRenderingCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}};
@@ -106,16 +110,20 @@ namespace Hazel
 #endif
     }
 
+    // ======== Aster Modify End ========
+
     void ImGuiLayer::OnDetach()
     {
         HZ_PROFILE_FUNCTION();
 
+// ======== Aster Modify Begin ========
 #if defined(RHI_USE_VULKAN)
         ImGui_ImplVulkan_Shutdown();
 #endif
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
         operator delete(m_ResourceHeap);
+        // ======== Aster Modify End ========
     }
 
     void ImGuiLayer::OnEvent(Event& e)
@@ -132,28 +140,36 @@ namespace Hazel
     {
         HZ_PROFILE_FUNCTION();
 
+// ======== Aster Modify Begin ========
 #if defined(RHI_USE_VULKAN)
         ImGui_ImplVulkan_NewFrame();
 #endif
+        // ======== Aster Modify End ========
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
     }
 
-    void ImGuiLayer::End(RHICommandBuffer* commandBuffer)
+    // ======== Aster Modify Begin ========
+    void ImGuiLayer::End(Aster::RHICommandBuffer* commandBuffer)
+    // ======== Aster Modify End ========
     {
         HZ_PROFILE_FUNCTION();
 
         ImGuiIO& io = ImGui::GetIO();
         Application& app = Application::Get();
         io.DisplaySize =
+            // ======== Aster Modify Begin ========
             ImVec2(static_cast<float>(app.GetWindow().GetWidth()), static_cast<float>(app.GetWindow().GetHeight()));
+        // ======== Aster Modify End ========
 
         // Rendering
         ImGui::Render();
+// ======== Aster Modify Begin ========
 #if defined(RHI_USE_VULKAN)
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer->GetHandle());
 #endif
+        // ======== Aster Modify End ========
     }
 
     void ImGuiLayer::SetDarkThemeColors()
@@ -189,16 +205,19 @@ namespace Hazel
         colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
     }
 
-    void* ImGuiLayer::AddTexture(RHISampler* sampler, RHIImageView* imageView, RHIImageResourceState imageState)
+    // ======== Aster Modify Begin ========
+    void* ImGuiLayer::AddTexture(Aster::RHISampler* sampler,
+                                 Aster::RHIImageView* imageView,
+                                 Aster::RHIImageResourceState imageState)
     {
         if (!sampler || !imageView) { return nullptr; }
 #ifdef RHI_USE_VULKAN
         return ImGui_ImplVulkan_AddTexture(sampler->GetHandle(),
                                            imageView->GetHandle(),
                                            static_cast<VkImageLayout>(VulkanConvertImageResourceState(imageState)));
-#endif
-        // other not supported
+#else
         return nullptr;
+#endif
     }
 
     void ImGuiLayer::RemoveTexture(void* textureID)
@@ -208,6 +227,8 @@ namespace Hazel
 #endif
         // other not supported
     }
+
+    // ======== Aster Modify End ========
 
     uint32_t ImGuiLayer::GetActiveWidgetID() const { return GImGui->ActiveId; }
 } // namespace Hazel

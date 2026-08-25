@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan device backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -12,7 +11,7 @@
 #include <memory>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     class VulkanMemoryAllocator;
 
@@ -136,4 +135,4 @@ namespace Hazel
         RHIOwnerSet<RHIShader> m_Shaders;
         RHIOwnerSet<RHISwapchain> m_Swapchains;
     };
-} // namespace Hazel
+} // namespace Aster

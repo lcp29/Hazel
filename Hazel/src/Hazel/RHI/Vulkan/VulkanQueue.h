@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan queue backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIQueue)
     {
@@ -54,4 +53,4 @@ namespace Hazel
         std::mutex m_QueueSubmitMutex;
         RHIDevice* m_DeviceOwner = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

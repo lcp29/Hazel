@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI command pool interface.
+// Created: 2026-03-14.
 
 #pragma once
 
 #include "RHIQueue.h"
 
-namespace Hazel
+namespace Aster
 {
     struct RHICommandPoolDesc
     {
@@ -14,4 +13,4 @@ namespace Hazel
         bool transient = false;
         bool allowCommandBufferReset = false;
     };
-} // namespace Hazel
+} // namespace Aster

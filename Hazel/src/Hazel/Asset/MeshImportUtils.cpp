@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/3.
-//
+// Implements mesh processing and import utilities.
+// Created: 2026-04-03.
 
 #include "MeshImportUtils.h"
 
@@ -17,7 +16,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace Hazel
+namespace Aster
 {
     std::pair<glm::vec3, float> ComputeRitterBoundingSphere(const std::vector<Vertex>& vertices)
     {
@@ -75,9 +74,7 @@ namespace Hazel
             glm::vec3 value{};
 
             bool operator==(const PositionKey& other) const
-            {
-                return value.x == other.value.x && value.y == other.value.y && value.z == other.value.z;
-            }
+            { return value.x == other.value.x && value.y == other.value.y && value.z == other.value.z; }
         };
 
         struct PositionKeyHash
@@ -137,7 +134,6 @@ namespace Hazel
         struct TriangleEdgeRef
         {
             uint32_t triangleIndex = 0;
-            std::array<uint32_t, 2> localCornerIndices{};
         };
 
         struct FinalTriangle
@@ -261,7 +257,7 @@ namespace Hazel
             for (auto& neighbors : adjacency)
             {
                 std::ranges::sort(neighbors);
-                neighbors.erase(std::ranges::unique(neighbors).begin(), neighbors.end());
+                neighbors.erase(std::unique(neighbors.begin(), neighbors.end()), neighbors.end());
             }
 
             return adjacency;
@@ -460,7 +456,10 @@ namespace Hazel
                 const float crossLength = glm::length(cross);
 
                 if (crossLength <= degenerateTriangleEpsilon) { triangle.isDegenerate = true; }
-                else { triangle.faceNormal = cross / crossLength; }
+                else
+                {
+                    triangle.faceNormal = cross / crossLength;
+                }
 
                 corner0.angle = glm::acos(glm::clamp(glm::dot(glm::normalize(p1 - p0), glm::normalize(p2 - p0))
                                                          / (glm::length(p1 - p0) * glm::length(p2 - p0)),
@@ -506,7 +505,7 @@ namespace Hazel
                 {
                     const uint32_t nextEdgeIndex = (edgeIndex + 1) % 3;
                     EdgeKey edge(triangle.positionNodeIndices[edgeIndex], triangle.positionNodeIndices[nextEdgeIndex]);
-                    edgeMap[edge].push_back(TriangleEdgeRef{triangleIndex, {edgeIndex, nextEdgeIndex}});
+                    edgeMap[edge].push_back(TriangleEdgeRef{triangleIndex});
                 }
 
                 indexOffset += vertexCount;
@@ -556,7 +555,7 @@ namespace Hazel
         for (auto& neighbors : triangleAdjacency)
         {
             std::ranges::sort(neighbors);
-            neighbors.erase(std::ranges::unique(neighbors).begin(), neighbors.end());
+            neighbors.erase(std::unique(neighbors.begin(), neighbors.end()), neighbors.end());
         }
 
         std::vector<Vertex> finalVertices;
@@ -694,4 +693,4 @@ namespace Hazel
         outData.boundingSphereRadius = boundingSphere.second;
         return true;
     }
-} // namespace Hazel
+} // namespace Aster

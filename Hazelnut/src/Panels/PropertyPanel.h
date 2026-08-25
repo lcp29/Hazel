@@ -6,13 +6,13 @@
 
 #include <filesystem>
 
-namespace Hazel
+namespace Aster
 {
     class PropertyPanel
     {
       public:
-        void SetContext(const Ref<Scene>& scene);
-        void SetSelectedEntity(Entity entity);
+        void SetContext(const Hazel::Ref<Hazel::Scene>& scene);
+        void SetSelectedEntity(Hazel::Entity entity);
         void SetSelectedMetaPath(const std::filesystem::path& metaPath);
 
         void OnImGuiRender();
@@ -27,12 +27,12 @@ namespace Hazel
 
         template <typename T> void DisplayAddComponentEntry(const std::string& entryName);
 
-        void DrawEntityProperties(Entity entity);
+        void DrawEntityProperties(Hazel::Entity entity);
         void DrawAssetProperties();
 
-        Ref<Scene> m_Context;
-        Entity m_SelectedEntity;
+        Hazel::Ref<Hazel::Scene> m_Context;
+        Hazel::Entity m_SelectedEntity;
         std::filesystem::path m_SelectedMetaPath;
         SelectionType m_SelectionType = SelectionType::None;
     };
-} // namespace Hazel
+} // namespace Aster

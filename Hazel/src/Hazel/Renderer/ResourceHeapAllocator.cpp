@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Implements descriptor resource-heap allocation.
+// Created: 2026-04-01.
 
 #include "ResourceHeapAllocator.h"
 
@@ -8,7 +7,7 @@
 
 #include <algorithm>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -106,9 +105,7 @@ namespace Hazel
         }
 
         uint32_t GetCapacityCount(uint32_t usageCount)
-        {
-            return usageCount == 0 ? 0 : std::max(usageCount * kHeapMaxGroups, kMinDescriptorCapacity);
-        }
+        { return usageCount == 0 ? 0 : std::max(usageCount * kHeapMaxGroups, kMinDescriptorCapacity); }
 
         RHIResourceHeapDesc GetHeapCapacity(const RHIResourceHeapDesc& usage)
         {
@@ -127,7 +124,7 @@ namespace Hazel
         }
     } // namespace
 
-    ResourceHeapAllocator::ResourceHeapAllocator(Renderer* renderer)
+    ResourceHeapAllocator::ResourceHeapAllocator(Hazel::Renderer* renderer)
         : m_Renderer(renderer)
         , m_IsValid(true)
     {}
@@ -256,4 +253,4 @@ namespace Hazel
         m_GroupsUpdateAfterBind.clear();
         m_IsValid = false;
     }
-} // namespace Hazel
+} // namespace Aster

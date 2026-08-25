@@ -1,11 +1,10 @@
-//
-// Created by helmholtz on 2026/4/2.
-//
+// Declares CPU asset importer entry points.
+// Created: 2026-04-02.
 
 #pragma once
 #include <filesystem>
 
-namespace Hazel
+namespace Aster
 {
     class AssetManager;
     class ComputeShaderAsset;
@@ -29,4 +28,4 @@ namespace Hazel
         static std::unique_ptr<TextureAsset> ImportTexture(AssetRegistryTerm* registryTerm);
         static std::unique_ptr<SamplerAsset> ImportSampler(AssetRegistryTerm* registryTerm);
     };
-} // namespace Hazel
+} // namespace Aster

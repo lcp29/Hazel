@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/3/29.
-//
+// Implements GPU compute shader asset resources.
+// Created: 2026-03-29.
 
 #include "Hazel/Renderer/GPUAsset/GPUComputeShaderAsset.h"
 
-namespace Hazel
+namespace Aster
 {
     GPUComputeShaderAsset::~GPUComputeShaderAsset() { GPUComputeShaderAsset::ReleaseImmediate(); }
 
@@ -63,4 +62,4 @@ namespace Hazel
 
         m_IsValid = false;
     }
-} // namespace Hazel
+} // namespace Aster

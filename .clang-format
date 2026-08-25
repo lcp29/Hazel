@@ -60,6 +60,15 @@ IndentAccessModifiers: false
 
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: '^<imgui\.h>$'
+    Priority: 2
+  - Regex: '^<ImGuizmo\.h>$'
+    Priority: 3
+  - Regex: '^<'
+    Priority: 4
 
 ReflowComments: false
 AlignTrailingComments: true

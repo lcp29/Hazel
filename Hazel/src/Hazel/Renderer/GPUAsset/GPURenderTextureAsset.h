@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Declares GPU render texture asset resources.
+// Created: 2026-03-22.
 
 #pragma once
 
@@ -14,6 +13,10 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct RenderTextureDesc
     {
@@ -33,9 +36,9 @@ namespace Hazel
       public:
         GPURenderTextureAsset() = delete;
 
-        GPURenderTextureAsset(UUID uuid,
+        GPURenderTextureAsset(Hazel::UUID uuid,
                               uint64_t sourceVersion,
-                              Renderer* renderer,
+                              Hazel::Renderer* renderer,
                               const RenderTextureDesc& desc,
                               std::vector<RHIImage*> images,
                               std::vector<RHIImageView*> imageViews,
@@ -67,9 +70,9 @@ namespace Hazel
         std::vector<RHIImageView*> m_ImageViews;
     };
 
-    std::unique_ptr<GPURenderTextureAsset> CreateGPURenderTextureAsset(Renderer* renderer,
-                                                                       UUID uuid,
+    std::unique_ptr<GPURenderTextureAsset> CreateGPURenderTextureAsset(Hazel::Renderer* renderer,
+                                                                       Hazel::UUID uuid,
                                                                        uint64_t sourceVersion,
                                                                        const RenderTextureDesc& desc,
                                                                        uint64_t lastReferencedFrame = 0);
-} // namespace Hazel
+} // namespace Aster

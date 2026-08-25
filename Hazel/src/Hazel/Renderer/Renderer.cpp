@@ -1,3 +1,4 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Renderer/Renderer.h"
 
 #include "GPUAsset/GPUGraphicsPipelineAsset.h"
@@ -42,19 +43,19 @@ namespace Hazel
             m_Instance->GetHandle(), static_cast<GLFWwindow*>(m_Window->GetNativeWindow()), nullptr, &surface);
 #endif
         m_WindowSurface = m_GraphicsContext->GetSurface();
-        m_MaxFramesInFlight = GlobalSettings.Get(MaxFramesInFlightString, m_MaxFramesInFlight);
-        m_SwapchainImageFormat = GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
+        m_MaxFramesInFlight = Aster::GlobalSettings.Get(MaxFramesInFlightString, m_MaxFramesInFlight);
+        m_SwapchainImageFormat = Aster::GlobalSettings.Get(SwapchainFormatString, m_SwapchainImageFormat);
         CreateSwapchainResources();
 
-        m_GPUAssetGarbageCollectFrameThreshold =
-            GlobalSettings.Get(GPUAssetGarbageCollectFrameThresholdString, m_GPUAssetGarbageCollectFrameThreshold);
+        m_GPUAssetGarbageCollectFrameThreshold = Aster::GlobalSettings.Get(GPUAssetGarbageCollectFrameThresholdString,
+                                                                           m_GPUAssetGarbageCollectFrameThreshold);
 
-        m_ResourceHeapAllocator = std::make_unique<ResourceHeapAllocator>(this);
+        m_ResourceHeapAllocator = std::make_unique<Aster::ResourceHeapAllocator>(this);
 
         // assets
-        m_GPUAssetRegistry = std::make_unique<GPUAssetRegistry>();
+        m_GPUAssetRegistry = std::make_unique<Aster::GPUAssetRegistry>();
 
-        m_ResourceBindingRegistry = std::make_unique<ResourceBindingRegistry>(this);
+        m_ResourceBindingRegistry = std::make_unique<Aster::ResourceBindingRegistry>(this);
         m_ResourceBindingRegistry->CreatePerViewResources();
 
         CreatePerFrameData();
@@ -63,38 +64,30 @@ namespace Hazel
         CreateDefaultResources();
 
         // render scene
-        m_RenderScene = std::make_unique<RenderScene>(this);
-        m_GeometryDataRegistry = std::make_unique<GeometryDataRegistry>(this);
+        m_RenderScene = std::make_unique<Aster::RenderScene>(this);
+        m_GeometryDataRegistry = std::make_unique<Aster::GeometryDataRegistry>(this);
 
         // render pipeline
-        m_RenderPipeline = std::make_unique<CustomRenderPipeline>(this);
+        m_RenderPipeline = std::make_unique<Aster::CustomRenderPipeline>(this);
     }
 
-    uint32_t Renderer::RegisterBindlessTexture(GPUAssetHandle texture)
-    {
-        return GetResourceBindingRegistry()->RegisterTexture(std::move(texture));
-    }
+    uint32_t Renderer::RegisterBindlessTexture(Aster::GPUAssetHandle texture)
+    { return GetResourceBindingRegistry()->RegisterTexture(std::move(texture)); }
 
-    uint32_t Renderer::RegisterBindlessSampler(GPUAssetHandle sampler)
-    {
-        return GetResourceBindingRegistry()->RegisterSampler(std::move(sampler));
-    }
+    uint32_t Renderer::RegisterBindlessSampler(Aster::GPUAssetHandle sampler)
+    { return GetResourceBindingRegistry()->RegisterSampler(std::move(sampler)); }
 
-    uint32_t Renderer::RegisterBindlessSamplerWithImage(GPUAssetHandle sampler, GPUAssetHandle image)
-    {
-        return GetResourceBindingRegistry()->RegisterSamplerWithImage(std::move(sampler), std::move(image));
-    }
+    uint32_t Renderer::RegisterBindlessSamplerWithImage(Aster::GPUAssetHandle sampler, Aster::GPUAssetHandle image)
+    { return GetResourceBindingRegistry()->RegisterSamplerWithImage(std::move(sampler), std::move(image)); }
 
     void Renderer::UnregisterBindlessTexture(uint32_t slot) { GetResourceBindingRegistry()->UnregisterTexture(slot); }
 
     void Renderer::UnregisterBindlessSampler(uint32_t slot) { GetResourceBindingRegistry()->UnregisterSampler(slot); }
 
     void Renderer::UnregisterBindlessSamplerWithImage(uint32_t slot)
-    {
-        GetResourceBindingRegistry()->UnregisterCombinedImageSampler(slot);
-    }
+    { GetResourceBindingRegistry()->UnregisterCombinedImageSampler(slot); }
 
-    GPUAssetHandle Renderer::ResolveGPUAsset(UUID uuid, AssetType type)
+    Aster::GPUAssetHandle Renderer::ResolveGPUAsset(UUID uuid, Aster::AssetType type)
     {
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAsset(uuid);
@@ -105,11 +98,11 @@ namespace Hazel
 
         bool shaderObsolete = false;
 
-        if (type == AssetType::Material)
+        if (type == Aster::AssetType::Material)
         {
-            if (auto* materialAsset = static_cast<CachedMaterial*>(currentAsset))
+            if (auto* materialAsset = static_cast<Aster::CachedMaterial*>(currentAsset))
             {
-                auto shader = ResolveGPUAsset(materialAsset->GetShader(), AssetType::Shader);
+                auto shader = ResolveGPUAsset(materialAsset->GetShader(), Aster::AssetType::Shader);
                 if (!shader.asset)
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
@@ -122,16 +115,16 @@ namespace Hazel
         {
             auto& gpuState = asset->GetGPUAssetState();
             std::unique_lock lock(gpuState.mutex);
-            if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset
+            if (gpuState.state == Aster::GPUAssetLoadState::Loaded && currentAsset
                 && gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                 return {currentAsset};
             }
 
-            if (gpuState.state == GPUAssetLoadState::Loading)
+            if (gpuState.state == Aster::GPUAssetLoadState::Loading)
             {
-                if (currentAsset && !(type == AssetType::Material && shaderObsolete))
+                if (currentAsset && !(type == Aster::AssetType::Material && shaderObsolete))
                 {
                     currentAsset->SetLastReferencedFrame(m_CurrentFrame);
                     return {currentAsset};
@@ -139,7 +132,7 @@ namespace Hazel
                 return {GetDefaultGPUAsset(asset->GetType())};
             }
 
-            gpuState.state = GPUAssetLoadState::Loading;
+            gpuState.state = Aster::GPUAssetLoadState::Loading;
         }
 
         std::thread([this, asset, type] { ResolveGPUAssetWhileLoading(asset, type); }).detach();
@@ -152,7 +145,7 @@ namespace Hazel
         return {GetDefaultGPUAsset(asset->GetType())};
     }
 
-    GPUAssetHandle Renderer::ResolveGPUAssetBlocked(UUID uuid, AssetType type)
+    Aster::GPUAssetHandle Renderer::ResolveGPUAssetBlocked(UUID uuid, Aster::AssetType type)
     {
         auto* assetManager = Project::GetActive()->GetAssetManager();
         auto* asset = assetManager->RequestAssetBlocked(uuid);
@@ -167,11 +160,11 @@ namespace Hazel
 
             bool shaderObsolete = false;
 
-            if (type == AssetType::Material)
+            if (type == Aster::AssetType::Material)
             {
-                if (auto* materialAsset = static_cast<CachedMaterial*>(currentAsset))
+                if (auto* materialAsset = static_cast<Aster::CachedMaterial*>(currentAsset))
                 {
-                    auto shader = ResolveGPUAssetBlocked(materialAsset->GetShader(), AssetType::Shader);
+                    auto shader = ResolveGPUAssetBlocked(materialAsset->GetShader(), Aster::AssetType::Shader);
                     if (!shader.asset)
                     {
                         materialAsset->Return();
@@ -181,7 +174,7 @@ namespace Hazel
                 }
             }
 
-            if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset
+            if (gpuState.state == Aster::GPUAssetLoadState::Loaded && currentAsset
                 && gpuState.resolvedVersion >= asset->GetVersion() && !shaderObsolete)
             {
                 currentAsset->SetLastReferencedFrame(m_CurrentFrame);
@@ -190,18 +183,19 @@ namespace Hazel
 
             if (currentAsset) { currentAsset->Return(); }
 
-            if (gpuState.state == GPUAssetLoadState::Loading)
+            if (gpuState.state == Aster::GPUAssetLoadState::Loading)
             {
-                gpuState.condition.wait(lock, [&gpuState] { return gpuState.state != GPUAssetLoadState::Loading; });
+                gpuState.condition.wait(lock,
+                                        [&gpuState] { return gpuState.state != Aster::GPUAssetLoadState::Loading; });
 
                 currentAsset = m_GPUAssetRegistry->GetAsset(uuid);
-                if (gpuState.state == GPUAssetLoadState::Loaded && currentAsset
+                if (gpuState.state == Aster::GPUAssetLoadState::Loaded && currentAsset
                     && gpuState.resolvedVersion >= asset->GetVersion())
                 {
-                    if (type == AssetType::Material)
+                    if (type == Aster::AssetType::Material)
                     {
-                        auto* materialAsset = static_cast<CachedMaterial*>(currentAsset);
-                        auto shader = ResolveGPUAssetBlocked(materialAsset->GetShader(), AssetType::Shader);
+                        auto* materialAsset = static_cast<Aster::CachedMaterial*>(currentAsset);
+                        auto shader = ResolveGPUAssetBlocked(materialAsset->GetShader(), Aster::AssetType::Shader);
                         if (!shader.asset)
                         {
                             currentAsset->Return();
@@ -226,68 +220,56 @@ namespace Hazel
                 return {GetDefaultGPUAsset(asset->GetType()), false};
             }
 
-            gpuState.state = GPUAssetLoadState::Loading;
+            gpuState.state = Aster::GPUAssetLoadState::Loading;
         }
 
         return ResolveGPUAssetWhileLoading(asset, type);
     }
 
-    GPUAssetHandle
+    Aster::GPUAssetHandle
     Renderer::ResolveGPUGraphicsPipeline(UUID material,
-                                         const std::vector<RHIFormat>& colorAttachmentFormats,
-                                         const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                         RHIFormat depthStencilFormat)
+                                         const std::vector<Aster::RHIFormat>& colorAttachmentFormats,
+                                         const std::vector<Aster::RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                         Aster::RHIFormat depthStencilFormat)
     {
-        return ResolveDirectGPUAsset<GPUGraphicsPipelineAsset>(
+        return ResolveDirectGPUAsset<Aster::GPUGraphicsPipelineAsset>(
             material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
     }
 
-    GPUAssetHandle
-    Renderer::ResolveGPUGraphicsPipelineBlocked(UUID material,
-                                                const std::vector<RHIFormat>& colorAttachmentFormats,
-                                                const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                                RHIFormat depthStencilFormat)
+    Aster::GPUAssetHandle Renderer::ResolveGPUGraphicsPipelineBlocked(
+        UUID material,
+        const std::vector<Aster::RHIFormat>& colorAttachmentFormats,
+        const std::vector<Aster::RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+        Aster::RHIFormat depthStencilFormat)
     {
-        return ResolveDirectGPUAssetBlocked<GPUGraphicsPipelineAsset>(
+        return ResolveDirectGPUAssetBlocked<Aster::GPUGraphicsPipelineAsset>(
             material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
     }
 
-    GPUAssetHandle Renderer::ResolveGPURenderTexture(const RenderTextureDesc& desc, uint64_t lastReferencedFrame)
-    {
-        return ResolveDirectGPUAsset<GPURenderTextureAsset>(desc, lastReferencedFrame);
-    }
+    Aster::GPUAssetHandle Renderer::ResolveGPURenderTexture(const Aster::RenderTextureDesc& desc,
+                                                            uint64_t lastReferencedFrame)
+    { return ResolveDirectGPUAsset<Aster::GPURenderTextureAsset>(desc, lastReferencedFrame); }
 
-    GPUAssetHandle Renderer::ResolveGPURenderBuffer(const RenderBufferDesc& desc, uint64_t lastReferencedFrame)
-    {
-        return ResolveDirectGPUAsset<GPURenderBufferAsset>(desc, lastReferencedFrame);
-    }
+    Aster::GPUAssetHandle Renderer::ResolveGPURenderBuffer(const Aster::RenderBufferDesc& desc,
+                                                           uint64_t lastReferencedFrame)
+    { return ResolveDirectGPUAsset<Aster::GPURenderBufferAsset>(desc, lastReferencedFrame); }
 
-    GPUAssetHandle Renderer::ResolveGPUSampler(const RHISamplerDesc& desc, uint64_t lastReferencedFrame)
-    {
-        return ResolveDirectGPUAsset<GPUSamplerAsset>(desc, lastReferencedFrame);
-    }
+    Aster::GPUAssetHandle Renderer::ResolveGPUSampler(const Aster::RHISamplerDesc& desc, uint64_t lastReferencedFrame)
+    { return ResolveDirectGPUAsset<Aster::GPUSamplerAsset>(desc, lastReferencedFrame); }
 
     uint32_t Renderer::RegisterMaterial(UUID shader, uint64_t shaderSourceVersion, UUID material)
-    {
-        return GetResourceBindingRegistry()->RegisterMaterial(shader, shaderSourceVersion, material);
-    }
+    { return GetResourceBindingRegistry()->RegisterMaterial(shader, shaderSourceVersion, material); }
 
     void Renderer::UnregisterMaterial(UUID shader, uint64_t shaderSourceVersion, uint32_t materialID)
-    {
-        GetResourceBindingRegistry()->UnregisterMaterial(shader, shaderSourceVersion, materialID);
-    }
+    { GetResourceBindingRegistry()->UnregisterMaterial(shader, shaderSourceVersion, materialID); }
 
-    void Renderer::RegisterShader(UUID uuid, uint64_t sourceVersion, const RHIShaderReflection& reflection)
-    {
-        GetResourceBindingRegistry()->RegisterShader(uuid, sourceVersion, reflection);
-    }
+    void Renderer::RegisterShader(UUID uuid, uint64_t sourceVersion, const Aster::RHIShaderReflection& reflection)
+    { GetResourceBindingRegistry()->RegisterShader(uuid, sourceVersion, reflection); }
 
     void Renderer::UnregisterShader(UUID uuid, uint64_t sourceVersion)
-    {
-        GetResourceBindingRegistry()->UnregisterShader(uuid, sourceVersion);
-    }
+    { GetResourceBindingRegistry()->UnregisterShader(uuid, sourceVersion); }
 
-    GPUAssetHandle Renderer::ResolveGPUAssetWhileLoading(Asset* asset, AssetType type)
+    Aster::GPUAssetHandle Renderer::ResolveGPUAssetWhileLoading(Aster::Asset* asset, Aster::AssetType type)
     {
         auto& gpuState = asset->GetGPUAssetState();
         auto uuid = asset->GetUUID();
@@ -300,7 +282,7 @@ namespace Hazel
             {
                 std::unique_lock lock(gpuState.mutex);
                 gpuState.resolvedVersion = 0;
-                gpuState.state = GPUAssetLoadState::Unloaded;
+                gpuState.state = Aster::GPUAssetLoadState::Unloaded;
             }
 
             m_GPUAssetRegistry->EnqueueForDeferredRelease(std::move(oldGPUAsset));
@@ -315,7 +297,7 @@ namespace Hazel
         {
             std::unique_lock lock(gpuState.mutex);
             gpuState.resolvedVersion = newVersion;
-            gpuState.state = GPUAssetLoadState::Loaded;
+            gpuState.state = Aster::GPUAssetLoadState::Loaded;
         }
 
         m_GPUAssetRegistry->EnqueueForDeferredRelease(std::move(oldGPUAsset));
@@ -331,101 +313,102 @@ namespace Hazel
 
         // error texture
         uint8_t data[4] = {255, 255, 255, 255};
-        RHIImageDesc imageDesc{};
+        Aster::RHIImageDesc imageDesc{};
         imageDesc.height = 1;
         imageDesc.width = 1;
         imageDesc.depth = 1;
         imageDesc.arrayLayers = 1;
         imageDesc.mipLevels = 1;
-        imageDesc.format = RHIFormat::RGBA8UNorm;
-        imageDesc.initialState = RHIImageResourceState::ShaderRead;
-        imageDesc.usages = RHIImageUsageFlagBits::Sampled;
-        auto image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
+        imageDesc.format = Aster::RHIFormat::RGBA8UNorm;
+        imageDesc.initialState = Aster::RHIImageResourceState::ShaderRead;
+        imageDesc.usages = Aster::RHIImageUsageFlagBits::Sampled;
+        auto image = Aster::RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
 
-        RHIImageViewDesc imageViewDesc{};
-        imageViewDesc.format = RHIFormat::RGBA8UNorm;
+        Aster::RHIImageViewDesc imageViewDesc{};
+        imageViewDesc.format = Aster::RHIFormat::RGBA8UNorm;
         auto imageView = m_Device->CreateImageView(image, imageViewDesc);
 
-        TextureDesc textureDesc{};
-        textureDesc.format = RHIFormat::RGBA8UNorm;
+        Aster::TextureDesc textureDesc{};
+        textureDesc.format = Aster::RHIFormat::RGBA8UNorm;
         textureDesc.width = 1;
         textureDesc.height = 1;
         textureDesc.useMipmap = false;
-        textureDesc.usages = RHIImageUsageFlagBits::Sampled;
+        textureDesc.usages = Aster::RHIImageUsageFlagBits::Sampled;
 
-        m_WhiteTexture = std::make_unique<GPUTextureAsset>(m_WhiteTextureUUID, 0, textureDesc, this, image, imageView);
+        m_WhiteTexture =
+            std::make_unique<Aster::GPUTextureAsset>(m_WhiteTextureUUID, 0, textureDesc, this, image, imageView);
         m_WhiteTextureBindingSlot =
-            GetResourceBindingRegistry()->RegisterTexture(GPUAssetHandle(m_WhiteTexture.get(), false));
+            GetResourceBindingRegistry()->RegisterTexture(Aster::GPUAssetHandle(m_WhiteTexture.get(), false));
 
         data[1] = 0;
-        image = RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
+        image = Aster::RHIImage::Factory::CreateFromRawData(m_Device, cmd, imageDesc, data, 4);
         imageView = m_Device->CreateImageView(image, imageViewDesc);
-        m_ErrorTexture = std::make_unique<GPUTextureAsset>(m_ErrorTextureUUID, 0, textureDesc, this, image, imageView);
+        m_ErrorTexture =
+            std::make_unique<Aster::GPUTextureAsset>(m_ErrorTextureUUID, 0, textureDesc, this, image, imageView);
         m_ErrorTextureBindingSlot =
-            GetResourceBindingRegistry()->RegisterTexture(GPUAssetHandle(m_ErrorTexture.get(), false));
+            GetResourceBindingRegistry()->RegisterTexture(Aster::GPUAssetHandle(m_ErrorTexture.get(), false));
 
-        RHISamplerDesc samplerDesc{};
+        Aster::RHISamplerDesc samplerDesc{};
         auto sampler = m_Device->CreateSampler(samplerDesc);
-        m_DefaultSampler =
-            std::make_unique<GPUSamplerAsset>(m_DefaultSamplerUUID, 0, this, samplerDesc, sampler, m_CurrentFrame);
+        m_DefaultSampler = std::make_unique<Aster::GPUSamplerAsset>(
+            m_DefaultSamplerUUID, 0, this, samplerDesc, sampler, m_CurrentFrame);
         m_DefaultSamplerBindingSlot =
-            GetResourceBindingRegistry()->RegisterSampler(GPUAssetHandle(m_DefaultSampler.get(), false));
+            GetResourceBindingRegistry()->RegisterSampler(Aster::GPUAssetHandle(m_DefaultSampler.get(), false));
 
         m_WhiteTextureWithDefaultSamplerBindingSlot = GetResourceBindingRegistry()->RegisterSamplerWithImage(
-            GPUAssetHandle(m_WhiteTexture.get(), false), GPUAssetHandle(m_DefaultSampler.get(), false));
+            Aster::GPUAssetHandle(m_WhiteTexture.get(), false), Aster::GPUAssetHandle(m_DefaultSampler.get(), false));
 
         cmd->End();
 
-        RHIQueueSubmitDesc submitDesc{};
+        Aster::RHIQueueSubmitDesc submitDesc{};
         submitDesc.commandBuffers = {cmd};
-        RHISyncPoint syncPoint = m_Device->GetUniformQueue()->Submit(submitDesc);
+        Aster::RHISyncPoint syncPoint = m_Device->GetUniformQueue()->Submit(submitDesc);
         m_Device->WaitSyncPoint(&syncPoint);
         m_GraphicsContext->ReleaseDefaultCommandBuffer(cmd);
     }
 
-    std::unique_ptr<GPUAsset> Renderer::LoadGPUAsset(Asset* asset)
+    std::unique_ptr<Aster::GPUAsset> Renderer::LoadGPUAsset(Aster::Asset* asset)
     {
         if (!asset) { return nullptr; }
         asset->VersionUp();
         switch (asset->GetType())
         {
-            case AssetType::ComputeShader:
-                return ImportGPUComputeShaderAsset(this, static_cast<ComputeShaderAsset*>(asset));
-            case AssetType::RenderTexture:
-                return ImportGPURenderTextureAsset(this, static_cast<RenderTextureAsset*>(asset));
-            case AssetType::Sampler:
-                return ImportGPUSamplerAsset(this, static_cast<SamplerAsset*>(asset));
-            case AssetType::Shader:
-                return ImportGPUShaderAsset(this, static_cast<ShaderAsset*>(asset));
-            case AssetType::Texture:
-                return ImportGPUTextureAsset(this, static_cast<TextureAsset*>(asset));
-            case AssetType::Material:
-                return ImportCachedMaterial(this, static_cast<MaterialAsset*>(asset));
-            // TODO: TEMP URGENT INTERVIEW: mesh asset import
-            case AssetType::Mesh:
-                return ImportGPUMeshAsset(this, static_cast<MeshAsset*>(asset));
+            case Aster::AssetType::ComputeShader:
+                return ImportGPUComputeShaderAsset(this, static_cast<Aster::ComputeShaderAsset*>(asset));
+            case Aster::AssetType::RenderTexture:
+                return ImportGPURenderTextureAsset(this, static_cast<Aster::RenderTextureAsset*>(asset));
+            case Aster::AssetType::Sampler:
+                return ImportGPUSamplerAsset(this, static_cast<Aster::SamplerAsset*>(asset));
+            case Aster::AssetType::Shader:
+                return ImportGPUShaderAsset(this, static_cast<Aster::ShaderAsset*>(asset));
+            case Aster::AssetType::Texture:
+                return ImportGPUTextureAsset(this, static_cast<Aster::TextureAsset*>(asset));
+            case Aster::AssetType::Material:
+                return ImportCachedMaterial(this, static_cast<Aster::MaterialAsset*>(asset));
+            case Aster::AssetType::Mesh:
+                return ImportGPUMeshAsset(this, static_cast<Aster::MeshAsset*>(asset));
             default:
                 return nullptr;
         }
     }
 
-    GPUAsset* Renderer::GetDefaultGPUAsset(AssetType type)
+    Aster::GPUAsset* Renderer::GetDefaultGPUAsset(Aster::AssetType type)
     {
         switch (type)
         {
-            case AssetType::Texture:
+            case Aster::AssetType::Texture:
                 return m_WhiteTexture.get();
-            case AssetType::Shader:
+            case Aster::AssetType::Shader:
                 return nullptr;
-            case AssetType::Sampler:
+            case Aster::AssetType::Sampler:
                 return m_DefaultSampler.get();
-            case AssetType::RenderTexture:
+            case Aster::AssetType::RenderTexture:
                 return nullptr;
-            case AssetType::ComputeShader:
+            case Aster::AssetType::ComputeShader:
                 return nullptr;
-            case AssetType::Mesh:
+            case Aster::AssetType::Mesh:
                 return nullptr;
-            case AssetType::Material:
+            case Aster::AssetType::Material:
                 return nullptr;
             default:
                 return nullptr;
@@ -436,9 +419,9 @@ namespace Hazel
     {
         m_Frames.resize(m_MaxFramesInFlight);
 
-        RHICommandPoolDesc commandPoolDesc{.queueType = {}, .transient = false, .allowCommandBufferReset = true};
+        Aster::RHICommandPoolDesc commandPoolDesc{.queueType = {}, .transient = false, .allowCommandBufferReset = true};
 
-        RHICommandBufferDesc commandBufferDesc{.level = RHICommandBufferLevel::Primary};
+        Aster::RHICommandBufferDesc commandBufferDesc{.level = Aster::RHICommandBufferLevel::Primary};
 
         for (int i = 0; i < m_MaxFramesInFlight; i++)
         {
@@ -463,18 +446,18 @@ namespace Hazel
     {
         for (auto& camera : m_Cameras)
         {
-            GPUAssetHandle renderTextureHandle = nullptr;
-            GPURenderTextureAsset* renderTexture = nullptr;
+            Aster::GPUAssetHandle renderTextureHandle = nullptr;
+            Aster::GPURenderTextureAsset* renderTexture = nullptr;
 
             if (camera.renderTextureUUID == UUID(-1)) { renderTexture = m_DefaultRenderTexture.get(); }
             else
             {
-                renderTextureHandle = ResolveGPUAsset(camera.renderTextureUUID, AssetType::RenderTexture);
+                renderTextureHandle = ResolveGPUAsset(camera.renderTextureUUID, Aster::AssetType::RenderTexture);
                 if (!renderTextureHandle.asset) { return; }
-                renderTexture = static_cast<GPURenderTextureAsset*>(renderTextureHandle.asset);
+                renderTexture = static_cast<Aster::GPURenderTextureAsset*>(renderTextureHandle.asset);
             }
 
-            RenderContext context(this, renderTexture, {.width = m_ViewportWidth, .height = m_ViewportHeight});
+            Aster::RenderContext context(this, renderTexture, {.width = m_ViewportWidth, .height = m_ViewportHeight});
             m_RenderPipeline->Render(context, camera);
         }
     }
@@ -487,16 +470,16 @@ namespace Hazel
         auto* swapchainImageView = m_Swapchain->FetchImageView(frameData.frameNumber);
 
         swapchainImage->Transition(
-            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::ColorAttachment);
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), Aster::RHIImageResourceState::ColorAttachment);
 
-        RHIRenderingAttachmentDesc colorAttachmentDesc{};
+        Aster::RHIRenderingAttachmentDesc colorAttachmentDesc{};
         colorAttachmentDesc.imageView = swapchainImageView;
-        colorAttachmentDesc.loadOp = RHIRenderingLoadOp::Clear;
-        colorAttachmentDesc.storeOp = RHIRenderingStoreOp::Store;
+        colorAttachmentDesc.loadOp = Aster::RHIRenderingLoadOp::Clear;
+        colorAttachmentDesc.storeOp = Aster::RHIRenderingStoreOp::Store;
         colorAttachmentDesc.clearColorValue.float32 = {0.2f, 0.2f, 0.2f, 1.0f};
-        colorAttachmentDesc.state = RHIImageResourceState::ColorAttachment;
+        colorAttachmentDesc.state = Aster::RHIImageResourceState::ColorAttachment;
 
-        RHIRenderingInfo renderingInfo{};
+        Aster::RHIRenderingInfo renderingInfo{};
         renderingInfo.colorAttachments = {colorAttachmentDesc};
         renderingInfo.renderOffset = {0, 0};
         renderingInfo.renderViewSize = {swapchainImage->GetDesc().width, swapchainImage->GetDesc().height};
@@ -511,7 +494,7 @@ namespace Hazel
 
         auto* swapchainImage = m_Swapchain->FetchImage(frameData.frameNumber);
         swapchainImage->Transition(
-            frameData.commandBuffer, swapchainImage->GetCurrentState(), RHIImageResourceState::Present);
+            frameData.commandBuffer, swapchainImage->GetCurrentState(), Aster::RHIImageResourceState::Present);
     }
 
     void Renderer::OnResize()
@@ -538,7 +521,7 @@ namespace Hazel
             m_DefaultRenderTexture.reset();
         }
 
-        RenderTextureDesc renderTextureDesc{};
+        Aster::RenderTextureDesc renderTextureDesc{};
         renderTextureDesc.width = m_ViewportWidth;
         renderTextureDesc.height = m_ViewportHeight;
         renderTextureDesc.format = m_SwapchainImageFormat;
@@ -569,7 +552,7 @@ namespace Hazel
 
         frameData.commandBuffer->End();
 
-        RHIQueueSubmitDesc submitDesc{};
+        Aster::RHIQueueSubmitDesc submitDesc{};
         submitDesc.waitSyncPoints = {frameData.imageAvailableSyncPoint};
         submitDesc.commandBuffers = {frameData.commandBuffer};
         frameData.renderCompleteSyncPoint = m_Device->GetUniformQueue()->Submit(submitDesc);
@@ -590,13 +573,14 @@ namespace Hazel
 
     void Renderer::CreateSwapchainResources()
     {
-        RHISwapchainDesc swapchainDesc{};
+        Aster::RHISwapchainDesc swapchainDesc{};
         swapchainDesc.height = m_Window->GetHeight();
         swapchainDesc.width = m_Window->GetWidth();
         swapchainDesc.format = m_SwapchainImageFormat;
         swapchainDesc.imageCount = m_MaxFramesInFlight;
-        swapchainDesc.mode = RHISwapchainMode::Mailbox;
-        swapchainDesc.usages = RHIImageUsageFlagBits::ColorAttachment | RHIImageUsageFlagBits::TransferDestination;
+        swapchainDesc.mode = Aster::RHISwapchainMode::Mailbox;
+        swapchainDesc.usages =
+            Aster::RHIImageUsageFlagBits::ColorAttachment | Aster::RHIImageUsageFlagBits::TransferDestination;
         swapchainDesc.surface = m_WindowSurface;
         m_Swapchain = m_Device->CreateSwapchain(swapchainDesc);
     }
@@ -610,15 +594,14 @@ namespace Hazel
         }
     }
 
-    // TODO: TEMP URGENT INTERVIEW: a vanilla forward pass
-    void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
+    void Renderer::RunGraphicsPass(Aster::RHICommandBuffer* cmd,
                                    const SceneCameraView& camera,
-                                   const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
-                                   const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                   const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
-                                   RHIRect2D renderArea,
-                                   RHIRect2D viewportArea,
-                                   RHIRect2D scissorArea)
+                                   const std::vector<Aster::RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                                   const std::vector<Aster::RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                   const Aster::RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
+                                   Aster::RHIRect2D renderArea,
+                                   Aster::RHIRect2D viewportArea,
+                                   Aster::RHIRect2D scissorArea)
     {
         const glm::mat4 view = camera.transform.GetView();
         const glm::mat4 projection = camera.camera->GetProjection();
@@ -644,10 +627,10 @@ namespace Hazel
             if (normalLength > 0.0f) { plane /= normalLength; }
         }
 
-        std::vector<RHIFormat> colorAttachmentFormats;
-        auto depthStencilFormat = RHIFormat::Undefined;
+        std::vector<Aster::RHIFormat> colorAttachmentFormats;
+        auto depthStencilFormat = Aster::RHIFormat::Undefined;
 
-        RHIRenderingInfo renderingInfo{};
+        Aster::RHIRenderingInfo renderingInfo{};
         renderingInfo.renderOffset = renderArea.offset;
         renderingInfo.renderViewSize = renderArea.extent;
 
@@ -679,13 +662,13 @@ namespace Hazel
                 continue;
             }
 
-            auto shaderResult = ResolveGPUAsset(it->first, AssetType::Shader);
+            auto shaderResult = ResolveGPUAsset(it->first, Aster::AssetType::Shader);
             if (!shaderResult.asset)
             {
                 it = end;
                 continue;
             }
-            auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
+            auto* shader = static_cast<Aster::GPUShaderAsset*>(shaderResult.asset);
 
             GetResourceBindingRegistry()->UpdateUserUploadDataForShader(shader->GetUUID(), shader->GetSourceVersion());
             GetResourceBindingRegistry()->CreateOrUpdatePerShaderResourcesForShader(shader->GetUUID(),
@@ -705,9 +688,9 @@ namespace Hazel
             {
                 auto* renderObject = it->second;
 
-                auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
+                auto meshResult = ResolveGPUAsset(renderObject->mesh, Aster::AssetType::Mesh);
                 if (!meshResult.asset) { continue; }
-                auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
+                auto* mesh = static_cast<Aster::GPUMeshAsset*>(meshResult.asset);
 
                 bool shouldCull = false;
                 const glm::mat4 worldToObjectPlaneTransform = glm::transpose(renderObject->transform);
@@ -728,31 +711,31 @@ namespace Hazel
                 }
                 if (shouldCull) { continue; }
 
-                auto materialResult = ResolveGPUAsset(renderObject->material, AssetType::Material);
+                auto materialResult = ResolveGPUAsset(renderObject->material, Aster::AssetType::Material);
                 if (!materialResult.asset) { continue; }
-                auto* material = static_cast<CachedMaterial*>(materialResult.asset);
+                auto* material = static_cast<Aster::CachedMaterial*>(materialResult.asset);
 
                 auto pipelineResult = ResolveGPUGraphicsPipeline(
                     renderObject->material, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
                 if (!pipelineResult.asset) { continue; }
-                auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
+                auto* pipeline = static_cast<Aster::GPUGraphicsPipelineAsset*>(pipelineResult.asset);
 
                 cmd->BindGraphicsPipeline(pipeline->GetPipeline());
                 cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
-                cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
+                cmd->BindIndexBuffer(mesh->GetIndexBuffer(), Aster::RHIIndexType::UInt32, 0);
 
                 auto materialID = material->GetMaterialID();
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
                                                                                             shader->GetSourceVersion()),
-                                   RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                                   Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                                    0,
                                    64,
                                    &renderObject->transform);
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
                                                                                             shader->GetSourceVersion()),
-                                   RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                                   Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                                    64,
                                    4,
                                    &materialID);
@@ -761,7 +744,7 @@ namespace Hazel
 
                 cmd->PushConstants(GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(),
                                                                                             shader->GetSourceVersion()),
-                                   RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                                   Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                                    68,
                                    4,
                                    &entityID);
@@ -781,15 +764,15 @@ namespace Hazel
         cmd->EndRendering();
     }
 
-    void Renderer::RunGraphicsPass(RHICommandBuffer* cmd,
+    void Renderer::RunGraphicsPass(Aster::RHICommandBuffer* cmd,
                                    UUID overrideMaterial,
                                    const SceneCameraView& camera,
-                                   const std::vector<RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
-                                   const std::vector<RHIColorBlendAttachmentDesc>& colorBlendAttachments,
-                                   const RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
-                                   RHIRect2D renderArea,
-                                   RHIRect2D viewportArea,
-                                   RHIRect2D scissorArea)
+                                   const std::vector<Aster::RHIRenderingAttachmentDesc>& colorAttachmentDescriptions,
+                                   const std::vector<Aster::RHIColorBlendAttachmentDesc>& colorBlendAttachments,
+                                   const Aster::RHIRenderingAttachmentDesc& depthStencilAttachmentDescription,
+                                   Aster::RHIRect2D renderArea,
+                                   Aster::RHIRect2D viewportArea,
+                                   Aster::RHIRect2D scissorArea)
     {
         const glm::mat4 view = camera.transform.GetView();
         const glm::mat4 projection = camera.camera->GetProjection();
@@ -815,18 +798,18 @@ namespace Hazel
             if (normalLength > 0.0f) { plane /= normalLength; }
         }
 
-        std::vector<RHIFormat> colorAttachmentFormats;
-        auto depthStencilFormat = RHIFormat::Undefined;
+        std::vector<Aster::RHIFormat> colorAttachmentFormats;
+        auto depthStencilFormat = Aster::RHIFormat::Undefined;
 
-        auto materialResult = ResolveGPUAsset(overrideMaterial, AssetType::Material);
+        auto materialResult = ResolveGPUAsset(overrideMaterial, Aster::AssetType::Material);
         if (!materialResult.asset) { return; }
-        auto shaderResult =
-            ResolveGPUAsset(static_cast<CachedMaterial*>(materialResult.asset)->GetShader(), AssetType::Shader);
+        auto shaderResult = ResolveGPUAsset(static_cast<Aster::CachedMaterial*>(materialResult.asset)->GetShader(),
+                                            Aster::AssetType::Shader);
 
-        auto* material = static_cast<CachedMaterial*>(materialResult.asset);
-        auto* shader = static_cast<GPUShaderAsset*>(shaderResult.asset);
+        auto* material = static_cast<Aster::CachedMaterial*>(materialResult.asset);
+        auto* shader = static_cast<Aster::GPUShaderAsset*>(shaderResult.asset);
 
-        RHIRenderingInfo renderingInfo{};
+        Aster::RHIRenderingInfo renderingInfo{};
         renderingInfo.renderOffset = renderArea.offset;
         renderingInfo.renderViewSize = renderArea.extent;
 
@@ -847,7 +830,7 @@ namespace Hazel
         auto pipelineResult = ResolveGPUGraphicsPipeline(
             overrideMaterial, colorAttachmentFormats, colorBlendAttachments, depthStencilFormat);
         if (!pipelineResult.asset) { return; }
-        auto* pipeline = static_cast<GPUGraphicsPipelineAsset*>(pipelineResult.asset);
+        auto* pipeline = static_cast<Aster::GPUGraphicsPipelineAsset*>(pipelineResult.asset);
 
         cmd->BeginRendering(renderingInfo);
 
@@ -862,9 +845,9 @@ namespace Hazel
 
         for (auto* renderObject : renderObjects | std::views::values)
         {
-            auto meshResult = ResolveGPUAsset(renderObject->mesh, AssetType::Mesh);
+            auto meshResult = ResolveGPUAsset(renderObject->mesh, Aster::AssetType::Mesh);
             if (!meshResult.asset) { continue; }
-            auto* mesh = static_cast<GPUMeshAsset*>(meshResult.asset);
+            auto* mesh = static_cast<Aster::GPUMeshAsset*>(meshResult.asset);
 
             bool shouldCull = false;
             const glm::mat4 worldToObjectPlaneTransform = glm::transpose(renderObject->transform);
@@ -886,20 +869,20 @@ namespace Hazel
             if (shouldCull) { continue; }
 
             cmd->BindVertexBuffer(0, mesh->GetVertexBuffer(), 0);
-            cmd->BindIndexBuffer(mesh->GetIndexBuffer(), RHIIndexType::UInt32, 0);
+            cmd->BindIndexBuffer(mesh->GetIndexBuffer(), Aster::RHIIndexType::UInt32, 0);
 
             auto materialID = material->GetMaterialID();
 
             cmd->PushConstants(
                 GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(), shader->GetSourceVersion()),
-                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                 0,
                 64,
                 &renderObject->transform);
 
             cmd->PushConstants(
                 GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(), shader->GetSourceVersion()),
-                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                 64,
                 4,
                 &materialID);
@@ -908,7 +891,7 @@ namespace Hazel
 
             cmd->PushConstants(
                 GetResourceBindingRegistry()->GetShaderResourceSignature(shader->GetUUID(), shader->GetSourceVersion()),
-                RHIShaderStageFlagBits::Vertex | RHIShaderStageFlagBits::Fragment,
+                Aster::RHIShaderStageFlagBits::Vertex | Aster::RHIShaderStageFlagBits::Fragment,
                 68,
                 4,
                 &entityID);
@@ -937,3 +920,5 @@ namespace Hazel
         m_ResourceHeapAllocator.reset();
     }
 } // namespace Hazel
+
+// ======== Aster Modify End ========

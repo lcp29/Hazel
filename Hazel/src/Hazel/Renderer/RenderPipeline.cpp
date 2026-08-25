@@ -1,3 +1,2 @@
-//
-// Created by helmholtz on 2026/4/14.
-//
+// Implements render pipeline.
+// Created: 2026-04-14.

@@ -12,7 +12,9 @@ namespace Hazel
     {
         m_Context = context;
         m_SelectionContext = {};
+        // ======== Aster Modify Begin ========
         m_SelectionVersion++;
+        // ======== Aster Modify End ========
     }
 
     void SceneHierarchyPanel::OnImGuiRender()
@@ -21,6 +23,7 @@ namespace Hazel
 
         if (m_Context)
         {
+            // ======== Aster Modify Begin ========
             m_EntityDeletionQueue.clear();
 
             for (auto& enttEntity : m_Context->m_Registry.view<entt::entity>())
@@ -50,6 +53,7 @@ namespace Hazel
             // Right-click on blank space
             if (ImGui::BeginPopupContextWindow(nullptr,
                                                ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+            // ======== Aster Modify End ========
             {
                 if (ImGui::MenuItem("Create Empty Entity")) m_Context->CreateEntity("Empty Entity");
 
@@ -62,11 +66,14 @@ namespace Hazel
     void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
     {
         m_SelectionContext = entity;
+        // ======== Aster Modify Begin ========
         m_SelectionVersion++;
+        // ======== Aster Modify End ========
     }
 
     void SceneHierarchyPanel::DrawEntityNode(Entity entity)
     {
+        // ======== Aster Modify Begin ========
         auto& tag = entity.GetComponent<TagComponent>().tag;
         auto& relationship = entity.GetComponent<EntityRelationshipComponent>();
 
@@ -77,13 +84,17 @@ namespace Hazel
 
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((void*)static_cast<uint64_t>((uint32_t)entity), flags, tag.c_str());
+        // ======== Aster Modify End ========
         if (ImGui::IsItemClicked())
         {
             m_SelectionContext = entity;
+            // ======== Aster Modify Begin ========
             m_SelectionVersion++;
+            // ======== Aster Modify End ========
         }
 
         bool entityDeleted = false;
+        // ======== Aster Modify Begin ========
         bool newEntityCreated = false;
         if (ImGui::BeginPopupContextItem())
         {
@@ -127,5 +138,6 @@ namespace Hazel
         }
 
         if (entityDeleted) { m_EntityDeletionQueue.push_back(entity); }
+        // ======== Aster Modify End ========
     }
 } // namespace Hazel

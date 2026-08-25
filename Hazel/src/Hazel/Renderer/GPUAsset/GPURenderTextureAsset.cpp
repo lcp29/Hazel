@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Implements GPU render texture asset resources.
+// Created: 2026-03-22.
 
 #include "Hazel/Renderer/GPUAsset/GPURenderTextureAsset.h"
 
@@ -9,7 +8,7 @@
 
 #include <unordered_set>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -40,8 +39,8 @@ namespace Hazel
         }
     } // namespace
 
-    std::unique_ptr<GPURenderTextureAsset> CreateGPURenderTextureAsset(Renderer* renderer,
-                                                                       UUID uuid,
+    std::unique_ptr<GPURenderTextureAsset> CreateGPURenderTextureAsset(Hazel::Renderer* renderer,
+                                                                       Hazel::UUID uuid,
                                                                        uint64_t sourceVersion,
                                                                        const RenderTextureDesc& desc,
                                                                        uint64_t lastReferencedFrame)
@@ -65,7 +64,10 @@ namespace Hazel
         {
             imageDesc.usages |= RHIImageUsageFlagBits::DepthStencilAttachment;
         }
-        else { imageDesc.usages |= RHIImageUsageFlagBits::ColorAttachment; }
+        else
+        {
+            imageDesc.usages |= RHIImageUsageFlagBits::ColorAttachment;
+        }
 
         if (resolvedDesc.useMipmap)
         {
@@ -92,7 +94,7 @@ namespace Hazel
             images.resize(renderer->GetMaxFramesInFlight(), nullptr);
             imageViews.resize(renderer->GetMaxFramesInFlight(), nullptr);
 
-            for (int i = 0; i < renderer->GetMaxFramesInFlight(); i++)
+            for (uint32_t i = 0; i < renderer->GetMaxFramesInFlight(); i++)
             {
                 auto* image = device->CreateImage(imageDesc);
                 auto* imageView = image->CreateView(viewDesc);
@@ -114,9 +116,9 @@ namespace Hazel
             uuid, sourceVersion, renderer, resolvedDesc, std::move(images), std::move(imageViews), lastReferencedFrame);
     }
 
-    GPURenderTextureAsset::GPURenderTextureAsset(UUID uuid,
+    GPURenderTextureAsset::GPURenderTextureAsset(Hazel::UUID uuid,
                                                  uint64_t sourceVersion,
-                                                 Renderer* renderer,
+                                                 Hazel::Renderer* renderer,
                                                  const RenderTextureDesc& desc,
                                                  std::vector<RHIImage*> images,
                                                  std::vector<RHIImageView*> imageViews,
@@ -165,14 +167,10 @@ namespace Hazel
     }
 
     RHIImage* GPURenderTextureAsset::GetImage() const
-    {
-        return m_Images[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0];
-    }
+    { return m_Images[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0]; }
 
     const std::vector<RHIImage*>& GPURenderTextureAsset::GetAllImages() const { return m_Images; }
 
     RHIImageView* GPURenderTextureAsset::GetDefaultImageView() const
-    {
-        return m_ImageViews[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0];
-    }
-} // namespace Hazel
+    { return m_ImageViews[m_PerFrame ? m_Renderer->GetCurrentFrameInFlightIndex() : 0]; }
+} // namespace Aster

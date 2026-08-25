@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan swapchain backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHISwapchain)
     {
@@ -62,4 +61,4 @@ namespace Hazel
         std::vector<vk::Semaphore> m_PresentSemaphores;
         uint32_t m_NextAcquireSemaphoreIndex = 0;
     };
-} // namespace Hazel
+} // namespace Aster

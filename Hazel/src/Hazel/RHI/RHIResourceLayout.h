@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Declares the RHI resource layout interface.
+// Created: 2026-03-15.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <vector>
 
-namespace Hazel
+namespace Aster
 {
     struct RHIResourceBindingSlotDesc
     {
@@ -32,4 +31,4 @@ namespace Hazel
     {
         std::vector<RHIResourceBindingSlotDesc> bindings;
     };
-} // namespace Hazel
+} // namespace Aster

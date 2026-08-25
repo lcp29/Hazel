@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/16.
-//
+// Declares the Vulkan graphics pipeline backend.
+// Created: 2026-03-16.
 
 #pragma once
 
@@ -11,7 +10,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     RHI_VK_CLASS_IMPL(RHIGraphicsPipeline)
     {
@@ -27,9 +26,7 @@ namespace Hazel
         vk::Pipeline GetHandle() const { return m_Pipeline; }
 
         vk::PipelineLayout GetPipelineLayout() const
-        {
-            return m_ResourceSignature ? m_ResourceSignature->GetPipelineLayout() : VK_NULL_HANDLE;
-        }
+        { return m_ResourceSignature ? m_ResourceSignature->GetPipelineLayout() : VK_NULL_HANDLE; }
 
         bool IsDetached() const { return m_IsDetached; }
 
@@ -50,4 +47,4 @@ namespace Hazel
         vk::Pipeline m_Pipeline = VK_NULL_HANDLE;
         bool m_IsDetached = false;
     };
-} // namespace Hazel
+} // namespace Aster

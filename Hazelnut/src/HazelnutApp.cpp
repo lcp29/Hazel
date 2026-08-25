@@ -1,6 +1,8 @@
+// ======== Aster Modify Begin ========
 #include "EditorLayer.h"
 
 #include <Hazel.h>
+// ======== Aster Modify End ========
 #include <Hazel/Core/EntryPoint.h>
 
 namespace Hazel
@@ -10,9 +12,9 @@ namespace Hazel
       public:
         Hazelnut(const ApplicationSpecification& spec)
             : Application(spec)
-        {
-            PushLayer(new EditorLayer(m_Renderer.get()));
-        }
+        // ======== Aster Modify Begin ========
+        { PushLayer(new EditorLayer(m_Renderer.get())); }
+        // ======== Aster Modify End ========
     };
 
     Application* CreateApplication(ApplicationCommandLineArgs args)

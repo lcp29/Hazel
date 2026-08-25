@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "Hazel/Core/UUID.h"
 #include "Hazel/Project/Project.h"
+// ======== Aster Modify Begin ========
 #include "Hazel/Scene/Components.h"
 
 #include <fstream>
@@ -35,6 +36,7 @@ namespace Hazel
         }
 
         out << rootNode;
+        // ======== Aster Modify End ========
 
         std::ofstream fout(filepath);
         fout << out.c_str();
@@ -47,21 +49,24 @@ namespace Hazel
         {
             data = YAML::LoadFile(filepath);
         }
-        catch (YAML::ParserException e)
+        // ======== Aster Modify Begin ========
+        catch (const YAML::ParserException& e)
         {
             HZ_CORE_ERROR("Failed to load .hazel file '{0}'\n     {1}", filepath, e.what());
             return false;
         }
+        // ======== Aster Modify End ========
 
         if (!data["Scene"]) return false;
 
+        // ======== Aster Modify Begin ========
         auto sceneName = data["Scene"].as<std::string>();
         HZ_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
         m_Scene->SetViewportCamera(Camera::Deserialize(data["ViewportCamera"]));
         if (auto viewportCameraTransformNode = data["ViewportCameraTransform"])
         {
-            Transform viewportCameraTransform;
+            Aster::Transform viewportCameraTransform;
             viewportCameraTransform.translation = viewportCameraTransformNode["Translation"].as<glm::vec3>();
             viewportCameraTransform.rotation = viewportCameraTransformNode["Rotation"].as<glm::vec3>();
             viewportCameraTransform.scale = viewportCameraTransformNode["Scale"].as<glm::vec3>();
@@ -80,6 +85,7 @@ namespace Hazel
                 auto uuid = entityNode["ID"]["ID"][0].as<UUID>();
                 Entity entity = m_Scene->GetEntityByUUID(uuid);
                 entity.BuildRelationship(entityNode["Relationship"]);
+                // ======== Aster Modify End ========
             }
         }
 

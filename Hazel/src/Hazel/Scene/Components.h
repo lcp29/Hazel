@@ -1,5 +1,6 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #include "../Renderer/GPUAsset/CachedMaterial.h"
 #include "../Renderer/GPUAsset/GPUMeshAsset.h"
 #include "Hazel/Core/UUID.h"
@@ -321,8 +322,8 @@ namespace Hazel
     {
         ScriptableEntity* instance = nullptr;
 
-        ScriptableEntity* (*instantiateScript)();
-        void (*destroyScript)(NativeScriptComponent*);
+        ScriptableEntity* (*instantiateScript)() = nullptr;
+        void (*destroyScript)(NativeScriptComponent*) = nullptr;
 
         template <typename T> void Bind()
         {
@@ -339,6 +340,7 @@ namespace Hazel
 
     using AllComponents = ComponentGroup<TransformComponent,
                                          MeshRendererComponent,
+                                         // ======== Aster Modify End ========
                                          CameraComponent,
                                          ScriptComponent,
                                          NativeScriptComponent>;

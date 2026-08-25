@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the Vulkan memory allocator backend.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     class VulkanMemoryAllocator
     {
@@ -48,4 +47,4 @@ namespace Hazel
         bool m_IsValid = false;
         VmaAllocator m_Allocator = VK_NULL_HANDLE;
     };
-} // namespace Hazel
+} // namespace Aster

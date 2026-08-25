@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Declares common RHI descriptors and result helpers.
+// Created: 2026-03-13.
 
 #pragma once
 
@@ -28,7 +27,7 @@
 #define HZ_RHI_DEBUG_RETURN_VALUE_IF(condition, value)
 #endif
 
-namespace Hazel
+namespace Aster
 {
     struct Version
     {
@@ -64,15 +63,15 @@ namespace Hazel
 
     struct DebugMessage
     {
-        RHIBackend backend;
+        RHIBackend backend = RHIBackend::Auto;
 
         DebugMessageType type;
         DebugMessageSeverity severity;
 
-        int32_t messageIdNumber;
-        const char* messageIdName;
-        const char* message;
+        int32_t messageIdNumber = 0;
+        const char* messageIdName = nullptr;
+        const char* message = nullptr;
     };
 
     using DebugMessageCallback = void (*)(const DebugMessage&, void*);
-} // namespace Hazel
+} // namespace Aster

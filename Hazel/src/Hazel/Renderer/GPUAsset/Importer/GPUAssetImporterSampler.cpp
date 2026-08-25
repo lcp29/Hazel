@@ -3,9 +3,9 @@
 #include "Hazel/Renderer/GPUAsset/Importer/GPUAssetImporter.h"
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPUSamplerAsset> ImportGPUSamplerAsset(Renderer* renderer, const SamplerAsset* asset)
+    std::unique_ptr<GPUSamplerAsset> ImportGPUSamplerAsset(Hazel::Renderer* renderer, const SamplerAsset* asset)
     {
         const auto& meta = asset->GetMeta();
         const auto& samplerDesc = meta.GetDesc();
@@ -14,4 +14,4 @@ namespace Hazel
         return std::make_unique<GPUSamplerAsset>(
             asset->GetUUID(), asset->GetVersion(), renderer, samplerDesc, sampler, renderer->GetCurrentFrameIndex());
     }
-} // namespace Hazel
+} // namespace Aster

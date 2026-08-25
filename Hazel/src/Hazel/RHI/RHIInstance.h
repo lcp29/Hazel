@@ -1,12 +1,11 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Declares the RHI instance interface.
+// Created: 2026-03-13.
 
 #pragma once
 
 #include "RHICommon.h"
 
-namespace Hazel
+namespace Aster
 {
     struct RHIInstanceDesc
     {
@@ -23,4 +22,4 @@ namespace Hazel
 
         DebugMessageCallback debugMessageCallback = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

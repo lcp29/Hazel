@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/29.
-//
+// Declares compute shader asset support.
+// Created: 2026-03-29.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     struct ComputeShaderAssetMeta
     {
@@ -17,14 +16,14 @@ namespace Hazel
         static ComputeShaderAssetMeta Deserialize(const YAML::Node& node);
         static ComputeShaderAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
         void VersionUp() { m_Version++; }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         uint64_t m_Version = 0;
     };
 
@@ -67,4 +66,4 @@ namespace Hazel
         ComputeShaderAssetMeta m_Meta{};
         ComputeShaderAssetData m_Data{};
     };
-} // namespace Hazel
+} // namespace Aster

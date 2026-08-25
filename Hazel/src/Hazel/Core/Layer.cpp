@@ -1,6 +1,9 @@
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Layer.h"
 
 #include "hzpch.h"
+
+// ======== Aster Modify End ========
 
 namespace Hazel
 {

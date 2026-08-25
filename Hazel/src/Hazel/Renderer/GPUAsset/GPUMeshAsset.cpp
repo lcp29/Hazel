@@ -1,19 +1,16 @@
-//
-// Created by helmholtz on 2026/3/28.
-//
+// Implements GPU mesh asset resources.
+// Created: 2026-03-28.
 
 #include "GPUMeshAsset.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-namespace Hazel
+namespace Aster
 {
     GPUMeshAsset::~GPUMeshAsset() { GPUMeshAsset::ReleaseImmediate(); }
 
     void GPUMeshAsset::Release()
     {
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
-        // m_Renderer->GetGeometryDataRegistry()->UnregisterMesh(this);
         if (m_VertexBuffer)
         {
             m_VertexBuffer->Release();
@@ -28,8 +25,6 @@ namespace Hazel
 
     void GPUMeshAsset::ReleaseImmediate()
     {
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
-        // m_Renderer->GetGeometryDataRegistry()->UnregisterMesh(this);
         if (m_VertexBuffer)
         {
             m_VertexBuffer->ReleaseImmediate();
@@ -41,4 +36,4 @@ namespace Hazel
             m_IndexBuffer = nullptr;
         }
     }
-} // namespace Hazel
+} // namespace Aster

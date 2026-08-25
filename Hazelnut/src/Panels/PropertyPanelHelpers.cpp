@@ -1,9 +1,10 @@
 #include "PropertyPanelHelpers.h"
 
 #include <imgui.h>
+
 #include <imgui_internal.h>
 
-namespace Hazel::PropertyPanelHelpers
+namespace Aster::PropertyPanelHelpers
 {
     void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue, float columnWidth)
     {
@@ -269,9 +270,7 @@ namespace Hazel::PropertyPanelHelpers
     }
 
     const char* GetFilterName(RHISamplerFilter filter)
-    {
-        return filter == RHISamplerFilter::Nearest ? "Nearest" : "Linear";
-    }
+    { return filter == RHISamplerFilter::Nearest ? "Nearest" : "Linear"; }
 
     bool DrawFilterCombo(const char* label, RHISamplerFilter& filter)
     {
@@ -409,9 +408,9 @@ namespace Hazel::PropertyPanelHelpers
         return false;
     }
 
-    std::string GetAssetLabel(const std::vector<AssetRegistryTerm*>& assets, UUID uuid)
+    std::string GetAssetLabel(const std::vector<AssetRegistryTerm*>& assets, Hazel::UUID uuid)
     {
-        if (uuid == UUID(-1)) { return "None"; }
+        if (uuid == Hazel::UUID(-1)) { return "None"; }
 
         auto it = std::ranges::find_if(assets, [uuid](const AssetRegistryTerm* asset) { return asset->uuid == uuid; });
         if (it == assets.end()) { return "None"; }
@@ -421,7 +420,7 @@ namespace Hazel::PropertyPanelHelpers
 
     bool DrawAssetRegistryCombo(const char* label,
                                 const std::vector<AssetRegistryTerm*>& assets,
-                                UUID& value,
+                                Hazel::UUID& value,
                                 bool allowNone)
     {
         bool changed = false;
@@ -430,10 +429,10 @@ namespace Hazel::PropertyPanelHelpers
         {
             if (allowNone)
             {
-                bool selected = value == UUID(-1);
-                if (ImGui::Selectable("None", selected) && value != UUID(-1))
+                bool selected = value == Hazel::UUID(-1);
+                if (ImGui::Selectable("None", selected) && value != Hazel::UUID(-1))
                 {
-                    value = UUID(-1);
+                    value = Hazel::UUID(-1);
                     changed = true;
                 }
                 if (selected) ImGui::SetItemDefaultFocus();
@@ -456,4 +455,4 @@ namespace Hazel::PropertyPanelHelpers
 
         return changed;
     }
-} // namespace Hazel::PropertyPanelHelpers
+} // namespace Aster::PropertyPanelHelpers

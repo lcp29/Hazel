@@ -1,10 +1,9 @@
-//
-// Created by helmholtz on 2026/4/5.
-//
+// Implements GPU graphics pipeline asset resources.
+// Created: 2026-04-05.
 
 #include "GPUGraphicsPipelineAsset.h"
 
-namespace Hazel
+namespace Aster
 {
     GPUGraphicsPipelineAsset::~GPUGraphicsPipelineAsset() { GPUGraphicsPipelineAsset::ReleaseImmediate(); }
 
@@ -33,4 +32,4 @@ namespace Hazel
 
         if (pipeline) { pipeline->ReleaseImmediate(); }
     }
-} // namespace Hazel
+} // namespace Aster

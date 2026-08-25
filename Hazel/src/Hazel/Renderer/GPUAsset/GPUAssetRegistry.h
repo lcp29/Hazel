@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/3.
-//
+// Declares GPU asset registry resources.
+// Created: 2026-04-03.
 
 #pragma once
 #include "Hazel/Core/UUID.h"
@@ -10,7 +9,7 @@
 #include <memory>
 #include <ranges>
 
-namespace Hazel
+namespace Aster
 {
     constexpr int kGarbageCollectionIncrement = 50;
 
@@ -35,7 +34,7 @@ namespace Hazel
             }
         }
 
-        bool HasAsset(UUID uuid)
+        bool HasAsset(Hazel::UUID uuid)
         {
             std::unique_lock lock(m_Mutex);
             return m_GPUAssets.contains(uuid);
@@ -50,7 +49,7 @@ namespace Hazel
             m_GarbageCollectionIterator = m_GPUAssets.begin();
         }
 
-        std::unique_ptr<GPUAsset> RemoveAsset(UUID uuid)
+        std::unique_ptr<GPUAsset> RemoveAsset(Hazel::UUID uuid)
         {
             std::unique_lock lock(m_Mutex);
             auto it = m_GPUAssets.find(uuid);
@@ -63,7 +62,7 @@ namespace Hazel
             return nullptr;
         }
 
-        GPUAsset* GetAsset(UUID uuid)
+        GPUAsset* GetAsset(Hazel::UUID uuid)
         {
             std::unique_lock lock(m_Mutex);
             auto it = m_GPUAssets.find(uuid);
@@ -155,7 +154,10 @@ namespace Hazel
                         unreferencedAssets.push_back(std::move(m_GarbageCollectionIterator->second));
                         m_GarbageCollectionIterator = m_GPUAssets.erase(m_GarbageCollectionIterator++);
                     }
-                    else { ++m_GarbageCollectionIterator; }
+                    else
+                    {
+                        ++m_GarbageCollectionIterator;
+                    }
 
                     count++;
                 }
@@ -211,7 +213,10 @@ namespace Hazel
                                 {
                                     assetsToRelease.emplace(iter->first, std::move(iter->second));
                                 }
-                                else { assetsNotToRelease.emplace(iter->first, std::move(iter->second)); }
+                                else
+                                {
+                                    assetsNotToRelease.emplace(iter->first, std::move(iter->second));
+                                }
                             }
                         }
                     }
@@ -225,14 +230,17 @@ namespace Hazel
                     }
                 });
                 if (sync) { releaseThread.join(); }
-                else { releaseThread.detach(); }
+                else
+                {
+                    releaseThread.detach();
+                }
             }
         }
 
         std::mutex& GetPipelineCacheMutex() { return m_PipelineCacheMutex; }
 
       private:
-        using GPUAssetMap = std::unordered_map<UUID, std::unique_ptr<GPUAsset>>;
+        using GPUAssetMap = std::unordered_map<Hazel::UUID, std::unique_ptr<GPUAsset>>;
 
         std::mutex m_PipelineCacheMutex;
         std::mutex m_Mutex;
@@ -241,4 +249,4 @@ namespace Hazel
         std::mutex m_GPUAssetReleaseMutex;
         std::multimap<RHIQueue*, std::unique_ptr<GPUAsset>> m_GPUAssetsToRelease;
     };
-} // namespace Hazel
+} // namespace Aster

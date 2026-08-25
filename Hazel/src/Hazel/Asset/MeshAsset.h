@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Declares mesh asset support.
+// Created: 2026-04-01.
 
 #pragma once
 #include "Asset.h"
@@ -10,7 +9,7 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     struct Vertex
     {
@@ -36,7 +35,7 @@ namespace Hazel
         static MeshAssetMeta Deserialize(const YAML::Node& node);
         static MeshAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
@@ -52,7 +51,7 @@ namespace Hazel
         }
 
       private:
-        UUID m_UUID = 0;
+        Hazel::UUID m_UUID = 0;
         bool m_GenerateMeshlets = false;
         uint64_t m_Version = 0;
     };
@@ -95,4 +94,4 @@ namespace Hazel
         MeshAssetMeta m_Meta{};
         MeshAssetData m_Data{};
     };
-} // namespace Hazel
+} // namespace Aster

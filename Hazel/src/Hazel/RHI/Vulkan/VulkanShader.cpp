@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/15.
-//
+// Implements the Vulkan shader backend.
+// Created: 2026-03-15.
 
 #define VULKAN_HPP_NO_EXCEPTIONS
 
@@ -12,7 +11,7 @@
 #include <algorithm>
 #include <spirv_cross/spirv_cross.hpp>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -396,4 +395,4 @@ namespace Hazel
         SortReflection(outReflection);
         return true;
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI adapter interface.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -9,7 +8,7 @@
 
 #include <string>
 
-namespace Hazel
+namespace Aster
 {
     enum class RHIAdapterType
     {
@@ -22,8 +21,8 @@ namespace Hazel
     struct RHIAdapterInfo
     {
         std::string name;
-        uint32_t deviceId;
-        uint32_t vendorId;
-        RHIAdapterType type;
+        uint32_t deviceId = 0;
+        uint32_t vendorId = 0;
+        RHIAdapterType type = RHIAdapterType::Other;
     };
-} // namespace Hazel
+} // namespace Aster

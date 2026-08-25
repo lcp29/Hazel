@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/2.
-//
+// Implements asset path and metadata utilities.
+// Created: 2026-04-02.
 
 #include "AssetUtils.h"
 
@@ -8,7 +7,7 @@
 #include <unordered_set>
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     AssetType InferAssetTypeFromPath(const std::filesystem::path& path)
     {
@@ -48,13 +47,16 @@ namespace Hazel
         return metaPath;
     }
 
-    UUID GetUUIDFromMetaFile(const std::filesystem::path& metaPath)
+    Hazel::UUID GetUUIDFromMetaFile(const std::filesystem::path& metaPath)
     {
-        if (!(std::filesystem::is_regular_file(metaPath) && std::filesystem::exists(metaPath))) { return UUID(-1); }
+        if (!(std::filesystem::is_regular_file(metaPath) && std::filesystem::exists(metaPath)))
+        {
+            return Hazel::UUID(-1);
+        }
 
         YAML::Node metaNode = YAML::LoadFile(metaPath.string());
-        if (!metaNode["UUID"]) { return UUID(-1); }
+        if (!metaNode["UUID"]) { return Hazel::UUID(-1); }
 
-        return UUID(metaNode["UUID"].as<uint64_t>());
+        return Hazel::UUID(metaNode["UUID"].as<uint64_t>());
     }
-} // namespace Hazel
+} // namespace Aster

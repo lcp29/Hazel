@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/17.
-//
+// Declares the RHI interface.
+// Created: 2026-03-17.
 
 #pragma once
 

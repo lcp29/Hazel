@@ -1,17 +1,16 @@
-//
-// Created by helmholtz on 2026/4/2.
-//
+// Declares asset path and metadata utilities.
+// Created: 2026-04-02.
 
 #pragma once
 #include "Asset.h"
 
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     AssetType InferAssetTypeFromPath(const std::filesystem::path& path);
     std::filesystem::path GetMetaPathFromAssetPath(const std::filesystem::path& assetPath);
-    UUID GetUUIDFromMetaFile(const std::filesystem::path& metaPath);
+    Hazel::UUID GetUUIDFromMetaFile(const std::filesystem::path& metaPath);
 
     template <typename T> void WriteMetaToFile(const T& meta, const std::filesystem::path& metaPath)
     {
@@ -37,4 +36,4 @@ namespace Hazel
         YAML::Node metaNode = YAML::LoadFile(metaPath.string());
         return T::Deserialize(metaNode);
     }
-} // namespace Hazel
+} // namespace Aster

@@ -1,11 +1,10 @@
-//
-// Created by helmholtz on 2026/4/5.
-//
+// Declares GPU asset handle resources.
+// Created: 2026-04-05.
 
 #pragma once
 #include "GPUAsset.h"
 
-namespace Hazel
+namespace Aster
 {
     struct GPUAssetHandle
     {
@@ -46,4 +45,4 @@ namespace Hazel
 
         ~GPUAssetHandle();
     };
-} // namespace Hazel
+} // namespace Aster

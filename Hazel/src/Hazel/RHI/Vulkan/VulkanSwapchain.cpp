@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan swapchain backend.
+// Created: 2026-03-14.
 
 #include "VulkanSwapchain.h"
 
@@ -14,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -368,4 +367,4 @@ namespace Hazel
         m_NextAcquireSemaphoreIndex = 0;
         m_IsDetached = false;
     }
-} // namespace Hazel
+} // namespace Aster

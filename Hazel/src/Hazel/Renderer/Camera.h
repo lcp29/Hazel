@@ -1,5 +1,6 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/glm.hpp>
 #include <yaml-cpp/yaml.h>
@@ -133,3 +134,5 @@ namespace Hazel
         glm::ivec2 m_ViewportSize{800, 800};
     };
 } // namespace Hazel
+
+// ======== Aster Modify End ========

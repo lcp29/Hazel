@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include "Components.h"
+// ======== Aster Modify Begin ========
 #include "Entity.h"
 #include "Hazel/Scripting/ScriptEngine.h"
 #include "ScriptableEntity.h"
@@ -51,9 +52,7 @@ namespace Hazel
                               entt::registry& dst,
                               entt::registry& src,
                               const std::unordered_map<UUID, entt::entity>& enttMap)
-    {
-        CopyComponent<Component...>(dst, src, enttMap);
-    }
+    { CopyComponent<Component...>(dst, src, enttMap); }
 
     template <typename... Component> static void CopyComponentIfExists(Entity dst, Entity src)
     {
@@ -66,9 +65,7 @@ namespace Hazel
 
     template <typename... Component>
     static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src)
-    {
-        CopyComponentIfExists<Component...>(dst, src);
-    }
+    { CopyComponentIfExists<Component...>(dst, src); }
 
     Ref<Scene> Scene::Copy(Ref<Scene> other)
     {
@@ -117,9 +114,9 @@ namespace Hazel
     {
         if (entity.HasComponent<MeshRendererComponent>())
         {
-            RenderSceneUpdatePayload payload{};
+            Aster::RenderSceneUpdatePayload payload{};
             payload.entity = entity.GetUUID();
-            payload.type = RenderSceneUpdatePayload::Type::Remove;
+            payload.type = Aster::RenderSceneUpdatePayload::Type::Remove;
             AddToRenderSceneUpdatePayload(payload);
         }
 
@@ -235,8 +232,6 @@ namespace Hazel
         }
     }
 
-    void Scene::OnUpdateEditor(Timestep ts) {}
-
     void Scene::OnViewportResize(uint32_t width, uint32_t height)
     {
         if (m_ViewportWidth == width && m_ViewportHeight == height) return;
@@ -271,7 +266,6 @@ namespace Hazel
 
     Entity Scene::GetEntityByUUID(UUID uuid)
     {
-        // TODO(Yan): Maybe should be assert
         if (m_EntityMap.contains(uuid)) return {m_EntityMap.at(uuid), this};
 
         return {};
@@ -316,9 +310,9 @@ namespace Hazel
         return cameras;
     }
 
-    std::vector<RenderSceneUpdatePayload> Scene::GetInitialRenderSceneUpdatePayloads() const
+    std::vector<Aster::RenderSceneUpdatePayload> Scene::GetInitialRenderSceneUpdatePayloads() const
     {
-        std::vector<RenderSceneUpdatePayload> payloads;
+        std::vector<Aster::RenderSceneUpdatePayload> payloads;
 
         auto view = m_Registry.view<MeshRendererComponent, IDComponent>();
         for (auto entity : view)
@@ -326,9 +320,9 @@ namespace Hazel
             const auto& meshRenderer = view.get<MeshRendererComponent>(entity);
             const auto& idComponent = view.get<IDComponent>(entity);
 
-            RenderSceneUpdatePayload payload{};
+            Aster::RenderSceneUpdatePayload payload{};
             payload.entity = idComponent.ID;
-            payload.type = RenderSceneUpdatePayload::Type::Add;
+            payload.type = Aster::RenderSceneUpdatePayload::Type::Add;
             payload.add.renderObject.transform = GetWorldTransform(entity);
             payload.add.renderObject.material = meshRenderer.materialUUID;
             payload.add.renderObject.mesh = meshRenderer.meshUUID;
@@ -366,9 +360,9 @@ namespace Hazel
     {
         if (m_Registry.any_of<MeshRendererComponent>(entity))
         {
-            RenderSceneUpdatePayload payload{};
+            Aster::RenderSceneUpdatePayload payload{};
             payload.entity = m_Registry.get<IDComponent>(entity).ID;
-            payload.type = RenderSceneUpdatePayload::Type::ChangeTransform;
+            payload.type = Aster::RenderSceneUpdatePayload::Type::ChangeTransform;
             payload.changeTransform.transform = globalTransform;
             AddToRenderSceneUpdatePayload(payload);
         }
@@ -399,6 +393,8 @@ namespace Hazel
     template <> void Scene::OnComponentAdded<MeshRendererComponent>(Entity entity, MeshRendererComponent& component) {}
 
     template <> void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component) {}
+
+    // ======== Aster Modify End ========
 
     template <> void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component) {}
 

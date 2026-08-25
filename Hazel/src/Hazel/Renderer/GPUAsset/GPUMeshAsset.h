@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/28.
-//
+// Declares GPU mesh asset resources.
+// Created: 2026-03-28.
 
 #pragma once
 #include "Hazel/Asset/MeshAsset.h"
@@ -12,14 +11,18 @@
 namespace Hazel
 {
     class Renderer;
+}
+
+namespace Aster
+{
 
     struct alignas(16) GPUVertex
     {
-        glm::vec3 position;
-        float uv0;
-        glm::vec3 normal;
-        float uv1;
-        glm::vec3 tangent;
+        glm::vec3 position{};
+        float uv0 = 0.0f;
+        glm::vec3 normal{};
+        float uv1 = 0.0f;
+        glm::vec3 tangent{};
 
         bool operator==(const GPUVertex& other) const
         {
@@ -27,7 +30,7 @@ namespace Hazel
                    && uv1 == other.uv1;
         }
 
-        GPUVertex operator()(const Vertex& vertex)
+        GPUVertex operator()(const Vertex& vertex) const
         {
             return GPUVertex{
                 vertex.position,
@@ -63,11 +66,11 @@ namespace Hazel
 
     struct alignas(16) GPUMeshletInfo
     {
-        uint32_t vertexOffset;
-        uint32_t vertexCount;
-        uint32_t indexOffset;
-        uint32_t indexCount;
-        glm::vec3 boundingSphereCenter;
+        uint32_t vertexOffset = 0;
+        uint32_t vertexCount = 0;
+        uint32_t indexOffset = 0;
+        uint32_t indexCount = 0;
+        glm::vec3 boundingSphereCenter{};
         float boundingSphereRadius = 0.0f;
     };
 
@@ -76,9 +79,9 @@ namespace Hazel
       public:
         GPUMeshAsset() = delete;
 
-        GPUMeshAsset(const UUID uuid,
+        GPUMeshAsset(const Hazel::UUID uuid,
                      uint64_t sourceVersion,
-                     Renderer* renderer,
+                     Hazel::Renderer* renderer,
                      const std::vector<Vertex>& vertices,
                      const std::vector<uint32_t>& indices,
                      const std::vector<GPUMeshletInfo>& meshlets,
@@ -126,22 +129,16 @@ namespace Hazel
 
         void SetMeshletVirtualPages(std::vector<uint32_t> pages) { m_MeshletVirtualPages = std::move(pages); }
 
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
         RHIBuffer* GetVertexBuffer() const { return m_VertexBuffer; }
 
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
         RHIBuffer* GetIndexBuffer() const { return m_IndexBuffer; }
 
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
         void SetVertexBuffer(RHIBuffer* buffer) { m_VertexBuffer = buffer; }
 
-        // TODO: TEMP URGENT INTERVIEW: temporary vertex/index buffer path
         void SetIndexBuffer(RHIBuffer* buffer) { m_IndexBuffer = buffer; }
 
       private:
         bool m_IsValid = false;
-        // TODO: TEMP URGENT INTERVIEW: use Vertex instead of GPUVertex
-        // std::vector<GPUVertex> m_Vertices;
         std::vector<uint32_t> m_VertexVirtualPages;
 
         std::vector<uint32_t> m_Indices;
@@ -156,9 +153,9 @@ namespace Hazel
         glm::vec3 m_BoundingSphereCenter{};
         float m_BoundingSphereRadius = 0.0f;
 
-        // TODO: TEMP URGENT INTERVIEW: use vertex and index buffers for each mesh
+        // TODO: Route mesh uploads through GeometryDataRegistry and retire the direct buffers.
         std::vector<Vertex> m_Vertices;
         RHIBuffer* m_VertexBuffer = nullptr;
         RHIBuffer* m_IndexBuffer = nullptr;
     };
-} // namespace Hazel
+} // namespace Aster

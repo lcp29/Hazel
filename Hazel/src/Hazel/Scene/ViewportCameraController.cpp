@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/22.
-//
+// Implements editor viewport camera controls.
+// Created: 2026-03-22.
 
 #include "ViewportCameraController.h"
 
@@ -12,23 +11,23 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-namespace Hazel
+namespace Aster
 {
     ViewportCameraController::ViewportCameraController()
         : m_MoveSpeed(GlobalSettings.Get(MoveSpeedString, DefaultMoveSpeed))
         , m_RotationSpeed(GlobalSettings.Get(RotationSpeedString, DefaultRotationSpeed))
     {}
 
-    ViewportCameraController::ViewportCameraController(Camera* camera)
+    ViewportCameraController::ViewportCameraController(Hazel::Camera* camera)
         : m_ViewportCamera(camera)
         , m_MoveSpeed(GlobalSettings.Get(MoveSpeedString, DefaultMoveSpeed))
         , m_RotationSpeed(GlobalSettings.Get(RotationSpeedString, DefaultRotationSpeed))
     {}
 
-    void ViewportCameraController::OnUpdate(Timestep ts)
+    void ViewportCameraController::OnUpdate(Hazel::Timestep ts)
     {
-        const glm::vec2 mousePosition = Input::GetMousePosition();
-        const bool rightMousePressed = Input::IsMouseButtonPressed(Mouse::ButtonRight);
+        const glm::vec2 mousePosition = Hazel::Input::GetMousePosition();
+        const bool rightMousePressed = Hazel::Input::IsMouseButtonPressed(Hazel::Mouse::ButtonRight);
 
         if (!rightMousePressed)
         {
@@ -41,7 +40,7 @@ namespace Hazel
         {
             m_LastMousePosition = mousePosition;
             m_WasRightMousePressed = true;
-            Application::Get().GetWindow().SetCursorMode(CursorMode::Disabled);
+            Hazel::Application::Get().GetWindow().SetCursorMode(Hazel::CursorMode::Disabled);
         }
 
         const glm::vec2 mouseDelta = mousePosition - m_LastMousePosition;
@@ -57,10 +56,10 @@ namespace Hazel
         const glm::vec3 right = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f)));
 
         glm::vec3 movement{0.0f};
-        if (Input::IsKeyPressed(Key::W)) { movement += forward; }
-        if (Input::IsKeyPressed(Key::S)) { movement -= forward; }
-        if (Input::IsKeyPressed(Key::A)) { movement -= right; }
-        if (Input::IsKeyPressed(Key::D)) { movement += right; }
+        if (Hazel::Input::IsKeyPressed(Hazel::Key::W)) { movement += forward; }
+        if (Hazel::Input::IsKeyPressed(Hazel::Key::S)) { movement -= forward; }
+        if (Hazel::Input::IsKeyPressed(Hazel::Key::A)) { movement -= right; }
+        if (Hazel::Input::IsKeyPressed(Hazel::Key::D)) { movement += right; }
 
         if (movement != glm::vec3(0.0f))
         {
@@ -73,6 +72,6 @@ namespace Hazel
         if (!m_WasRightMousePressed) { return; }
 
         m_WasRightMousePressed = false;
-        Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+        Hazel::Application::Get().GetWindow().SetCursorMode(Hazel::CursorMode::Normal);
     }
-} // namespace Hazel
+} // namespace Aster

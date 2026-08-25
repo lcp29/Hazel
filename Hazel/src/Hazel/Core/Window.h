@@ -7,12 +7,15 @@
 
 namespace Hazel
 {
+    // ======== Aster Modify Begin ========
     enum class CursorMode
     {
         Normal = 0,
         Hidden,
         Disabled
     };
+
+    // ======== Aster Modify End ========
 
     struct WindowProps
     {
@@ -44,10 +47,12 @@ namespace Hazel
         virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
         virtual void SetVSync(bool enabled) = 0;
         virtual bool IsVSync() const = 0;
+        // ======== Aster Modify Begin ========
         virtual void SetCursorMode(CursorMode mode) = 0;
         virtual CursorMode GetCursorMode() const = 0;
 
         virtual void* GetNativeWindow() const = 0;
+        // ======== Aster Modify End ========
 
         static Scope<Window> Create(const WindowProps& props = WindowProps());
     };

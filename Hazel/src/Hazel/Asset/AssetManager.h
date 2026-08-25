@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/23.
-//
+// Declares asset discovery, loading, and dependency management.
+// Created: 2026-03-23.
 
 #pragma once
 
@@ -26,38 +25,42 @@ namespace Hazel
 {
     class Project;
     class Renderer;
+} // namespace Hazel
+
+namespace Aster
+{
 
     class AssetManager
     {
       public:
         AssetManager() = delete;
 
-        AssetManager(Project* project, Renderer* renderer);
+        AssetManager(Hazel::Project* project, Hazel::Renderer* renderer);
 
         void WriteAllMetaFiles() const;
         void InitializeAssetRegistry();
-        AssetType GetAssetType(UUID uuid) const;
-        bool HasAsset(UUID uuid) const;
-        std::filesystem::path GetAssetPath(UUID uuid) const;
+        AssetType GetAssetType(Hazel::UUID uuid) const;
+        bool HasAsset(Hazel::UUID uuid) const;
+        std::filesystem::path GetAssetPath(Hazel::UUID uuid) const;
         std::vector<AssetRegistryTerm*> GetAssetsByType(AssetType type) const;
         void RegisterAsset(std::unique_ptr<AssetRegistryTerm> term);
         void ClearLoadedAssets();
-        Asset* RequestAsset(UUID uuid);
-        Asset* RequestAssetBlocked(UUID uuid);
+        Asset* RequestAsset(Hazel::UUID uuid);
+        Asset* RequestAssetBlocked(Hazel::UUID uuid);
 
       private:
-        Asset* LoadAssetFromRegistry(UUID uuid, AssetRegistryTerm* registry);
+        Asset* LoadAssetFromRegistry(Hazel::UUID uuid, AssetRegistryTerm* registry);
 
-        Project* m_Project = nullptr;
-        Renderer* m_Renderer = nullptr;
+        Hazel::Project* m_Project = nullptr;
+        Hazel::Renderer* m_Renderer = nullptr;
 
         mutable std::mutex m_AssetRegistryMutex;
-        std::unordered_map<UUID, std::unique_ptr<AssetRegistryTerm>> m_AssetRegistry;
+        std::unordered_map<Hazel::UUID, std::unique_ptr<AssetRegistryTerm>> m_AssetRegistry;
         mutable std::mutex m_AssetMutex;
-        std::unordered_map<UUID, std::unique_ptr<Asset>> m_Assets;
+        std::unordered_map<Hazel::UUID, std::unique_ptr<Asset>> m_Assets;
 
         mutable std::mutex m_DependencyMutex;
-        std::unordered_map<UUID, std::unordered_set<UUID>> m_Dependencies;
-        std::unordered_map<UUID, std::unordered_set<UUID>> m_Dependents;
+        std::unordered_map<Hazel::UUID, std::unordered_set<Hazel::UUID>> m_Dependencies;
+        std::unordered_map<Hazel::UUID, std::unordered_set<Hazel::UUID>> m_Dependents;
     };
-} // namespace Hazel
+} // namespace Aster

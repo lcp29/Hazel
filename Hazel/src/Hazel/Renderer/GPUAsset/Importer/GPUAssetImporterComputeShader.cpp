@@ -4,9 +4,9 @@
 #include "Hazel/Renderer/Renderer.h"
 #include "Hazel/Renderer/ShaderCommon.h"
 
-namespace Hazel
+namespace Aster
 {
-    std::unique_ptr<GPUComputeShaderAsset> ImportGPUComputeShaderAsset(Renderer* renderer,
+    std::unique_ptr<GPUComputeShaderAsset> ImportGPUComputeShaderAsset(Hazel::Renderer* renderer,
                                                                        const ComputeShaderAsset* asset)
     {
         const auto& computeShaderData = asset->GetData();
@@ -54,4 +54,4 @@ namespace Hazel
                                                        computePipeline,
                                                        renderer->GetCurrentFrameIndex());
     }
-} // namespace Hazel
+} // namespace Aster

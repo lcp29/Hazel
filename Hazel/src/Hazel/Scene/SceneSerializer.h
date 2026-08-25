@@ -8,10 +8,12 @@ namespace Hazel
     {
       public:
         SceneSerializer(const Ref<Scene>& scene)
+            // ======== Aster Modify Begin ========
             : m_Scene(scene)
         {}
 
         void Serialize(const std::string& filepath) const;
+        // ======== Aster Modify End ========
         bool Deserialize(const std::string& filepath);
 
       private:

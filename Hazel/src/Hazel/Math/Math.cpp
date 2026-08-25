@@ -1,6 +1,8 @@
+// ======== Aster Modify Begin ========
 #include "Math.h"
 
 #include "hzpch.h"
+// ======== Aster Modify End ========
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_decompose.hpp>
@@ -52,7 +54,7 @@ namespace Hazel::Math
         // Check for a coordinate system flip.  If the determinant
         // is -1, then negate the matrix and the scaling factors.
 #if 0
-        Pdum3 = cross(Row[1], Row[2]); // v3Cross(row[1], row[2], Pdum3);
+        Pdum3 = cross(Row[1], Row[2]);
         if (dot(Row[0], Pdum3) < 0)
         {
             for (length_t i = 0; i < 3; i++)

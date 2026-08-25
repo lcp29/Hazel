@@ -1,13 +1,12 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI device interface.
+// Created: 2026-03-14.
 
 #pragma once
 
 #include "RHICommon.h"
 #include "RHIQueue.h"
 
-namespace Hazel
+namespace Aster
 {
     struct RHIDeviceCapabilities
     {
@@ -17,4 +16,4 @@ namespace Hazel
         uint32_t subgroupSizeMin = 0;
         uint32_t subgroupSizeMax = 0;
     };
-} // namespace Hazel
+} // namespace Aster

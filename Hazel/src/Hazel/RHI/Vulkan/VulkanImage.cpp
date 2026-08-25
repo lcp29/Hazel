@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Implements the Vulkan image backend.
+// Created: 2026-03-14.
 
 #include "VulkanImage.h"
 
@@ -18,7 +17,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -404,7 +403,10 @@ namespace Hazel
                     VulkanMemoryAllocator::DestroyImage(allocator, image, allocation);
                 });
             }
-            else { VulkanMemoryAllocator::DestroyImage(allocator, image, allocation); }
+            else
+            {
+                VulkanMemoryAllocator::DestroyImage(allocator, image, allocation);
+            }
         }
 
         m_Image = VK_NULL_HANDLE;
@@ -485,9 +487,7 @@ namespace Hazel
     }
 
     void RHI_VK_FUNC_IMPL(RHIImage, RegisterView)(std::unique_ptr<RHIImageView> view)
-    {
-        m_Views.Register(std::move(view));
-    }
+    { m_Views.Register(std::move(view)); }
 
     void RHI_VK_FUNC_IMPL(RHIImage, UnregisterView)(RHIImageView* view) { m_Views.Unregister(view); }
-} // namespace Hazel
+} // namespace Aster

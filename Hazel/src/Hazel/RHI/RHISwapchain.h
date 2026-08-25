@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/14.
-//
+// Declares the RHI swapchain interface.
+// Created: 2026-03-14.
 
 #pragma once
 
@@ -10,7 +9,7 @@
 #include "RHISurface.h"
 #include "RHISyncPoint.h"
 
-namespace Hazel
+namespace Aster
 {
     enum class RHISwapchainMode
     {
@@ -36,4 +35,4 @@ namespace Hazel
         uint32_t frameNumber = 0;
         RHISyncPoint availableSyncPoint;
     };
-} // namespace Hazel
+} // namespace Aster

@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/20.
-//
+// Implements camera projection management.
+// Created: 2026-03-20.
 
 #include "Camera.h"
 
@@ -11,34 +10,22 @@ namespace Hazel
     namespace
     {
         float GetDefaultPerspectiveFovX()
-        {
-            return GlobalSettings.Get(Camera::DefaultPerspectiveFovXString, Camera::DefaultPerspectiveFovX);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultPerspectiveFovXString, Camera::DefaultPerspectiveFovX); }
 
         float GetDefaultPerspectiveNear()
-        {
-            return GlobalSettings.Get(Camera::DefaultPerspectiveNearString, Camera::DefaultPerspectiveNear);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultPerspectiveNearString, Camera::DefaultPerspectiveNear); }
 
         float GetDefaultPerspectiveFar()
-        {
-            return GlobalSettings.Get(Camera::DefaultPerspectiveFarString, Camera::DefaultPerspectiveFar);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultPerspectiveFarString, Camera::DefaultPerspectiveFar); }
 
         float GetDefaultOrthoWidth()
-        {
-            return GlobalSettings.Get(Camera::DefaultOrthoWidthString, Camera::DefaultOrthoWidth);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultOrthoWidthString, Camera::DefaultOrthoWidth); }
 
         float GetDefaultOrthoNear()
-        {
-            return GlobalSettings.Get(Camera::DefaultOrthoNearString, Camera::DefaultOrthoNear);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultOrthoNearString, Camera::DefaultOrthoNear); }
 
         float GetDefaultOrthoFar()
-        {
-            return GlobalSettings.Get(Camera::DefaultOrthoFarString, Camera::DefaultOrthoFar);
-        }
+        { return Aster::GlobalSettings.Get(Camera::DefaultOrthoFarString, Camera::DefaultOrthoFar); }
     } // namespace
 
     Camera::Camera()
@@ -48,9 +35,7 @@ namespace Hazel
         , m_OrthoWidth(GetDefaultOrthoWidth())
         , m_OrthoNearClip(GetDefaultOrthoNear())
         , m_OrthoFarClip(GetDefaultOrthoFar())
-    {
-        UpdateMatrices();
-    }
+    { UpdateMatrices(); }
 
     Camera Camera::Perspective(float fovX, float aspectRatio, float nearClip, float farClip)
     {

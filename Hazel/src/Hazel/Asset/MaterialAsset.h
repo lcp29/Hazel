@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/4/1.
-//
+// Declares material asset support.
+// Created: 2026-04-01.
 
 #pragma once
 #include "Asset.h"
@@ -12,7 +11,7 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
-namespace Hazel
+namespace Aster
 {
     class ShaderAsset;
     class SamplerAsset;
@@ -38,15 +37,15 @@ namespace Hazel
     {
         std::string name{};
         MaterialAssetPropertyType type = MaterialAssetPropertyType::Float;
-        uint8_t data[64];
+        uint8_t data[64]{};
 
         union
         {
-            UUID sampler;
+            Hazel::UUID sampler;
             uint64_t bindlessID = 0;
         };
 
-        UUID texture{};
+        Hazel::UUID texture{};
         uint32_t slot = 0;
         RHIShaderBufferMemberReflection member{};
     };
@@ -77,15 +76,15 @@ namespace Hazel
         static MaterialAssetMeta Deserialize(const YAML::Node& node);
         static MaterialAssetMeta CreateDefault();
 
-        UUID GetUUID() const { return m_UUID; }
+        Hazel::UUID GetUUID() const { return m_UUID; }
 
         uint64_t GetVersion() const { return m_Version; }
 
         void VersionUp() { m_Version++; }
 
-        UUID GetShader() const { return m_Shader; }
+        Hazel::UUID GetShader() const { return m_Shader; }
 
-        void SetShader(UUID shader)
+        void SetShader(Hazel::UUID shader)
         {
             if (m_Shader == shader) { return; }
             m_Shader = shader;
@@ -151,14 +150,14 @@ namespace Hazel
             VersionUp();
         }
 
-        void SetPropertySampler(size_t index, UUID sampler)
+        void SetPropertySampler(size_t index, Hazel::UUID sampler)
         {
             if (index >= m_Properties.size() || m_Properties[index].sampler == sampler) { return; }
             m_Properties[index].sampler = sampler;
             VersionUp();
         }
 
-        void SetPropertyTexture(size_t index, UUID texture)
+        void SetPropertyTexture(size_t index, Hazel::UUID texture)
         {
             if (index >= m_Properties.size() || m_Properties[index].texture == texture) { return; }
             m_Properties[index].texture = texture;
@@ -168,8 +167,8 @@ namespace Hazel
         void RefreshShader(AssetManager* assetManager);
 
       private:
-        UUID m_UUID = 0;
-        UUID m_Shader = UUID(-1);
+        Hazel::UUID m_UUID = 0;
+        Hazel::UUID m_Shader = Hazel::UUID(-1);
         MaterialPipelineState m_PipelineState{};
         std::vector<MaterialAssetProperty> m_Properties;
         uint64_t m_Version = 0;
@@ -193,11 +192,11 @@ namespace Hazel
 
         MaterialAssetMeta& GetMeta() { return m_Meta; }
 
-        UUID GetShader() const { return m_Meta.GetShader(); }
+        Hazel::UUID GetShader() const { return m_Meta.GetShader(); }
 
         MaterialPipelineState GetPipelineState() const { return m_Meta.GetPipelineState(); }
 
       private:
         MaterialAssetMeta m_Meta{};
     };
-} // namespace Hazel
+} // namespace Aster

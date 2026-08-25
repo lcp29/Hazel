@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Implements the Vulkan instance backend.
+// Created: 2026-03-13.
 
 #include "VulkanInstance.h"
 
@@ -14,7 +13,7 @@
 #include <VkBootstrap.h>
 #include <vulkan/vulkan.hpp>
 
-namespace Hazel
+namespace Aster
 {
     std::vector<RHIAdapter> RHI_VK_FUNC_IMPL(RHIInstance, GetAdapters)()
     {
@@ -99,7 +98,10 @@ namespace Hazel
                     return VK_FALSE;
                 });
         }
-        else { instanceBuilder.use_default_debug_messenger(); }
+        else
+        {
+            instanceBuilder.use_default_debug_messenger();
+        }
 
         auto instance = instanceBuilder.build();
 
@@ -161,16 +163,12 @@ namespace Hazel
     }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, RegisterDevice)(std::unique_ptr<RHIDevice> device)
-    {
-        m_Devices.Register(std::move(device));
-    }
+    { m_Devices.Register(std::move(device)); }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterDevice)(RHIDevice* device) { m_Devices.Unregister(device); }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, RegisterSurface)(std::unique_ptr<RHISurface> surface)
-    {
-        m_Surfaces.Register(std::move(surface));
-    }
+    { m_Surfaces.Register(std::move(surface)); }
 
     void RHI_VK_FUNC_IMPL(RHIInstance, UnregisterSurface)(RHISurface* surface) { m_Surfaces.Unregister(surface); }
-} // namespace Hazel
+} // namespace Aster

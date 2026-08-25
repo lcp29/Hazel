@@ -1,9 +1,11 @@
+// ======== Aster Modify Begin ========
 #include "ProjectSerializer.h"
 
 #include "GlobalSettingRegistry.h"
 #include "hzpch.h"
 
 #include <fstream>
+// ======== Aster Modify End ========
 #include <yaml-cpp/yaml.h>
 
 namespace Hazel
@@ -17,6 +19,7 @@ namespace Hazel
         const auto& config = m_Project->GetConfig();
 
         YAML::Emitter out;
+        // ======== Aster Modify Begin ========
         YAML::Node rootNode;
         YAML::Node projectNode;
         projectNode["Name"] = config.Name;
@@ -24,9 +27,10 @@ namespace Hazel
         projectNode["AssetDirectory"] = config.AssetDirectory.string();
         projectNode["ScriptModulePath"] = config.ScriptModulePath.string();
         rootNode["Project"] = projectNode;
-        rootNode["GlobalSettings"] = GlobalSettings.Serialize();
+        rootNode["GlobalSettings"] = Aster::GlobalSettings.Serialize();
 
         out << rootNode;
+        // ======== Aster Modify End ========
 
         std::ofstream fout(filepath);
         fout << out.c_str();
@@ -43,12 +47,15 @@ namespace Hazel
         {
             data = YAML::LoadFile(filepath.string());
         }
+        // ======== Aster Modify Begin ========
         catch (const std::exception& e)
         {
-            HZ_CORE_ERROR("Failed to load project file '{0}'\n     {1}", (const char*)filepath.c_str(), e.what());
+            HZ_CORE_ERROR("Failed to load project file '{0}'\n     {1}", filepath.string(), e.what());
+            // ======== Aster Modify End ========
             return false;
         }
 
+        // ======== Aster Modify Begin ========
         YAML::Node projectNode = data["Project"];
         if (!projectNode) return false;
 
@@ -59,7 +66,8 @@ namespace Hazel
         config.ScriptModulePath =
             projectNode["ScriptModulePath"] ? projectNode["ScriptModulePath"].as<std::string>() : "";
 
-        GlobalSettings.Deserialize(data["GlobalSettings"]);
+        Aster::GlobalSettings.Deserialize(data["GlobalSettings"]);
+        // ======== Aster Modify End ========
         return true;
     }
 } // namespace Hazel

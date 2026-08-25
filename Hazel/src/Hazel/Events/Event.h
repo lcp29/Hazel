@@ -1,7 +1,9 @@
 #pragma once
 
+// ======== Aster Modify Begin ========
 #include "Hazel/Core/Base.h"
 #include "Hazel/Debug/Instrumentor.h"
+// ======== Aster Modify End ========
 
 #include <functional>
 
@@ -42,6 +44,7 @@ namespace Hazel
         EventCategoryMouseButton = BIT(4)
     };
 
+// ======== Aster Modify Begin ========
 #define EVENT_CLASS_TYPE(type)                                                                                         \
     static EventType GetStaticType() { return EventType::type; }                                                       \
     virtual EventType GetEventType() const override { return GetStaticType(); }                                        \
@@ -49,6 +52,8 @@ namespace Hazel
 
 #define EVENT_CLASS_CATEGORY(category)                                                                                 \
     virtual int GetCategoryFlags() const override { return category; }
+
+    // ======== Aster Modify End ========
 
     class Event
     {

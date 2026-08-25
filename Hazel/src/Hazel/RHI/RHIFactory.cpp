@@ -1,6 +1,5 @@
-//
-// Created by helmholtz on 2026/3/13.
-//
+// Implements the RHI factory interface.
+// Created: 2026-03-13.
 
 #include "RHIFactory.h"
 
@@ -10,7 +9,7 @@
 #include <fstream>
 #include <shaderc/shaderc.hpp>
 
-namespace Hazel
+namespace Aster
 {
     namespace
     {
@@ -56,7 +55,10 @@ namespace Hazel
                 std::filesystem::path requestedPath(requested_source);
                 std::filesystem::path filePath;
                 if (requestedPath.is_absolute()) { filePath = requestedPath; }
-                else { filePath = requestingPath.parent_path() / requestedPath; }
+                else
+                {
+                    filePath = requestingPath.parent_path() / requestedPath;
+                }
                 auto requestedFileContent = ReadTextFile(filePath);
 
                 auto* result = new shaderc_include_result;
@@ -124,4 +126,4 @@ namespace Hazel
 
         return device->CreateShader(shaderDesc);
     }
-} // namespace Hazel
+} // namespace Aster
